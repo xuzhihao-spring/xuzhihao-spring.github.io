@@ -1,12 +1,15 @@
+# samuelebistoletti/docker-statsd-influxdb-grafana
+
 ## Versions
-Warning, breaking change: upgrade from version 1.0.x of this image is not supported, all persisted data in volumes will be lost if you delete the container.
+
 - Docker Image: 2.3.0
 - Ubuntu: 18.04
 - InfluxDB: 1.7.10
 - Telegraf (StatsD): 1.13.3-1
 - Grafana: 6.6.2
+
 ## Quick Start
-To start the container the first time launch:
+
 
 ```bash
 docker run --ulimit nofile=66000:66000 \
@@ -21,8 +24,7 @@ docker run --ulimit nofile=66000:66000 \
 ## Mapped Ports
 
 ```
-Host        Container        Service
-
+Host        Container       Service
 3003        3003            grafana
 3004        8888            influxdb-admin (chronograf)
 8086        8086            influxdb
@@ -30,7 +32,6 @@ Host        Container        Service
 ```
 
 ## Grafana
-
 Open [http://localhost:3003](http://localhost:3003/) 
 
 Get this dashboard:1443
