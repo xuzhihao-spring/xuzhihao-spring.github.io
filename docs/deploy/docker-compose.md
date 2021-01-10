@@ -1,40 +1,9 @@
 ## 1. Fastdfs
-docker-compose-fastdfs.yml
+
 ```bash
-version: '2'
-services:
-    fastdfs-tracker:
-        hostname: fastdfs-tracker
-        container_name: fastdfs-tracker
-        image: season/fastdfs:1.2
-        network_mode: "host"
-        command: tracker
-        volumes:
-          - ./tracker_data:/fastdfs/tracker/data
-    fastdfs-storage:
-        hostname: fastdfs-storage
-        container_name: fastdfs-storage
-        image: season/fastdfs:1.2
-        network_mode: "host"
-        volumes:
-          - ./storage_data:/fastdfs/storage/data
-          - ./store_path:/fastdfs/store_path
-        environment:
-          - TRACKER_SERVER=172.17.17.80:22122
-        command: storage
-        depends_on:
-          - fastdfs-tracker
-    fastdfs-nginx:
-        hostname: fastdfs-nginx
-        container_name: fastdfs-nginx
-        image: season/fastdfs:1.2
-        network_mode: "host"
-        volumes:
-          - ./nginx.conf:/etc/nginx/conf/nginx.conf
-          - ./store_path:/fastdfs/store_path
-        environment:
-          - TRACKER_SERVER=172.17.17.80:22122
-        command: nginx
+netstat -unltp | grep fdfs  #检测fdfs
+docker run -dti --network=host --name tracker -v /var/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
+docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /var/fdfs/storage:/var/fdfs delron/fastdfs storage
 ```
 ## 2. Zookeeper
 
