@@ -16,5 +16,6 @@
   * [docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
 
 * 技术分享
+  * [学习线路](share/学习线路.md) 
   * [服务端高并发分布式架构演进之路](share/服务端高并发分布式架构演进之路.md)
   
