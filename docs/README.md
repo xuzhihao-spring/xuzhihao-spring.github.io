@@ -18,5 +18,3 @@
 | spring-mybatis-learn | spring+mybatis整合  |                                                              |
 | springboot-learn     | spring 2.3.0源码    | WebMvcConfigurer                                             |
 | springmvc-embed    | springMvc 5.3.1源码 | 内嵌Tomcat8，Jetty9，servlet3.0规范扩展SPI,自定义参数解析            |
-|                      |                     |                                                              |
-|                      |                     |                                                              |
