@@ -88,17 +88,19 @@ public interface BlockingQueue<E> extends Queue<E> {
 - 删除的时候两把锁一起加
 - 先进先出
   
-### SynchronousQueue 同步队列
+### SynchronousQueue 同步队列、无缓冲阻塞队列
+
+### LinkedTransferQueue 由链表结构组成的无界阻塞
 
 ### PriorityBlockingQueue 优先级阻塞队列 
 - 小于64则翻倍，大于64增加一半 最小二叉堆
-- 
+
 
 ### DelayQueue 延迟队列
   
 ### LinkedBlockingDeque 链表阻塞双端队列
 
-### LinkedTransferQueue 由链表结构组成的无界阻塞
+
 
 ## JDK特性
 
