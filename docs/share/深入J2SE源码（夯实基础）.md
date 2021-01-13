@@ -71,7 +71,7 @@ public interface BlockingQueue<E> extends Queue<E> {
 
 
 
-### LinkedBlockingQueue 数组阻塞队列
+### ArrayBlockingQueue 数组阻塞队列
 - 数据结构：静态数组固定长度无扩容机制
 - 存取同一把锁互斥 操作同一个对象
 - 阻塞：出队为0时，无元素可取，阻塞在notEmpty 入队为数组长度时，无法刚入，阻塞在notFull
