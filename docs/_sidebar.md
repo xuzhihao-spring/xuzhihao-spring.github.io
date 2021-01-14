@@ -11,7 +11,7 @@
   * [Oracle常用](database/Oracle常用.md)
 
 * 系统部署
-  * [docker快速部署](deploy/docker-compose.md)
+  * [docker快速部署](deploy/docker-deploy.md)
   * [docker-compose-env.yml](deploy/docker-compose-env.md)
   * [docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
 

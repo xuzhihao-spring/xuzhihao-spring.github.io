@@ -89,17 +89,55 @@ public interface BlockingQueue<E> extends Queue<E> {
 - 先进先出
   
 ### SynchronousQueue 同步队列、无缓冲阻塞队列
+- 存取和调用都使用transfer方法
+  - put、offer为生产者，携带了数据e,为Data模式1，设置到QNode中
+  - tale、pool为消费者，不携带数据e,为REQUEST模式0，设置到QNode中
+- 存取和调用都使用transfer方法
+- 数据结构：链表Node
+- 锁：CAS + 自旋
+- 阻塞：`LockSupport`
+- 公平模式：TransferQueue 队尾入列 对头出列 先进先出
+- 非公平模式：TransferStack 栈顶入列 栈顶出列 后进先出
+```java
+//默认false非公平
+public SynchronousQueue() {
+    this(false);
+}
+//公平模式使用TransferQueue先进先出
+//非公平模式使用TransferStack后进先出
+public SynchronousQueue(boolean fair) {
+        transferer = fair ? new TransferQueue<E>() : new TransferStack<E>();
+    }
+```
 
 ### LinkedTransferQueue 由链表结构组成的无界阻塞
+- 数据结构：链表Node
+- 锁：CAS + 自旋
+- 阻塞：`LockSupport`
+- 可以看作LinkedBlockingQueue、SynchronousQueue（公平模式）、ConcurrentLinkedQueue三者的集合体
+- 对于入队之后，先自旋一定次数后再调用LockSupport.park()或LockSupport.parkNanos阻塞
 
 ### PriorityBlockingQueue 优先级阻塞队列 
-- 小于64则翻倍，大于64增加一半 最小二叉堆
-
+- 数据结构：数组+平衡二叉堆 小堆顶 
+- 可以指定容量，自动扩容，容量小于64则翻倍，大于64增加一半，最大容量Integer.MAX_VALUE
+- 锁：ReentrantLock存取同一把锁
+- 阻塞：notEmpty 出队队列为空的时候阻塞
+- 入队：不阻塞，永远返回成功，无界。有比较器的时候根据比较器进行堆化，没有使用默认比较器，自下而上堆化
+- 出队：弹出堆顶元素，自上而下重新堆化，为空则阻塞
 
 ### DelayQueue 延迟队列
+- 数据结构：Priority 与PriorityBlockingQueue类似，没有阻塞功能
+- 锁：ReentrantLock
+- 阻塞：Condition available
+- 入队：不阻塞，与优先级队列相同，唤醒available
+- 出队：为空的时候阻塞available。检测堆顶元素过期时间，小于等于0则取出，大于0阻塞，判断leader线程是否为空
   
 ### LinkedBlockingDeque 链表阻塞双端队列
-
+- 数据结构：同LinkedBlockingQueue
+- 锁定：同ArrayBlockingQueue
+- 阻塞：同ArrayBlockingQueue
+- 入队：队首队尾都可
+- 出队：队首队尾都可
 
 
 ## JDK特性

@@ -47,3 +47,21 @@ docker run -d \
   --mount type=tmpfs,destination=/tmp \
   80x86/nginx-fancyindex
 ```
+
+## 5. activemq
+
+```bash
+docker run -d --name activemq2 -p 61616:61616 -p 8161:8161 webcenter/activemq
+```
+
+## 6. zipkin
+
+```bash
+docker run -d -p  9411:9411 openzipkin/zipkin:2.17.2
+```
+
+## 7. Kafka
+
+```bash
+docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 --link zookeeper -e 	KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -t wurstmeister/kafka
+```

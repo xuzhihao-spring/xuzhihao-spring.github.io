@@ -8,21 +8,24 @@
  - Mem: 8GB
  - Disk: 100GB
  - 操作系统：CentOS 7.8 x86_64
+
+
 ### 1.1 关闭防火墙和SELinux
 安装配置时关闭防火墙，避免一些坑，服务调试完成，没有问题时再开启防火墙添加相关服务通过防火墙
 ```bash
 systemctl stop firewalld
 systemctl disable firewalld
-
 sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
 setenforce 0
 ```
+
 ### 1.2 添加本地DNS解析
 如果不添加，后面前端页面会有一些报错。
 ```bash
 vim /etc/hosts
 192.168.3.200 monitor01.smartlinux.cn monitor01
 ```
+
 ### 1.3 配置yum源
 CentOS默认的yum源是使用国外的服务器，修改为国内的阿里yum源
 ```bash
@@ -46,6 +49,7 @@ yum install -y centos-release-scl
 enabled=1
 sed -i '11 s/0/1/' /etc/yum.repos.d/zabbix.repo
 ```
+
 ## 2. 安装 Zabbix
 ### 2.1 安装 Zabbix server 和 agent
 
@@ -109,7 +113,6 @@ sed -i '246a StartDiscoverers=2' /etc/zabbix/zabbix_server.conf
 
 ```bash
 php_value[date.timezone] = Asia/Shanghai
-
 sed -i /timezone/d /etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf
 echo 'php_value[date.timezone] = Asia/Shanghai'>>/etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf
 ```
