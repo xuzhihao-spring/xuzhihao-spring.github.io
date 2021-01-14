@@ -14,6 +14,7 @@
   * [docker快速部署](deploy/docker-deploy.md)
   * [docker-compose-env.yml](deploy/docker-compose-env.md)
   * [docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
+  * [Gitlab搭建](deploy/Gitlab搭建.md)
 
 * 技术分享
   * [JVM底层原理（深入JDK）](share/JVM底层原理（深入JDK）.md) 
