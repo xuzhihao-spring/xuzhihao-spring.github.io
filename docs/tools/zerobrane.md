@@ -4,7 +4,7 @@
 ZeroBrane Studio是一个轻量级的Lua IDE，具有代码完成，语法高亮，实时编码，代码分析器以及Lua 5.1，Lua 5.2，Lua 5.3， LuaJIT和其他Lua引擎的调试支持
 
 ## 2.资源下载
-<a href="https://github.com/pkulchenko/ZeroBraneStudio/releases">最新及历史版下载</a>
+下载地址：https://github.com/pkulchenko/ZeroBraneStudio/releases
 
 ## 2.脚本调试
 
