@@ -6,7 +6,7 @@ ZeroBrane Studio是一个轻量级的Lua IDE，具有代码完成，语法高亮
 ## 2.资源下载
 下载地址：https://github.com/pkulchenko/ZeroBraneStudio/releases
 
-## 2.脚本调试
+## 3.脚本调试
 
 ```lua
 local aa=redis.call("set","name1","xcg1")

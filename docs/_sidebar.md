@@ -1,5 +1,6 @@
 * Java
   * [技术栈](java/framework.md)
+  * [Hutool常用的工具类和方法](java/hutool.md)
 
 * Linux
   * [基本命令](linux/linux_command.md)
@@ -11,7 +12,8 @@
   * [Oracle常用](database/oracle_command.md)
 
 * 系统部署
-  * [docker快速部署](deploy/docker-deploy.md)
+  * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
+  * [Nginx如何支持HTTPS](deploy/nginx_https_start.md)
   * [docker-compose-env.yml](deploy/docker-compose-env.md)
   * [docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
   * [Gitlab搭建](deploy/gitlab.md)
