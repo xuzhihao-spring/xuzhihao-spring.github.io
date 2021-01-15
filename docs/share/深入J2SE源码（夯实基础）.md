@@ -22,7 +22,6 @@ HashMap初始化容量大小与阿里巴巴Java开发手册约定计算公式一
 即initialCapacity = (需要存储的元素个数 / 负载因子) + 1
 
 ```java
-
 public HashSet(Collection<? extends E> c) {
     map = new HashMap<>(Math.max((int) (c.size()/.75f) + 1, 16));
     addAll(c);
@@ -35,7 +34,6 @@ public HashSet(Collection<? extends E> c) {
 BlockingQueue的核心方法：
 ```java
 public interface BlockingQueue<E> extends Queue<E> {
-
     //将给定元素设置到队列中，如果设置成功返回true, 否则抛出异常。如果是往限定了长度的队列中设置值，推荐使用offer()方法。
     boolean add(E e);
 
@@ -46,15 +44,13 @@ public interface BlockingQueue<E> extends Queue<E> {
     void put(E e) throws InterruptedException;
 
     //将给定元素在给定的时间内设置到队列中，如果设置成功返回true, 否则返回false.
-    boolean offer(E e, long timeout, TimeUnit unit)
-        throws InterruptedException;
+    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
 
     //从队列中获取值，如果队列中没有值，线程会一直阻塞，直到队列中有值，并且该方法取得了该值。
     E take() throws InterruptedException;
 
     //在给定的时间里，从队列中获取值，时间到了直接调用普通的poll方法，为null则直接返回null。
-    E poll(long timeout, TimeUnit unit)
-        throws InterruptedException;
+    E poll(long timeout, TimeUnit unit) throws InterruptedException;
 
     //获取队列中剩余的空间。
     int remainingCapacity();

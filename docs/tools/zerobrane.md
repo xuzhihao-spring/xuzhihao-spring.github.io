@@ -19,7 +19,7 @@ return aa1
 
 首次执行需要填写redis地址
 
-![](../images/tools/zbstudio_1.png)
+![](../images/tools/zerobrane_1.png)
 
 
 
@@ -33,4 +33,4 @@ return aa1
 - F5 debug运行
 
 ## 5.查看结果
-![](../images/tools/zbstudio_2.png)
+![](../images/tools/zerobrane_2.png)
