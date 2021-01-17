@@ -161,7 +161,38 @@ public SynchronousQueue(boolean fair) {
 ```java
 ```
 #### 可变参数 JDK 5 
+
+jdbc释放链接
+
 ```java
+//释放资源
+public static void free(AutoCloseable... ios) {
+		for (AutoCloseable io : ios) {
+			try {
+				if (io != null) {
+					io.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					if (io != null) {
+						io.close();
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					if (io != null) {
+						try {
+							io.close();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}
+	}
 ```
 #### foreach 循环 JDK 5  能够配合数组，以及所有实现了 Iterable 接口的集合类一起使用
 ```java
