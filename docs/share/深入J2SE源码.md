@@ -218,12 +218,51 @@ public static void free(AutoCloseable... ios) {
 
 ### JDK8
 
+#### Stream使用和底层原理详解
+#### 函数式接口与Lambda 表达式详解
+#### 方法引用与Data API详解
+#### 其他特性详解
+
 ### JDK9
+
+#### modularity System 模块化系统
+#### HTTP/2详解
+#### JShell : 交互式 Java REPL
+#### 不可变集合工厂方法、私有接口方法详解
+#### 多版本兼容 JAR与I/O 流新特性
 
 ### JDK10
 
+#### 局部变量的类型推断
+#### GC改进和内存管理
+#### 线程本地握手
+#### 备用内存设备上的堆分配
+#### 其他Unicode语言 - 标记扩展
+#### 基于Java的实验性JIT编译器
+#### 开源根证书
+#### 根证书颁发认证（CA）
+#### 将JDK生态整合单个存储库
+#### 删除工具javah
+
 ### JDK11
+
+#### HTTP Client 详解
+#### Java Flight Recorder (JFR)
+#### JavaFX从JDK分离为独立模块
+#### Project ZGC
 
 ### JDK12
 
+#### Shenandoah
+#### Microbenchmark Suite
+#### JVM常量API
+#### 默认CDS档案
+#### G1的优化详解
+
 ### JDK13
+
+#### Dynamic CDS Archives
+#### ZGC详解
+#### Reimplement the Legacy Socket API
+#### Switch Expressions
+#### Text Blocks
