@@ -1,6 +1,6 @@
 # 深入J2SE源码
 
-## Map源码
+## 1. Map源码
 
 ### 1.7HashMap源码
 ### 1.8HashMap源码
@@ -9,13 +9,13 @@
 ### 1.8ConcurrentHashMap源码
 ### LinkedHashMap源码
 
-## List源码
+## 2. List源码
 
 ### ArrayList
 ### LinkedList
 ### CopyOnWriteArrayList
 
-## Set源码
+## 3. Set源码
 ### HashSet
 HashMap初始化容量大小与阿里巴巴Java开发手册约定计算公式一致
 
@@ -30,7 +30,7 @@ public HashSet(Collection<? extends E> c) {
 ### TreeSet
 ### LinkedHashSet
 
-## Queue源码
+## 4. Queue源码
 BlockingQueue的核心方法：
 ```java
 public interface BlockingQueue<E> extends Queue<E> {
@@ -147,7 +147,7 @@ public SynchronousQueue(boolean fair) {
 - 出队：队首队尾都可
 
 
-## JDK特性
+## 5. JDK特性
 
 ### 语法糖
 
