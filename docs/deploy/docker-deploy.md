@@ -426,24 +426,3 @@ docker run --name openfire -d --restart=always \
   --volume /srv/docker/openfire:/var/lib/openfire \
   gizmotronic/openfire
 ```
-```xml
-<dependency>
-  <groupId>org.igniterealtime</groupId>
-  <artifactId>rest-api-client</artifactId>
-  <version>1.1.4</version>
-</dependency>
-```
-```java
-  AuthenticationToken authenticationToken = new AuthenticationToken("p9M5L3mSofk5Kpsc");
-  RestApiClient restApiClient = new RestApiClient("http://172.17.17.80", 9090, authenticationToken);
-  String userName = "river" + r.nextInt(100);
-  // 创建用户
-  UserEntity userEntity = new UserEntity(userName, "xuzhihao", "xuzhihao@google.com", "123456");
-  Response response = restApiClient.createUser(userEntity);
-  if (response.getStatus() == 201)
-    System.out.println("创建成功");
-  else {
-    System.out.println("创建失败");
-  }
-```
-

@@ -38,5 +38,6 @@
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
   * [MongoDB客户端工具Robo 3T](tools/robo3t.md)
   * [C/C++ IDE CLion 配置使用教程](tools/clion.md)
+  * [阿里开源的诊断神器Arthas](tools/arthas.md)
 
 
