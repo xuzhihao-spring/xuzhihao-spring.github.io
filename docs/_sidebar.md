@@ -20,19 +20,19 @@
 
 * Linux
   * [基本命令](linux/linux_command.md)
-  * [docker命令](linux/docker_command.md)
-  * [grafana7.3.4](linux/grafana7.3.4.md)
-  * [zabbix5.0](linux/zabbix5.0.md)
+  * [Docker命令](linux/docker_command.md)
 
 * 数据库
   * [Oracle常用](database/oracle_command.md)
 
 * 系统部署
   * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
-  * [Nginx如何支持HTTPS](deploy/nginx_https_start.md)
-  * [docker-compose-env.yml](deploy/docker-compose-env.md)
-  * [docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
+  * [Docker-compose-env.yml](deploy/docker-compose-env.md)
+  * [Docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
+  * [Nginx如何支持HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
+  * [Zabbix5.0](deploy/zabbix5.0.md)
+  * [Grafana7.3.4](deploy/grafana7.3.4.md)
 
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)

@@ -1,4 +1,12 @@
-# docker-compose-env.yml
+- mysql:5.7
+- redis:5
+- nginx:1.10
+- rabbitmq:3.7.15-management
+- elasticsearch:7.6.2
+- kibana:7.6.2
+- mongo:4.2.5
+- nacos/nacos-server:1.3.0
+- logstash:7.6.2
 
 ```bash
 version: '3'

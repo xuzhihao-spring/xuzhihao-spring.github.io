@@ -1,4 +1,4 @@
-# yum安装zabbix5.0
+# yum安装Zabbix5.0
 
 ## 1. 准备工作
  - 服务器配置固定的IP地址和DNS
