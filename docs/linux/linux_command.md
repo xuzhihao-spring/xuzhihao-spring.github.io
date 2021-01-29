@@ -31,7 +31,7 @@ service iptables stop #关闭防火墙
 nginx -s reload; #重载
 ```
 
-## jdk安装
+## Jdk安装
 ```bash
 vim /etc/profile
 source /etc/profile
@@ -41,7 +41,7 @@ CLASSPATH=$JAVA_HOME/jre/lib/ext:$JAVA_HOME/lib/tools.jar
 export PATH JAVA_HOME CLASSPATH
 ```
 
-## ftp安装
+## Ftp安装
 ```bash
 yum install vsftpd #ftp
 cat /etc/passwd 新增用户
@@ -54,7 +54,7 @@ vi /etc/selinux/config
 SELINUX=disabled 
 ```
 
-## solr4.7.2
+## Solr4.7.2
 ```bash
 cd /opt/solr-4.7.2/example  #solr启动
 nohup java -Djetty.port=8080 -jar start.jar

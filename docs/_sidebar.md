@@ -33,6 +33,7 @@
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix5.0](deploy/zabbix5.0.md)
   * [Grafana7.3.4](deploy/grafana7.3.4.md)
+  * [Minikube安装](deploy/minikube.md) 
 
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)

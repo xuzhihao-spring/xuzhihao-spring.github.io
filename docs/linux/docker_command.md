@@ -9,7 +9,7 @@ docker --help #查看docker容器帮助
 ## 2. 镜像操作
 ```bash
 docker images  #查看镜像
-docker rmi [imageid1] 删除镜像
+docker rmi [imageid1] #删除镜像
 docker rmi $(docker images -q)  #删除本地所有镜像
 ```
 
