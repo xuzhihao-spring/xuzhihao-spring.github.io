@@ -1,8 +1,7 @@
-# yum安装Grafana7.3.4
+# Minikube安装
+- 首先我们需要下载Minikube的二进制安装包并安装：
 
 ```bash
-#wget https://dl.grafana.com/oss/release/grafana-7.3.4-1.x86_64.rpm
-yum localinstall grafana-7.3.4-1.x86_64.rpm
-start grafana-server.service
-systemctl enable grafana-server.service
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
