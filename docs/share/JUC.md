@@ -77,7 +77,7 @@ RejectedExecutionException |
 RejectedExecutionHandler | 
 RunnableFuture | 
 RunnableScheduledFuture | 
-ScheduledExecutorService | 
+ScheduledExecutorService | Netty的EventLoop扩展于此
 ScheduledFuture | 
 ScheduledThreadPoolExecutor | 
 Semaphore | 
