@@ -1,6 +1,6 @@
 # samuelebistoletti/docker-statsd-influxdb-grafana
 
-## 1.Versions
+## 1.版本
 
 - Docker Image: 2.3.0
 - Ubuntu: 18.04
@@ -8,8 +8,7 @@
 - Telegraf (StatsD): 1.13.3-1
 - Grafana: 6.6.2
 
-## 2.Quick Start
-
+## 2.快速启动
 
 ```bash
 docker run --ulimit nofile=66000:66000 \
@@ -21,9 +20,10 @@ docker run --ulimit nofile=66000:66000 \
   -p 8125:8125/udp \
   samuelebistoletti/docker-statsd-influxdb-grafana:latest
 ```
-## 3.Mapped Ports
 
-```
+## 3.端口
+
+```bash
 Host        Container       Service
 3003        3003            grafana
 3004        8888            influxdb-admin (chronograf)
@@ -31,27 +31,16 @@ Host        Container       Service
 8125        8125            statsd
 ```
 
-## 4.Grafana
-Open http://localhost:3003
-```bash
-Username: root
-Password: root
-```
+## 4.控制台
 
-Add data source on Grafana
+http://localhost:3003 root/root
 
-```bash
-Url: http://localhost:8086
-Database:    telegraf
-User: telegraf
-Password:    telegraf
-```
+添加Grafana数据源
+- Url：http://localhost:8086
+- Database：telegraf
+- User:telegraf
+- Password：telegraf
 
-## 5.InfluxDB
-Open [http://localhost:3004]
+## 5.数据库配置
 
-```
-Username: root
-Password: root
-Port: 8086
-```
+http://localhost:3004 root/root:8086

@@ -19,21 +19,22 @@
   * [Hutool常用的工具类和方法](java/hutool.md)
 
 * Linux
-  * [基本命令](linux/linux_command.md)
-  * [Docker命令](linux/docker_command.md)
+  * [Linux常用命令](linux/linux_command.md)
+  * [Docker常用命令](linux/docker_command.md)
+  * [Kubernetes常用命令](linux/kubernetes_command.md)
 
 * 数据库
   * [Oracle常用](database/oracle_command.md)
 
 * 系统部署
   * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
-  * [Docker-compose-env.yml](deploy/docker-compose-env.md)
-  * [Docker-statsd-influxdb-grafana](deploy/docker-statsd-influxdb-grafana.md)
+  * [Grafana+InfluxDb数据监控（Docker）](deploy/docker-statsd-influxdb-grafana.md)
+  * [Minikube安装](deploy/minikube.md) 
+  * [docker-compose-env.yml](deploy/docker-compose-env.md)
   * [Nginx如何支持HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
-  * [Zabbix5.0](deploy/zabbix5.0.md)
-  * [Grafana7.3.4](deploy/grafana7.3.4.md)
-  * [Minikube安装](deploy/minikube.md) 
+  * [Zabbix5.0安装](deploy/zabbix5.0.md)
+  * [Grafana7.3.4安装](deploy/grafana7.3.4.md)
 
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
