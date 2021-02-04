@@ -1,19 +1,3 @@
-* 技术分享
-  * [JVM底层原理](share/JVM底层原理.md)
-  * [深入J2SE源码](share/深入J2SE源码.md)
-  * [并发编程](share/并发编程.md)
-  * [开发框架源码](share/开发框架源码.md)
-  * [网络通信](share/网络通信.md)
-  * [操作系统原理](share/操作系统原理.md)
-  * [分布式技术](share/分布式技术.md)
-  * [微服务技术](share/微服务技术.md)
-  * [数据库原理调优](share/数据库原理调优.md)
-  * [运维与监控](share/运维与监控.md)
-  * [架构师思维设计架构](share/架构师思维设计架构.md)
-  * [JDK8之JUC](share/JUC.md)
-  * [服务端高并发分布式架构演进之路](share/服务端高并发分布式架构演进之路.md)
-  * [参考](share/参考.md)
-
 * Java
   * [技术栈](java/framework.md)
   * [Hutool常用的工具类和方法](java/hutool.md)
@@ -29,7 +13,7 @@
 * 系统部署
   * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
   * [Grafana+InfluxDb数据监控（Docker）](deploy/docker-statsd-influxdb-grafana.md)
-  * [Minikube安装](deploy/minikube.md) 
+  * [Minikube安装](deploy/minikube.md)
   * [docker-compose-env.yml](deploy/docker-compose-env.md)
   * [Nginx如何支持HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
@@ -42,4 +26,18 @@
   * [C/C++ IDE CLion 配置使用教程](tools/clion.md)
   * [阿里开源的诊断神器Arthas](tools/arthas.md)
 
-
+* 技术分享
+  * [JVM底层原理](share/JVM底层原理.md)
+  * [深入J2SE源码](share/深入J2SE源码.md)
+  * [并发编程](share/并发编程.md)
+  * [开发框架源码](share/开发框架源码.md)
+  * [网络通信](share/网络通信.md)
+  * [操作系统原理](share/操作系统原理.md)
+  * [分布式技术](share/分布式技术.md)
+  * [微服务技术](share/微服务技术.md)
+  * [数据库原理调优](share/数据库原理调优.md)
+  * [运维与监控](share/运维与监控.md)
+  * [架构师思维设计架构](share/架构师思维设计架构.md)
+  * [JDK8之JUC](share/JUC.md)
+  * [服务端高并发分布式架构演进之路](share/服务端高并发分布式架构演进之路.md)
+  * [参考](share/参考.md)
