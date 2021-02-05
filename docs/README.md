@@ -1,4 +1,4 @@
-# Java 学习笔记
+# 学习笔记
 
 <p>
 <a href="https://github.com/xuzhihao-spring/xuzhihao-spring.github.io"><img src="https://xuzhihao-shop.oss-cn-beijing.aliyuncs.com/shop/%E5%90%8E%E5%8F%B0%E9%A1%B9%E7%9B%AE-shop-blue.svg" alt="后台项目"></a>

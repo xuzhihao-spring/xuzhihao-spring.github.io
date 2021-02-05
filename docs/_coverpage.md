@@ -1,6 +1,6 @@
 ![logo](https://docsify.js.org/_media/icon.svg)
 
-# Java 笔记
+# xuzhihao
 
 > 使用Spring Cloud全家桶搭建小型全栈项目
 
