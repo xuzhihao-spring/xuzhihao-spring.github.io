@@ -6,6 +6,7 @@
   * [Linux常用命令](linux/linux_command.md)
   * [Docker常用命令](linux/docker_command.md)
   * [Kubernetes常用命令](linux/kubernetes_command.md)
+  * [Nginx配置](linux/nginx.md)
 
 * 数据库
   * [Oracle常用](database/oracle_command.md)
