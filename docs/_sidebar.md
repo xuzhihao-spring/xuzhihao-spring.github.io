@@ -6,7 +6,6 @@
   * [Linux常用命令](linux/linux_command.md)
   * [Docker常用命令](linux/docker_command.md)
   * [Kubernetes常用命令](linux/kubernetes_command.md)
-  * [Nginx配置](linux/nginx.md)
 
 * 数据库
   * [Oracle常用](database/oracle_command.md)
@@ -15,8 +14,9 @@
   * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
   * [Grafana+InfluxDb数据监控（Docker）](deploy/docker-statsd-influxdb-grafana.md)
   * [Minikube安装](deploy/minikube.md)
-  * [docker-compose-env.yml](deploy/docker-compose-env.md)
+  * [Docker Compose](deploy/docker-compose-env.md)
   * [Nginx如何支持HTTPS](deploy/nginx_https.md)
+  * [Nginx配置](deploy/nginx.md)
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix5.0安装](deploy/zabbix5.0.md)
   * [Grafana7.3.4安装](deploy/grafana7.3.4.md)
