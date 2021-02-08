@@ -65,11 +65,25 @@ vim mycentos
 docker build -f /docker/dockerfile/mycentos -t mycentos:1.1
 ```
 
-## 8. docker-compose
+## 8. Docker-compose
 ```bash
 docker-compose -f docker-compose-env.yml up -d  
 ```
+## 9. 添加仓库镜像地址
 
-## 9. 常用地址
+1. Docker官方中国区： https://registry.docker-cn.com
+2. 网易：http://hub-mirror.c.163.com
+3. 中国科学技术大学：https://docker.mirrors.ustc.edu.cn
+
+```Shell
+# vi /etc/docker/daemon.json
+{
+    "registry-mirrors":[ "https://registry.docker-cn.com" ]
+}
+sudo systemctl daemon-reload
+sudo systemctl restart docker 
+```
+
+## 10. 常用地址
 
 doc仓库：https://hub.docker.com/r/samuelebistoletti/docker-statsd-influxdb-grafana

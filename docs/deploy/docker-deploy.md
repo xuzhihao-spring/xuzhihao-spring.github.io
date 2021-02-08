@@ -39,6 +39,12 @@ docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22
 docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
 ```
 
+## Dubbo-admin安装
+
+```bash
+docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 -e dubbo.admin.root.password=root -e dubbo.admin.guest.password=guest chenchuxin/dubbo-admin 
+```
+
 ## Portainer安装
 
 ```bash
