@@ -13,6 +13,7 @@
 | shop-main | Springcloud脚手架   | 附件，网关，检索，认证，监控 |
 | spring-api|  |  |
 | spring-base | 注解使用 | |
+| dubbo-2.7.7| | test |
 | mybatis-3.4.6| 源码   | sql日志分析，乐观锁，日志脱敏，关键词过滤，gen生成代码 |
 | netty-4.1.49| | |
 | spring-5.3.1|| ProxyGenerator字节码重写 |
