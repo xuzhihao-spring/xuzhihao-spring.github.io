@@ -9,6 +9,7 @@
 
 * 数据库
   * [Oracle常用](database/oracle_command.md)
+  * [MySQL](database/mysql_command.md)
 
 * 系统部署
   * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
