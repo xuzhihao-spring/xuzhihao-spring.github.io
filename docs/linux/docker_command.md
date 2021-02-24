@@ -9,7 +9,7 @@ docker --help #查看docker容器帮助
 ## 2. 镜像操作
 ```bash
 docker images  #查看镜像
-docker rmi [imageid1] #删除镜像
+docker rmi [imageid] #删除镜像
 docker rmi $(docker images -q)  #删除本地所有镜像
 ```
 
@@ -43,12 +43,14 @@ docker logs -t --since="2018-02-08T13:23:37" --until "2018-02-09T12:23:37" [cont
 ```
 ## 5. 容器与主机间的数据拷贝
 ```bash
-##将rabbitmq容器中的文件copy至本地路径
+## 将rabbitmq容器中的文件copy至本地路径
 docker cp rabbitmq:/[container_path] [local_path]
-##将主机文件copy至rabbitmq容器
+## 将主机文件copy至rabbitmq容器
 docker cp [local_path] rabbitmq:/[container_path]/
-##将主机文件copy至rabbitmq容器，目录重命名为[container_path]（注意与非重命名copy的区别）
+## 将主机文件copy至rabbitmq容器，目录重命名为[container_path]（注意与非重命名copy的区别）
 docker cp [local_path] rabbitmq:/[container_path]
+## 挂载宿主机的一个目录
+docker run -it -v /[local_path]:/[container_path] [imageid] /bin/bash
 ```
 
 ## 6. 生成镜像
