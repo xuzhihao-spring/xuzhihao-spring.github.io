@@ -1,6 +1,6 @@
 # Linux环境下的部署（基于Docker容器）
 
-## Docker环境安装
+## 1. Docker环境安装
 
 - 安装`yum-utils`：
 
@@ -26,26 +26,26 @@ yum install docker-ce
 systemctl start docker
 ```
 
-## Fastdfs安装
+## 2. Fastdfs安装
 
 ```bash
 netstat -unltp | grep fdfs  #检测fdfs
 docker run -dti --network=host --name tracker -v /var/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
 docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /var/fdfs/storage:/var/fdfs delron/fastdfs storage
 ```
-## Zookeeper安装
+## 3. Zookeeper安装
 
 ```bash
 docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
 ```
 
-## Dubbo-admin安装
+## 4. Dubbo-admin安装
 
 ```bash
 docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 -e dubbo.admin.root.password=root -e dubbo.admin.guest.password=guest chenchuxin/dubbo-admin 
 ```
 
-## Portainer安装
+## 5. Portainer安装
 
 ```bash
 docker run -p 9000:9000 -p 8000:8000 --name portainer \
@@ -55,7 +55,7 @@ docker run -p 9000:9000 -p 8000:8000 --name portainer \
 -d portainer/portainer
 ```
 
-## MinIO安装
+## 6. MinIO安装
 默认Access Key和Secret都是minioadmin
 
 ```bash
@@ -65,7 +65,7 @@ docker run -p 9090:9000 --name minio \
   -d minio/minio server /data
 ```
 
-## nginx-fancyindex安装
+## 7. nginx-fancyindex安装
 
 ```bash
 docker run -d \
@@ -80,25 +80,25 @@ docker run -d \
   80x86/nginx-fancyindex
 ```
 
-## activemq安装
+## 8. activemq安装
 
 ```bash
 docker run -d --name activemq2 -p 61616:61616 -p 8161:8161 webcenter/activemq
 ```
 
-## zipkin安装
+## 9. zipkin安装
 
 ```bash
 docker run -d -p  9411:9411 openzipkin/zipkin:2.17.2
 ```
 
-## Kafka安装
+## 10. Kafka安装
 
 ```bash
 docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 --link zookeeper -e 	KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -t wurstmeister/kafka
 ```
 
-## MySQL安装
+## 11. MySQL安装
 
 - 下载MySQL`5.7`的docker镜像：
 
@@ -167,7 +167,7 @@ source /shop.sql;
 grant all privileges on *.* to 'reader' @'%' identified by '123456';
 ```
 
-## Redis安装
+## 12. Redis安装
 
 - 下载Redis`5.0`的docker镜像：
 
@@ -191,7 +191,7 @@ docker exec -it redis redis-cli
 
 ![](../images/deploy/mall_linux_deploy_01.png)
 
-## Nginx安装
+## 13. Nginx安装
 
 - 下载Nginx`1.10`的docker镜像：
 
@@ -237,7 +237,7 @@ docker run -p 80:80 --name nginx \
 -d nginx:1.10
 ```
 
-## RabbitMQ安装
+## 14. RabbitMQ安装
 
 - 下载rabbitmq`3.7.15`的docker镜像：
 
@@ -289,7 +289,7 @@ firewall-cmd --reload
 
 ![](../images/deploy/mall_linux_deploy_07.png)
 
-## Elasticsearch安装
+## 15. Elasticsearch安装
 
 - 下载Elasticsearch`7.6.2`的docker镜像：
 
@@ -340,7 +340,7 @@ firewall-cmd --reload
 
 ![](../images/deploy/mall_linux_deploy_08.png)
 
-## Logstash安装
+## 16. Logstash安装
 
 - 下载Logstash`7.6.2`的docker镜像：
 
@@ -380,7 +380,7 @@ docker run --name logstash -p 4560:4560 -p 4561:4561 -p 4562:4562 -p 4563:4563 \
 logstash-plugin install logstash-codec-json_lines
 ```
 
-## Kibana安装
+## 17. Kibana安装
 
 - 下载Kibana`7.6.2`的docker镜像：
 
@@ -407,7 +407,7 @@ firewall-cmd --reload
 
 ![](../images/deploy/mall_linux_deploy_09.png)
 
-## MongoDB安装
+## 18. MongoDB安装
 
 - 下载MongoDB`4.2.5`的docker镜像：
 
@@ -423,7 +423,7 @@ docker run -p 27017:27017 --name mongo \
 -d mongo:4.2.5
 ```
 
-## Openfire安装
+## 19. Openfire安装
 ```bash
 docker pull gizmotronic/openfire
 
@@ -431,4 +431,14 @@ docker run --name openfire -d --restart=always \
   --publish 9090:9090 --publish 5222:5222 --publish 7070:7070 \
   --volume /srv/docker/openfire:/var/lib/openfire \
   gizmotronic/openfire
+```
+
+## 20. eclipse/che安装
+```bash
+docker run -it --rm \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v /d/checmd3/che/assembly/assembly-main/target/eclipse-che-7.0.0-beta-2.0/eclipse-che-7.0.0-beta-2.0:/che \
+-e CHE_ASSEMBLY='/d/checmd3/che/assembly/assembly-main/target/eclipse-che-7.0.0-beta-2.0/eclipse-che-7.0.0-beta-2.0' \
+-v /d/checmd3/che/tmp:/data \
+eclipse/che start
 ```
