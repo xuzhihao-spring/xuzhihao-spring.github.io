@@ -5,10 +5,12 @@
 * Linux
   * [Linux常用命令](linux/linux_command.md)
   * [Docker常用命令](linux/docker_command.md)
+  * [Npm常用命令](linux/npm_command.md)
   * [Kubernetes常用命令](linux/kubernetes_command.md)
 
 * 数据库
   * [Oracle常用](database/oracle_command.md)
+  * [Redis命令](database/redis_command.md)
   * [MySQL](database/mysql_command.md)
 
 * 系统部署

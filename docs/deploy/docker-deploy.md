@@ -55,6 +55,9 @@ docker run -p 9000:9000 -p 8000:8000 --name portainer \
 -d portainer/portainer
 ```
 
+![](../images/deploy/5.portainer.png)
+
+
 ## 6. MinIO安装
 默认Access Key和Secret都是minioadmin
 
@@ -433,6 +436,9 @@ docker run --name openfire -d --restart=always \
   gizmotronic/openfire
 ```
 
+![](../images/deploy/19.openfire.png)
+
+
 ## 20. eclipse/che安装
 ```bash
 docker run -it --rm \
@@ -442,3 +448,14 @@ docker run -it --rm \
 -v /d/checmd3/che/tmp:/data \
 eclipse/che start
 ```
+
+![](../images/deploy/20.eclipse-che.png)
+
+## 21. Theia安装
+
+```bash
+docker pull theiaide/theia-full
+docker run -d -it --init -p 3000:3000 -v "/mydata/vscode:/home/project:cached" theiaide/theia-full:latest
+```
+
+![](../images/deploy/21.Theia.png)

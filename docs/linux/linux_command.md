@@ -20,10 +20,6 @@ rpm -e --nodeps java-1.6.0-openjdk-1.6.0.0-1.66.1.13.0.el6.x86_64  #删除程序
 memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111;  #memcached启动
 nohup sh /data/kh_shell/jb.sh &  #重新执行数据库
 
-cd /usr/local/bin
-redis-server /etc/redis.conf
-npm install --registry=https://registry.npm.taobao.org
-
 #重启，启动，开机启动，状态，关闭
 systemctl restart memcached
 systemctl start memcached
