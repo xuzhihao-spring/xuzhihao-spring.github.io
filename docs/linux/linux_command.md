@@ -60,3 +60,7 @@ cd /opt/solr-4.7.2/example  #solr启动
 nohup java -Djetty.port=8080 -jar start.jar
 ps aux|grep jetty
 ```
+
+## 4. github无法链接
+
+http://tool.chinaz.com/dns?type=1&host=www.github.com&ip=

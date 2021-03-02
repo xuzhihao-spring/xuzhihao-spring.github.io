@@ -4,7 +4,25 @@
 
 ```sql
 show variables like '%lower_case_table_names%' --大小写敏感
+
+lower_case_table_names=0   	表名存储为给定的大小和比较是区分大小写的 
+lower_case_table_names=1    表名存储在磁盘是小写的，但是比较的时候是不区分大小写
+lower_case_table_names=2	表名存储为给定的大小写但是比较的时候是小写的
+
 ```
+
+```bash
+docker ps -a
+docker exec -it  [containerid]  /bin/bash
+vi /etc/mysql/mysql.conf.d/mysqld.cnf 
+#在配置文件中添加lower_case_table_names=1
+apt-get update
+apt-get install -y vim
+```
+
+![](../images/database/mysql-mysqld.png)
+
+···
 
 ## 2. 函数
 ```sql
