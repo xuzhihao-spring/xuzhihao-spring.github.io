@@ -440,6 +440,9 @@ docker run --name openfire -d --restart=always \
 
 
 ## 20. eclipse/che安装
+
+http://ip:8080
+
 ```bash
 docker run -it --rm \
 -v /var/run/docker.sock:/var/run/docker.sock \

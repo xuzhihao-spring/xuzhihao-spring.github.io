@@ -23,7 +23,7 @@
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix5.0安装](deploy/zabbix5.0.md)
   * [Grafana7.3.4安装](deploy/grafana7.3.4.md)
-  * [MyCat1.6.7.3搭建](deploy/mycat.md)
+  * [MyCat+HA+Keepalived搭建](deploy/mycat.md)
 
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
@@ -44,5 +44,6 @@
   * [运维与监控](share/运维与监控.md)
   * [架构师思维设计架构](share/架构师思维设计架构.md)
   * [JDK8之JUC](share/JUC.md)
+  * [开源世界](share/openSource.md)
   * [服务端高并发分布式架构演进之路](share/服务端高并发分布式架构演进之路.md)
   * [参考](share/参考.md)
