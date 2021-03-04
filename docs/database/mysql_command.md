@@ -18,6 +18,11 @@ vi /etc/mysql/mysql.conf.d/mysqld.cnf
 #在配置文件中添加lower_case_table_names=1
 apt-get update
 apt-get install -y vim
+
+find / -name my.cnf rpm安装时配置文件位置
+/usr/my.cnf
+lower_case_table_names=1
+
 ```
 
 ![](../images/database/mysql-mysqld.png)

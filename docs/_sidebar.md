@@ -23,6 +23,7 @@
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix5.0安装](deploy/zabbix5.0.md)
   * [Grafana7.3.4安装](deploy/grafana7.3.4.md)
+  * [MyCat1.6.7.3搭建](deploy/mycat.md)
 
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
