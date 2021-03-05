@@ -63,4 +63,10 @@ ps aux|grep jetty
 
 ## 4. github无法链接
 
-http://tool.chinaz.com/dns?type=1&host=www.github.com&ip=
+https://www.ipaddress.com/
+
+分别输入github.global.ssl.fastly.net和github.com，查询ip地址
+
+140.82.113.3	github.com
+
+199.232.69.194	github.global.ssl.fastly.net

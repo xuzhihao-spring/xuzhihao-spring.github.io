@@ -1,6 +1,9 @@
 # npm命令
 
 ```bash
+sudo curl -sL -o /etc/yum.repos.d/khara-nodejs.repo \ https://copr.fedoraproject.org/coprs/khara/nodejs/repo/epel-7/khara-nodejs-epel-7.repo
+$ sudo yum install -y nodejs nodejs-npm #yum安装npm和nodejs
+
 npm -v #查看npm安装的版本
 npm install --registry=https://registry.npm.taobao.org #指定仓库地址
 npm install moduleName #安装node模块
