@@ -6,7 +6,7 @@
   * [Linux常用命令](linux/linux_command.md)
   * [Windows常用命令](linux/windows_command.md)
   * [Docker常用命令](linux/docker_command.md)
-  * [Npm常用命令](linux/npm_command.md)
+  * [Node.js常用命令](linux/node_command.md)
   * [Kubernetes常用命令](linux/kubernetes_command.md)
 
 * 数据库

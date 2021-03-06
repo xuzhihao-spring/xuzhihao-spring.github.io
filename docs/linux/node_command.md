@@ -1,6 +1,6 @@
-# npm命令
+# Node.js
 
-## 1. 安装
+## 1. 安装Node
 
 ```bash
 wget https://npm.taobao.org/mirrors/node/v10.14.1/node-v10.14.1-linux-x64.tar.gz 安装
@@ -16,11 +16,13 @@ node -v
 npm -v
 ```
 
-## 2. 其他 
+## 2. 包管理器NPM
 
-```
+```bash
 npm -v #查看npm安装的版本
+
 npm install --registry=https://registry.npm.taobao.org #指定仓库地址
+
 npm install moduleName #安装node模块
 npm install moduleName@1.0.0 #安装node模块特定版本
 npm install -g moduleName #全局安装命令
@@ -37,3 +39,15 @@ npm root -g #查看全局的包的安装路径
 npm list #查看当前目录下已安装的node包
 npm list parseable=true #以目录的形式来展现当前安装的所有node包
 ```
+
+## 2. NODEJS
+
+```bash
+sudo npm install forever -g #全局安装forever启动命令
+forever start app.js #启动进程
+forever stop  app.js #关闭进程
+forever restart app.js #重启进程
+forever start -l forever.log -o out.log -e err.log app.js #日志输出
+forever list #查看forever进程列表
+```
+
