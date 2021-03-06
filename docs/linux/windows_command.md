@@ -56,3 +56,11 @@ PATH
 cd C:\Program Files\Oracle\VirtualBox
 
 VBoxManage internalcommands sethduuid "D:\VirtualBox VMs\mediasoup\c7.vdi"
+
+## 4. 本地证书生成
+
+keytool -genkey -alias tomcat -keyalg RSA -keystore d:/tomcat.keystore
+
+openssl genrsa > privkey.pem
+
+openssl req -new -x509 -key privkey.pem > fullchain.pem
