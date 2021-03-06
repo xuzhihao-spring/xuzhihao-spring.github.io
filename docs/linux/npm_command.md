@@ -1,9 +1,24 @@
 # npm命令
 
-```bash
-sudo curl -sL -o /etc/yum.repos.d/khara-nodejs.repo \ https://copr.fedoraproject.org/coprs/khara/nodejs/repo/epel-7/khara-nodejs-epel-7.repo
-$ sudo yum install -y nodejs nodejs-npm #yum安装npm和nodejs
+## 1. 安装
 
+```bash
+wget https://npm.taobao.org/mirrors/node/v10.14.1/node-v10.14.1-linux-x64.tar.gz 安装
+tar -xvf node-v10.14.1-linux-x64.tar.gz
+mv node-v10.14.1-linux-x64 node
+
+vim /etc/profile
+export NODE_HOME=/usr/local/node
+export PATH=$NODE_HOME/bin:$PATH
+
+source /etc/profile
+node -v
+npm -v
+```
+
+## 2. 其他 
+
+```
 npm -v #查看npm安装的版本
 npm install --registry=https://registry.npm.taobao.org #指定仓库地址
 npm install moduleName #安装node模块

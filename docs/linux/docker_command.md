@@ -22,7 +22,7 @@ docker-compose -v
 
 ```
 
-## 2. Docker容器信息
+## 2. 容器信息
 ```bash
 docker version #查看docker容器版本
 docker info #查看docker容器信息

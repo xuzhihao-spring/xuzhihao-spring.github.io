@@ -142,12 +142,13 @@ yum makecache
 
 wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 
-## 6. github无法链接
+## 6. centos7gcc升级
 
-https://www.ipaddress.com/
-
-分别输入github.global.ssl.fastly.net和github.com，查询ip地址
-
-140.82.113.3	github.com
-
-199.232.69.194	github.global.ssl.fastly.net
+```
+yum -y install centos-release-scl #gcc7
+yum -y install devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-binutils
+sudo yum install devtoolset-7-gcc*
+scl enable devtoolset-7 bash
+which gcc
+gcc --version
+```
