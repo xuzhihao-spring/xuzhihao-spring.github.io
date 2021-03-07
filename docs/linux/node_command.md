@@ -3,9 +3,10 @@
 ## 1. 安装Node
 
 ```bash
-wget https://npm.taobao.org/mirrors/node/v10.14.1/node-v10.14.1-linux-x64.tar.gz 安装
-tar -xvf node-v10.14.1-linux-x64.tar.gz
-mv node-v10.14.1-linux-x64 node
+yum install -y git
+wget https://nodejs.org/dist/v14.16.0/node-v14.16.0-linux-x64.tar.xz
+tar -xvf node-v14.16.0-linux-x64.tar.xz
+mv node-v14.16.0-linux-x64 /usr/local/node
 
 vim /etc/profile
 export NODE_HOME=/usr/local/node

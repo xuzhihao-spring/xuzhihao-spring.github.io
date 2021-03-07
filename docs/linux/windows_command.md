@@ -71,6 +71,12 @@ keytool -genkey -alias tomcat -keyalg RSA -keystore d:/tomcat.keystore
 ```bash
 openssl genrsa > privkey.pem
 openssl req -new -x509 -key privkey.pem > fullchain.pem
+
+openssl genrsa -out server.key 2048
+openssl req -new -key server.key -out server.csr
+openssl x509 -req -in server.csr -out server.crt -signkey server.key -days 3650
+cat server.crt server.key > server.pem
+
 ```
 
 **crt和key生成**

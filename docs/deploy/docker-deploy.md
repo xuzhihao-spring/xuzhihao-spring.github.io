@@ -55,6 +55,13 @@ docker run -p 9000:9000 -p 8000:8000 --name portainer \
 -d portainer/portainer
 ```
 
+```bash
+vim /usr/lib/systemd/system/docker.service #编辑文件
+ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock #修改参数
+systemctl daemon-reload #加载docker守护线程
+systemctl restart docker #重启docker
+```
+
 ![](../images/deploy/5.portainer.png)
 
 
