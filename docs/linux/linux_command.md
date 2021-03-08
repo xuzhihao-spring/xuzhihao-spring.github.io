@@ -76,7 +76,7 @@ cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &
 java -jar sentinel-dashboard-1.7.2.jar &
 ```
 
-## 5. centos7配置yum仓库
+## 5. Centos7配置yum仓库
 
 备份原有yum源
 
@@ -144,7 +144,7 @@ yum makecache
 
 wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 
-## 6. gcc升级
+## 6. Gcc升级
 
 ```
 yum -y install centos-release-scl

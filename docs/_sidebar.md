@@ -15,16 +15,18 @@
   * [MySQL](database/mysql_command.md)
 
 * 系统部署
-  * [Linux环境下的部署（基于Docker容器）](deploy/docker-deploy.md)
-  * [Grafana+InfluxDb数据监控（Docker）](deploy/docker-statsd-influxdb-grafana.md)
-  * [Minikube安装](deploy/minikube.md)
+  * [Linux基于Docker部署](deploy/docker-deploy.md)
   * [Docker Compose](deploy/docker-compose-env.md)
-  * [Nginx如何支持HTTPS](deploy/nginx_https.md)
-  * [Nginx配置](deploy/nginx.md)
+  * [Docker安装Grafana+InfluxDb监控平台](deploy/docker-statsd-influxdb-grafana.md)
+  * [Minikube安装](deploy/minikube.md)
+  * [Nginx安装](deploy/nginx.md)
+  * [Nginx配置HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
-  * [Zabbix5.0安装](deploy/zabbix5.0.md)
-  * [Grafana7.3.4安装](deploy/grafana7.3.4.md)
+  * [Zabbix安装](deploy/zabbix5.0.md)
+  * [Grafana安装](deploy/grafana7.3.4.md)
   * [MyCat+HA+Keepalived搭建](deploy/mycat.md)
+  * [Turnserver搭建](deploy/turnserve.md)
+  
 
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)

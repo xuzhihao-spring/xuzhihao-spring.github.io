@@ -1,4 +1,4 @@
-# Linux环境下的部署（基于Docker容器）
+# Linux基于Docker部署
 
 ## 1. Docker环境安装
 
@@ -227,7 +227,7 @@ docker container cp nginx:/etc/nginx /mydata/nginx/
 - 修改文件名称：
 
 ```bash
-mv nginx conf
+mv /mydata/nginx/nginx /mydata/nginx/conf
 ```
 
 - 终止并删除容器：
@@ -240,7 +240,7 @@ docker rm nginx
 - 使用如下命令启动Nginx服务：
 
 ```bash
-docker run -p 80:80 --name nginx \
+docker run -p 80:80 -p 443:443 --name nginx \
 -v /mydata/nginx/html:/usr/share/nginx/html \
 -v /mydata/nginx/logs:/var/log/nginx  \
 -v /mydata/nginx/conf:/etc/nginx \
