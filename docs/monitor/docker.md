@@ -1,0 +1,14 @@
+# Docker
+
+Docker功能实现，依赖于namespace、cgroup、chroot
+1. Linux的内核，提供了多达8种类型的Namespace。在这些独立的Namespace中，资源互不影响
+   1. Mount（mnt） 隔离挂载点
+   2. Process ID (pid) 隔离进程 ID
+   3. Network (net) 隔离网络设备，端口号等
+   4. nterprocess Communication (ipc) 隔离 System V IPC 和 POSIX message queues
+   5. UTS Namespace(uts) 隔离主机名和域名
+   6. User Namespace (user) 隔离用户和用户组
+   7. Control group (cgroup) Namespace 隔离 Cgroups 根目录 (4.6版本加入)
+   8. Time Namespace 隔离系统时间 (5.6版本加入)
+2. cgroups是Linux下控制一个（或一组）进程的资源限制机制，全称是control groups，可以对cpu、内存等资源做精细化控制
+3. chroot，即 change root directory (更改 root 目录)。在 linux 系统中，系统默认的目录结构都是以 /，即以根 (root) 开始的。而在使用 chroot 之后，系统的目录结构将以指定的位置作为 / 位置
