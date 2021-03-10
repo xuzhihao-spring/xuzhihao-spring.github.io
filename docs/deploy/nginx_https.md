@@ -1,6 +1,6 @@
 # Nginx配置HTTPS
 
-## 生成SSL自签名证书
+## 1. 生成SSL自签名证书
 
 > 虽然自签名证书浏览器认为并不是安全的，但是学习下SSL证书的生成还是很有必要的！
 
@@ -49,11 +49,11 @@ openssl x509 -req -days 365 -in blog.csr -signkey blog.key -out blog.crt
 
 - 其实最终有用的文件是两个，一个是证书文件`blog.crt`，另一个是不需要输入密码的证书私钥文件`blog_nopass.key`。
 
-## Nginx支持HTTPS
+## 2. Nginx支持HTTPS
 
 > SSL证书生成好了，接下来我们就可以配置Nginx来支持HTTPS了！
 
-### 安装Nginx
+### 2.1 安装Nginx
 
 - 我们还是使用在Docker容器中安装Nginx的方式，先下载Nginx的Docker镜像；
 
@@ -99,7 +99,7 @@ docker run -p 80:80 -p 443:443 --name nginx \
 -d nginx:1.10
 ```
 
-### 配置支持HTTPS
+### 2.2 配置支持HTTPS
 
 - 将我们生成好的SSL证书和私钥拷贝到Nginx的`html/ssl`目录下；
 
@@ -191,19 +191,19 @@ server {
 - 任意调用一个接口测试下，比如说登录接口，可以发现已经可以通过HTTPS正常访问SpringBoot应用提供的接口。
 
 
-## 使用受信任的证书
+## 3. 使用受信任的证书
 
 > 之前我们使用的是自签名的SSL证书，对于浏览器来说是无效的。使用权威机构颁发的SSL证书浏览器才会认为是有效的，这里给大家推荐两种申请免费SSL证书的方法，一种是从阿里云申请，另一种是从FreeSSL申请。
 
-### 阿里云证书
+### 3.1 阿里云证书
 
 - 阿里云上可以申请的免费证书目前只有支持单个域名的DV级SSL证书。比如说你有`blog.xuzhihao.com`和`api.xuzhihao.com`两个二级域名需要使用HTTPS，就需要申请两个SSL证书。
 
-![](../images/deploy/nginx_https_start_05.png)
+![](../images/deploy/https/nginx_https_start_05.png)
 
 - 申请成功后点击下载Nginx证书即可；
 
-![](../images/deploy/nginx_https_start_06.png)
+![](../images/deploy/https/nginx_https_start_06.png)
 
 - 下载完成后解压会有下面两个文件；
 
@@ -223,25 +223,25 @@ ssl_certificate_key  /usr/share/nginx/html/ssl/blog/blog.xuzhihao.com.key; # 配
 - 再次通过HTTPS访问`admin.xuzhihao.com`这个域名，发现证书已经有效了，连接也是安全的了。
 
 
-### FreeSSL证书
+### 3.2 FreeSSL证书
 
 - 如果你有使用通配符域名的需求，可以上`FreeSSL`申请SSL证书，不过免费的有效期只有3个月，这就意味着你过3个月就要重新申请一次了。
 
-![](../images/deploy/nginx_https_start_08.png)
+![](../images/deploy/https/nginx_https_start_08.png)
 
 - 附上官网地址：https://freessl.cn/
 
-### 使用`acme.sh`自动申请证书
+### 3.3 使用`acme.sh`自动申请证书
 
 - `acme.sh`脚本实现了`acme`协议, 可以从`letsencrypt`生成免费的证书。一般我们申请的证书有效期都是1年，过期就要重新申请了，使用`acme.sh`脚本可以实现到期自动申请，再也不用担心证书过期了！
 
-![](../images/deploy/nginx_https_start_09.png)
+![](../images/deploy/https/nginx_https_start_09.png)
 
 - 附上官网地址：https://github.com/acmesh-official/acme.sh
 
-## 配置文件
+## 4. 配置文件
 
-### nginx.conf
+### 4.1 nginx.conf
 
 ```xml
 worker_processes 32;
@@ -309,7 +309,7 @@ application/x-font-ttf application/vnd.ms-fontobject image/x-icon;
 }
 ```
 
-### blob.xuzhihao.com.cn_upstream.conf
+### 4.2 blob.xuzhihao.com.cn_upstream.conf
 ```xml
 upstream blob.xuzhihao.com.cn {
   ip_hash;
@@ -317,7 +317,7 @@ upstream blob.xuzhihao.com.cn {
 }
 ```
 
-### blob.xuzhihao.com.cn.conf
+### 4.3 blob.xuzhihao.com.cn.conf
 ```xml
 server {
   listen 480;
@@ -370,7 +370,7 @@ Authorization';
 }
 ```
 
-### 二级路径
+### 4.4 二级路径
 
 ```text
 server 
@@ -395,7 +395,7 @@ server
 }
 ```
 
-### 泛域
+### 4.5 泛域
 
 ```text
 server

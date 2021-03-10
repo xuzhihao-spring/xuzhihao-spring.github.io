@@ -1,6 +1,6 @@
 * 序章
-  * [技术栈](java/framework.md)
-  * [学习路线](java/mindmap.md)
+  * [技术栈](catalog/framework.md)
+  * [学习路线](catalog/mindmap.md)
 
 * Linux
   * [Linux常用命令](linux/linux_command.md)
@@ -23,7 +23,7 @@
   * [Nginx配置HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix安装](deploy/zabbix5.0.md)
-  * [Grafana安装](deploy/grafana7.3.4.md)
+  * [Grafana安装](deploy/grafana.md)
   * [MyCat+HA+Keepalived搭建](deploy/mycat.md)
   * [Turnserver搭建](deploy/turnserve.md)
   
@@ -84,7 +84,7 @@
    * [MongoDB](/database/mongodb)
    * [Mysql](/database/mysql)
    * [Oracle](/database/oracle)
-   * [Mycat](/deploy/mycat)
+   * [Mycat](/database/mycat)
    * [ShardingSphere](/database/shardingsphere)
    * [DBLE](/database/dble)
    * [分布式数据库OceanBase](/database/oceanbase)
@@ -95,7 +95,7 @@
    * [Kubernetes](/monitor/k8s)
    * [devops](/monitor/devops)
    * [prometheus](/monitor/prometheus)
-   * [grafana](/monitor/grafana)
+   * [grafana](monitor/grafana)
    * [设计模式](/designpattern/model)
    * [架构设计](/designpattern/design)
    * [领域驱动模型](/designpattern/ddd)

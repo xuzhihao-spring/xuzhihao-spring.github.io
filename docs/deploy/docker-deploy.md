@@ -62,7 +62,7 @@ systemctl daemon-reload #加载docker守护线程
 systemctl restart docker #重启docker
 ```
 
-![](../images/deploy/5.portainer.png)
+![](../images/deploy/docker/5.portainer.png)
 
 
 ## 6. MinIO安装
@@ -199,7 +199,7 @@ docker run -p 6379:6379 --name redis \
 docker exec -it redis redis-cli
 ```
 
-![](../images/deploy/mall_linux_deploy_01.png)
+![](../images/deploy/docker/mall_linux_deploy_01.png)
 
 ## 13. Nginx安装
 
@@ -269,7 +269,7 @@ docker exec -it rabbitmq /bin/bash
 rabbitmq-plugins enable rabbitmq_management
 ```
 
-![](../images/deploy/mall_linux_deploy_02.png)
+![](../images/deploy/docker/mall_linux_deploy_02.png)
 
 - 开启防火墙：
 
@@ -279,25 +279,25 @@ firewall-cmd --reload
 ```
 - 访问地址查看是否安装成功：http://192.168.3.200:15672
 
-![](../images/deploy/mall_linux_deploy_03.png)
+![](../images/deploy/docker/mall_linux_deploy_03.png)
 
 - 输入账号密码并登录：guest guest
 
 - 创建帐号并设置其角色为管理员：mall mall
 
-![](../images/deploy/mall_linux_deploy_04.png)
+![](../images/deploy/docker/mall_linux_deploy_04.png)
 
 - 创建一个新的虚拟host为：/mall
 
-![](../images/deploy/mall_linux_deploy_05.png)
+![](../images/deploy/docker/mall_linux_deploy_05.png)
 
 - 点击mall用户进入用户配置页面
 
-![](../images/deploy/mall_linux_deploy_06.png)
+![](../images/deploy/docker/mall_linux_deploy_06.png)
 
 - 给mall用户配置该虚拟host的权限
 
-![](../images/deploy/mall_linux_deploy_07.png)
+![](../images/deploy/docker/mall_linux_deploy_07.png)
 
 ## 15. Elasticsearch安装
 
@@ -348,7 +348,7 @@ firewall-cmd --reload
 
 - 访问会返回版本信息：http://192.168.3.200:9200
 
-![](../images/deploy/mall_linux_deploy_08.png)
+![](../images/deploy/docker/mall_linux_deploy_08.png)
 
 ## 16. Logstash安装
 
@@ -415,7 +415,7 @@ firewall-cmd --reload
 ```
 - 访问地址进行测试：http://192.168.3.200:5601
 
-![](../images/deploy/mall_linux_deploy_09.png)
+![](../images/deploy/docker/mall_linux_deploy_09.png)
 
 ## 18. MongoDB安装
 
@@ -443,7 +443,7 @@ docker run --name openfire -d --restart=always \
   gizmotronic/openfire
 ```
 
-![](../images/deploy/19.openfire.png)
+![](../images/deploy/docker/19.openfire.png)
 
 
 ## 20. eclipse/che安装
@@ -459,7 +459,7 @@ docker run -it --rm \
 eclipse/che start
 ```
 
-![](../images/deploy/20.eclipse-che.png)
+![](../images/deploy/docker/20.eclipse-che.png)
 
 ## 21. Theia安装
 
@@ -468,4 +468,4 @@ docker pull theiaide/theia-full
 docker run -d -it --init -p 3000:3000 -v "/mydata/vscode:/home/project:cached" theiaide/theia-full:latest
 ```
 
-![](../images/deploy/21.Theia.png)
+![](../images/deploy/docker/21.Theia.png)

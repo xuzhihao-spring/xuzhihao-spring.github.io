@@ -3,15 +3,15 @@
 > GitLab是一款使用MIT许可证的基于网络的Git仓库管理工具，我们可以使用它来搭建自己的Git仓库，本文将介绍如何使用Gitlab在Linux下快速搭建Git仓库。
 
 
-## Gitlab服务端搭建
+## 1. Gitlab服务端搭建
 
-### 下载Gitlab的Docker镜像
+### 1.1 下载Gitlab的Docker镜像
 
 ```bash
 docker pull gitlab/gitlab-ce
 ```
 
-### 运行如下命令来启动Gitlab
+### 1.2 运行如下命令来启动Gitlab
 
 > 需要注意的是我们的Gitlab的http服务运行在宿主机的1080端口上，这里我们将Gitlab的配置，日志以及数据目录映射到了宿主机的指定文件夹下，防止我们在重新创建容器后丢失数据。
 
@@ -26,7 +26,7 @@ docker run --detach \
   gitlab/gitlab-ce:latest
 ```
 
-### 开启防火墙的指定端口
+### 1.3 开启防火墙的指定端口
 
 > 由于Gitlab运行在1080端口上，所以我们需要开放该端口，注意千万不要直接关闭防火墙，否则Gitlab会无法启动。
 
@@ -39,65 +39,77 @@ systemctl restart firewalld
 firewall-cmd --list-ports
 ```
 
-### 访问Gitlab
+### 1.4 访问Gitlab
 - 访问地址：[http://192.168.3.200:1080/](http://192.168.3.200:1080/)
 - 由于Gitlab启动比较慢，需要耐心等待10分钟左右，如果Gitlab没有启动完成访问，会出现如下错误。
 
-![](../images/deploy/gitlab_screen_04.png)
+![](../images/deploy/gitlab/gitlab_screen_04.png)
 - 可以通过docker命令动态查看容器启动日志来知道gitlab是否已经启动完成。
 ```bash
 docker logs gitlab -f
 ```
 
-![](../images/deploy/gitlab_screen_05.png)
+![](../images/deploy/gitlab/gitlab_screen_05.png)
 
 
-## Gitlab的使用
+## 2. Gitlab的使用
 
-### Gitlab启动完成后第一次访问，会让你重置root帐号的密码
-![](../images/deploy/gitlab_screen_06.png)
-### 重置完成后输入帐号密码登录
-![](../images/deploy/gitlab_screen_07.png)
-### 选择创建项目、创建组织、创建帐号
-![](../images/deploy/gitlab_screen_08.png)
-### 创建组织
+### 2.1 Gitlab启动完成后第一次访问，会让你重置root帐号的密码
+![](../images/deploy/gitlab/gitlab_screen_06.png)
+
+### 2.2 重置完成后输入帐号密码登录
+![](../images/deploy/gitlab/gitlab_screen_07.png)
+
+### 2.3 选择创建项目、创建组织、创建帐号
+![](../images/deploy/gitlab/gitlab_screen_08.png)
+
+### 2.4 创建组织
 首先我们需要创建一个组织，然后在这个组织下分别创建用户和项目，这样同组织的用户就可以使用该组织下的项目了。
-![](../images/deploy/gitlab_screen_09.png)
-### 创建用户并修改密码
+![](../images/deploy/gitlab/gitlab_screen_09.png)
 
-#### 找到添加用户的按钮
+### 2.5 创建用户并修改密码
 
-![](../images/deploy/gitlab_screen_10.png)
-#### 输入用户名密码添加用户
-![](../images/deploy/gitlab_screen_11.png)
-#### 在编辑界面中修改用户密码
-![](../images/deploy/gitlab_screen_12.png)
+#### 2.5.1 找到添加用户的按钮
 
-![](../images/deploy/gitlab_screen_13.png)
-### 创建项目并添加README文件
-![](../images/deploy/gitlab_screen_14.png)
+![](../images/deploy/gitlab/gitlab_screen_10.png)
 
-![](../images/deploy/gitlab_screen_15.png)
-### 将用户分配到组织
-![](../images/deploy/gitlab_screen_16.png)
+#### 2.5.2 输入用户名密码添加用户
 
-## Git客户端安装及使用
+![](../images/deploy/gitlab/gitlab_screen_11.png)
 
-### 下载Git客户端并安装
+#### 2.5.3 在编辑界面中修改用户密码
+
+![](../images/deploy/gitlab/gitlab_screen_12.png)
+
+![](../images/deploy/gitlab/gitlab_screen_13.png)
+
+### 2.6 创建项目并添加README文件
+
+![](../images/deploy/gitlab/gitlab_screen_14.png)
+
+![](../images/deploy/gitlab/gitlab_screen_15.png)
+
+### 2.7 将用户分配到组织
+
+![](../images/deploy/gitlab/gitlab_screen_16.png)
+
+## 3. Git客户端安装及使用
+
+### 3.1 下载Git客户端并安装
 
 - 下载地址：https://github.com/git-for-windows/git/releases/download/v2.23.0.windows.1/Git-2.23.0-64-bit.exe
 - 下载完成后，一路点击Next安装即可。
 
-![](../images/deploy/gitlab_screen_01.png)
+![](../images/deploy/gitlab/gitlab_screen_01.png)
 
-### clone项目
+### 3.2 clone项目
 
 - 找到项目clone的地址：
 
-![](../images/deploy/gitlab_screen_17.png)
+![](../images/deploy/gitlab/gitlab_screen_17.png)
 - 打开Git命令行工具：
   
-![](../images/deploy/gitlab_screen_18.png)
+![](../images/deploy/gitlab/gitlab_screen_18.png)
 - 执行以下命令clone项目到本地：
 
 ```bash
@@ -105,7 +117,7 @@ git clone http://192.168.3.200:1080/xuzhihao/hello.git
 
 ```
 
-### 提交代码
+### 3.3 提交代码
 
 进入项目目录，修改一下README.md并提交：
 ```bash
@@ -117,23 +129,23 @@ git add .
 git commit -m "first commit"
 ```
 
-### 推送到远程仓库
+### 3.4 推送到远程仓库
 ```bash
 git push
 ```
-![](../images/deploy/gitlab_screen_19.png)
+![](../images/deploy/gitlab/gitlab_screen_19.png)
 
-### 拉取远程仓库代码
+### 3.5 拉取远程仓库代码
 
 - 在Gitlab上修改readme中的文件内容：
 
-![](../images/deploy/gitlab_screen_20.png)
+![](../images/deploy/gitlab/gitlab_screen_20.png)
 - 拉取代码：
  ```bash
 git pull
 ```
 
-### 本地创建并提交分支
+### 3.6 本地创建并提交分支
 
 ```bash
 # 切换并从当前分支创建一个dev分支
@@ -141,9 +153,9 @@ git checkout -b dev
 # 将新创建的dev分支推送到远程仓库
 git push origin dev
 ```
-![](../images/deploy/gitlab_screen_21.png)
+![](../images/deploy/gitlab/gitlab_screen_21.png)
 
-### 其他常用命令
+### 3.7 其他常用命令
 
 ```bash
 # 切换到dev分支

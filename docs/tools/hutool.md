@@ -1,8 +1,6 @@
 # Hutool常用的工具类和方法
 
-> Hutool是一个Java工具包，它帮助我们简化每一行代码，避免重复造轮子。如果你有需要用到某些工具方法的时候，不妨在Hutool里面找找，可能就有。本文将对Hutool中的常用工具类和方法进行介绍。
-
-## 安装
+## 1. 引用
 
 maven项目在pom.xml添加以下依赖即可：
 
@@ -14,9 +12,9 @@ maven项目在pom.xml添加以下依赖即可：
 </dependency>
 ```
 
-## 常用工具类
+## 2. 常用工具类
 
-### Convert
+### 2.1 Convert
 类型转换工具类，用于各种类型数据的转换。
 
 ```java 
@@ -34,7 +32,7 @@ String[] strArr = {"a", "b", "c", "d"};
 List<String> strList = Convert.toList(String.class, strArr);
 ```
 
-### DateUtil
+### 2.2 DateUtil
 日期时间工具类，定义了一些常用的日期时间操作方法。
 
 ```java 
@@ -65,7 +63,7 @@ Date newDate = DateUtil.offset(date, DateField.DAY_OF_MONTH, 2);
 long betweenDay = DateUtil.between(date, newDate, DateUnit.DAY);
 ```
 
-### StrUtil
+### 2.3 StrUtil
 字符串工具类，定义了一些常用的字符串操作方法。
 
 ```java 
@@ -82,7 +80,7 @@ String str2 = StrUtil.format(template, "我是占位符");
 LOGGER.info("/strUtil format:{}", str2);
 ```
 
-### ClassPathResource
+### 2.4 ClassPathResource
 
 获取classPath下的文件，在Tomcat等容器下，classPath一般是WEB-INF/classes。
 
@@ -94,7 +92,7 @@ properties.load(resource.getStream());
 LOGGER.info("/classPath:{}", properties);
 ```
 
-### ReflectUtil
+### 2.5 ReflectUtil
 Java反射工具类，可用于反射获取类的方法及创建对象。
 
 ```java 
@@ -108,7 +106,7 @@ PmsBrand pmsBrand = ReflectUtil.newInstance(PmsBrand.class);
 ReflectUtil.invoke(pmsBrand, "setId", 1);
 ```
 
-### NumberUtil
+### 2.6 NumberUtil
 数字处理工具类，可用于各种类型数字的加减乘除操作及判断类型。
 
 ```java 
@@ -129,7 +127,7 @@ NumberUtil.isInteger(n3);
 NumberUtil.isDouble(n3);
 ```
 
-### BeanUtil
+### 2.7 BeanUtil
 
 JavaBean的工具类，可用于Map与JavaBean对象的互相转换以及对象属性的拷贝。
 
@@ -150,7 +148,7 @@ BeanUtil.copyProperties(brand, copyBrand);
 LOGGER.info("beanUtil copy properties:{}", copyBrand);
 ```
 
-### CollUtil
+### 2.8 CollUtil
 集合操作的工具类，定义了一些常用的集合操作。
 
 ```java 
@@ -171,7 +169,7 @@ ArrayList<Object> newList = CollUtil.newArrayList();
 CollUtil.isEmpty(list);
 ```
 
-### MapUtil
+### 2.9 MapUtil
 Map操作工具类，可用于创建Map对象及判断Map是否为空。
 
 ```java 
@@ -186,7 +184,7 @@ MapUtil.isEmpty(map);
 MapUtil.isNotEmpty(map);
 ```
 
-### AnnotationUtil
+### 2.10 AnnotationUtil
 
 注解工具类，可用于获取注解与注解中指定的值。
 
@@ -201,7 +199,7 @@ LOGGER.info("annotationUtil api value:{}", api.description());
 Object annotationValue = AnnotationUtil.getAnnotationValue(HutoolController.class, RequestMapping.class);
 ```
 
-### SecureUtil
+### 2.11 SecureUtil
 加密解密工具类，可用于MD5加密。
 
 ```java 
@@ -211,7 +209,7 @@ String md5Str = SecureUtil.md5(str);
 LOGGER.info("secureUtil md5:{}", md5Str);
 ```
 
-### CaptchaUtil
+### 2.12 CaptchaUtil
 验证码工具类，可用于生成图形验证码。
 
 ```java 

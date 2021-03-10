@@ -70,7 +70,7 @@ JVM底层原理
  * [MongoDB](/database/mongodb)
  * [Mysql](/database/mysql)
  * [Oracle](/database/oracle)
- * [Mycat](/deploy/mycat)
+ * [Mycat](/database/mycat)
  * [ShardingSphere](/database/shardingsphere)
  * [DBLE](/database/dble)
  * [分布式数据库OceanBase](/database/oceanbase)

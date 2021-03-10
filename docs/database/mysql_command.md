@@ -25,7 +25,7 @@ lower_case_table_names=1
 
 ```
 
-![](../images/database/mysql-mysqld.png)
+![](../images/database/mysql_command/mysql-mysqld.png)
 
 ···
 

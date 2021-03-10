@@ -31,7 +31,7 @@ redis-cli -h 127.0.0.1 -p 6379
 
 ## 2. 命令
 
-### **key**
+### 2.1 key
 
 ```bash
 keys *              #获取所有的key
@@ -51,7 +51,7 @@ pexpire key 1000    #毫秒
 persist key         #删除过期时间
 ```
 
-### **string**
+### 2.2 string
 
 ```bash
 set name cxx
@@ -73,7 +73,7 @@ strlen          #长度
 getbit/setbit/bitcount/bitop    #位操作
 ```
 
-### **hash**
+### 2.3 hash
 
 ```bash
 hset myhash name cxx
@@ -90,7 +90,7 @@ hvals myhash                 #只取value
 hlen myhash                  #长度
 ```
 
-### **list**
+### 2.4 list
 
 ```bash
 lpush mylist a b c  #左插入
@@ -108,7 +108,7 @@ linsert mylist after a   #插入
 rpoplpush list list2     #转移列表的数据
 ```
 
-### **set**
+### 2.5 set
 
 ```bash
 sadd myset redis 
@@ -121,7 +121,7 @@ srandmember          #随机获取集合中的元素
 spop                 #从集合中弹出一个元素
 ```
 
-### **zset**
+### 2.6 zset
 
 ```bash
 zadd zset 1 one
@@ -144,7 +144,7 @@ Zinterstore
 zunionstore rank:last_week 7 rank:20150323 rank:20150324 rank:20150325  weights 1 1 1 1 1 1 1
 ``` 
 
-### **排序**
+### 2.7 排序
 
 ```bash
 sort mylist                      #排序
@@ -154,7 +154,7 @@ sort list by it:* desc get it:*  #get参数
 sort list by it:* desc get it:* store sorc:result  #sort命令之store参数：表示把sort查询的结果集保存起来
 ```
 
-### **订阅与发布**
+### 2.8 订阅与发布
 
 ```bash
 订阅频道：subscribe chat1
@@ -165,7 +165,7 @@ sort list by it:* desc get it:* store sorc:result  #sort命令之store参数：�
 订阅一组频道： psubscribe java.*
 ```
 
-### **服务器管理**
+### 2.9 服务器管理
 
 ```txt
 dump.rdb
@@ -196,7 +196,7 @@ redis-server /etc/redis.conf #启动服务器
 
 ```
 
-### **aop备份处理**
+### 2.10 aop备份处理
 
 ```txt
 appendonly yes 开启持久化

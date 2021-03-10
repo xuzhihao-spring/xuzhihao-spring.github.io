@@ -1,6 +1,6 @@
 # Grafana+InfluxDb监控平台
 
-## 1.版本
+## 1. 版本
 
 - Docker Image: 2.3.0
 - Ubuntu: 18.04
@@ -8,7 +8,7 @@
 - Telegraf (StatsD): 1.13.3-1
 - Grafana: 6.6.2
 
-## 2.快速启动
+## 2. 快速启动
 
 ```bash
 docker run --ulimit nofile=66000:66000 \
@@ -21,7 +21,7 @@ docker run --ulimit nofile=66000:66000 \
   samuelebistoletti/docker-statsd-influxdb-grafana:latest
 ```
 
-## 3.端口
+## 3. 端口
 
 ```bash
 Host        Container       Service
@@ -31,7 +31,7 @@ Host        Container       Service
 8125        8125            statsd
 ```
 
-## 4.控制台
+## 4. 控制台
 
 http://localhost:3003 root/root
 
@@ -41,6 +41,6 @@ http://localhost:3003 root/root
 - User:telegraf
 - Password：telegraf
 
-## 5.数据库配置
+## 5. 数据库配置
 
 http://localhost:3004 root/root:8086

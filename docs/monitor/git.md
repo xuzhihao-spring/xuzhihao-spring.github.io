@@ -1,2 +1,1 @@
-
-# Git
+# [Gitlab搭建](deploy/gitlab)

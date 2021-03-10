@@ -1,6 +1,6 @@
 # Minikube
 
-## 安装
+## 1. 安装
 
 - 首先我们需要下载Minikube的二进制安装包并安装：
   
@@ -67,7 +67,7 @@ docker pull anjone/kicbase
 minikube start --vm-driver=docker --base-image="anjone/kicbase"
 ```
 
-## Kubernetes的使用
+## 2. Kubernetes的使用
 >通过Minikube我们可以创建一个单节点的K8S集群，集群管理Master和负责运行应用的Node都部署在此节点上。
 
 - 查看Minikube的版本号
@@ -121,7 +121,7 @@ NAME       STATUS   ROLES                  AGE   VERSION
 minikube   Ready    control-plane,master   31m   v1.20.2
 ```
 
-## 部署应用
+## 3. 部署应用
 >一旦运行了K8S集群，就可以在其上部署容器化应用程序。通过创建Deployment对象，可以指挥K8S如何创建和更新应用程序的实例。
 - 指定好应用镜像并创建一个Deployment，这里创建一个Nginx应用
 
@@ -161,7 +161,7 @@ Starting to serve on 127.0.0.1:8001
 }
 ```
 
-## 查看应用
+## 4. 查看应用
 >通过对运行应用的Pod进行操作，可以查看容器日志，也可以执行容器内部命令
 
 - 查看K8s中所有Pod的状态
@@ -256,7 +256,7 @@ HOME=/root
 kubectl exec -ti kubernetes-nginx-78bcc44665-zt2qx -- bash
 ```
 
-## 公开暴露应用
+## 5. 公开暴露应用
 
 >默认Pod无法被集群外部访问，需要创建Service并暴露端口才能被外部访问
 
@@ -294,7 +294,7 @@ External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
-## 可视化管理
+## 6. 可视化管理
 >Dashboard是基于网页的K8S用户界面。你可以使用Dashboard将容器应用部署到K8S集群中，也可以对容器应用排错，还能管理集群资源
 
 - 查看Minikube内置插件，默认情况下Dashboard插件未启用
@@ -359,4 +359,4 @@ http://192.168.3.200:44469/api/v1/namespaces/kubernetes-dashboard/services/http:
 ```
 - 查看K8S集群中的资源状态信息
 
-![](../images/deploy/kubernetes-dashboard.png)
+![](../images/deploy/minikube/kubernetes-dashboard.png)

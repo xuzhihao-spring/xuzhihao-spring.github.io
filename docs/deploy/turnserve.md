@@ -55,9 +55,9 @@ cat /var/run/turnserver/turnserver.pid
 
 https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/
 
-![](../images/deploy/turnserver1.png)
+![](../images/deploy/turnserver/turnserver1.png)
 
-![](../images/deploy/turnserver2.png)
+![](../images/deploy/turnserver/turnserver2.png)
 
 stun服务器：
 

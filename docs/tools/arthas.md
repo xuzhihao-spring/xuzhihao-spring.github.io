@@ -4,19 +4,19 @@ Arthas是Alibaba开源的Java诊断工具，深受开发者喜爱。它采用命
 
 下载地址：https://alibaba.github.io/arthas/arthas-boot.jar
 
-## 常用命令
+## 1. 常用命令
 
-### dashboard
+### 1.1 dashboard
 
 使用`dashboard`命令可以显示当前系统的实时数据面板，包括线程信息、JVM内存信息及JVM运行时参数。
 
-![](../images/tools/arthas_start_03.png)
+![](../images/tools/arthas/arthas_start_03.png)
 
-### thread
+### 1.2 thread
 
 查看当前线程信息，查看线程的堆栈，可以找出当前最占CPU的线程。
 
-![](../images/tools/arthas_start_04.png)
+![](../images/tools/arthas/arthas_start_04.png)
 
 常用命令：
 
@@ -31,7 +31,7 @@ thread -b
 thread -state WAITING
 ```
 
-### logger
+### 1.3 logger
 
 使用`logger`命令可以查看日志信息，并改变日志级别，这个命令非常有用。
 
@@ -39,7 +39,7 @@ thread -state WAITING
 
 - 我们的应用默认使用的是`INFO`级别的日志，使用`logger`命令可以查看；
 
-![](../images/tools/arthas_start_06.png)
+![](../images/tools/arthas/arthas_start_06.png)
 
 - 使用如下命令改变日志级别为`DEBUG`，需要使用`-c`参数指定类加载器的HASH值；
 
@@ -49,11 +49,11 @@ logger -c 21b8d17c --name ROOT --level debug
 
 - 再使用`logger`命令查看，发现`ROOT`级别日志已经更改；
 
-![](../images/tools/arthas_start_07.png)
+![](../images/tools/arthas/arthas_start_07.png)
 
 - 使用`docker logs -f shop-admin`命令查看容器日志，发现已经打印了DEBUG级别的日志；
 
-![](../images/tools/arthas_start_08.png)
+![](../images/tools/arthas/arthas_start_08.png)
 
 - 查看完日志以后记得要把日志级别再调回`INFO`级别。
 
@@ -61,7 +61,7 @@ logger -c 21b8d17c --name ROOT --level debug
 logger -c 21b8d17c --name ROOT --level info
 ```
 
-### 热更新
+### 1.4 热更新
 
 ```bash
 jad --source-only com.xuzhihao.LoginAction > /tmp/LoginAction.java

@@ -51,23 +51,23 @@ sed -i '11 s/0/1/' /etc/yum.repos.d/zabbix.repo
 ```
 
 ## 2. 安装 Zabbix
-### 2.1 安装 Zabbix server 和 agent
+### 2.1 安装zabbix-server和agent
 
 ```bash
 yum install -y zabbix-server-mysql zabbix-agent
 ```
-### 2.2 安装 Zabbix 前端和相关环境
+### 2.2 安装Zabbix前端和相关环境
 
 ```bash
 yum install -y zabbix-web-mysql-scl zabbix-apache-conf-scl
 ```
-### 2.3 安装 centos7 默认的 mariadb 数据库
+### 2.3 安装centos7默认的mariadb数据库
 
 ```bash
 yum install -y mariadb-server
 ```
 ## 3. 配置zabbix
-### 3.1 配置mariadb 数据库
+### 3.1 配置mariadb数据库
 
 启动数据库，并配置开机自动启动
 
@@ -107,7 +107,7 @@ sed -i '117 s/zabbix/zabbixuser/' /etc/zabbix/zabbix_server.conf
 sed -i '126a DBPassword=zabbix51769' /etc/zabbix/zabbix_server.conf
 sed -i '246a StartDiscoverers=2' /etc/zabbix/zabbix_server.conf
 ```
-### 3.3 修改 zabbix 的 php 配置文件
+### 3.4 修改 zabbix 的 php 配置文件
 
 修改 /etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf 里的时区
 
@@ -116,7 +116,7 @@ php_value[date.timezone] = Asia/Shanghai
 sed -i /timezone/d /etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf
 echo 'php_value[date.timezone] = Asia/Shanghai'>>/etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf
 ```
-### 3.4 启动相关服务，并配置开机自动启动
+### 3.5 启动相关服务，并配置开机自动启动
 
 ```bash
 systemctl restart zabbix-server zabbix-agent httpd rh-php72-php-fpm
