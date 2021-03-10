@@ -13,9 +13,9 @@ IO模型
 - APJ 用于和WEB服务器集成(如Apache),以实现对静态资源的优化和集群部署，当前支持APJ/1.3
 - HTTP/2 HTTP2.0大幅提升了web性能，下一代HTTP协议，自8.5以及9.0版本后支持
 
-## 整体架构设计
+## 1. 整体架构设计
 
-### 连接器Connector
+### 1.1 连接器Connector
 - Socket连接
 - 读取请求网络中的字节流
 - 根据相应的协议(Http/AJP)解析字节流，生成统一的 TomcatRequestt对象
@@ -32,7 +32,7 @@ IO模型
 
 ProtocolHandler是EndPoint和Processor的组合
 
-### catalina容器
+### 1.2 catalina容器
 
 ![](../images/network/tomcat/tomcat_1.jpg)
 
@@ -41,13 +41,13 @@ ProtocolHandler是EndPoint和Processor的组合
 ![](../images/network/tomcat/tomcat_3.png)
 
 
-## Tomcat中“HTTP长连接”的实现原理与源码分析
+## 2. Tomcat中“HTTP长连接”的实现原理与源码分析
 
-## Tomcat中关于解析HTTP请求行、请求头、情头体的源码分析
+## 3. Tomcat中关于解析HTTP请求行、请求头、情头体的源码分析
 
-## Tomcat中关于分块传输（chunk）请求体的源码分析
+## 4. Tomcat中关于分块传输（chunk）请求体的源码分析
 
-## Tomcat中响应一个请求的原理与源码分析
+## 5. Tomcat中响应一个请求的原理与源码分析
 
 ![](../images/network/tomcat/tomcat_5.png)
 
@@ -321,7 +321,7 @@ protected void service(HttpServletRequest req, HttpServletResponse resp)
 }
 ```
 
-## Tomcat中一个JSP请求的字节码生成分析
+## 6. Tomcat中一个JSP请求的字节码生成分析
 
 Tomcat在默认web.xml中配置了
 ```xml
@@ -740,13 +740,13 @@ public final class index_jsp extends org.apache.jasper.runtime.HttpJspBase
 8. 对于每一行的静态内容(HTML)，调用out.write输出
 9. 对于<% ... %>中的java代码，将直接转换为Servlet类中的代码。如果在Java代码中嵌入了静态文件，同样调用out.write输出
 
-## Tomcat中利用BIO处理请求的源码分析
+## 7. Tomcat中利用BIO处理请求的源码分析
 
-## Tomcat中利用NIO处理请求的源码分析
+## 8. Tomcat中利用NIO处理请求的源码分析
 
-## Tomcat中异步Servlet实现的源码分析
+## 9. Tomcat中异步Servlet实现的源码分析
 
-## Tomcat是如何做到“打破双亲委派的”？Tomcat中自定义类加载器的应用与源码解析
+## 10. Tomcat是如何做到“打破双亲委派的”？Tomcat中自定义类加载器的应用与源码解析
 - commonLoader：Tomcat最基本的类加载器，加载路径中的class可以被Tomcat容器本身以及各个Webapp访问
 - catalinaLoader：Tomcat容器私有的类加载器，加载路径中的class对于Webapp不可见
 - sharedLoader：各个Webapp共享的类加载器，加载路径中的class对于所有Webapp可见，但是对于Tomcat容器不可见
@@ -754,19 +754,19 @@ public final class index_jsp extends org.apache.jasper.runtime.HttpJspBase
 
 tomcat 为了实现隔离性，没有遵守这个父类委托机制约定，每个webappClassLoader加载自己的目录下的class文件，不会传递给父类加载器
 
-## Tomcat中的四大容器处理请求的源码分析
+## 11. Tomcat中的四大容器处理请求的源码分析
 - Engine：org.apache.catalina.core.StandardEngine
 - Host： org.apache.catalina.core.StandardHost
 - Context：org.apache.catalina.core.StandardContext
 - Wrapper：org.apache.catalina.core.StandardWrapper
 
-## Tomcat启动过程与解析配置文件源码解析
+## 12. Tomcat启动过程与解析配置文件源码解析
 
 Server,Service,Container,Executor都实现了Lifecycle接口
 
 ![](../images/network/tomcat/tomcat_4.png)
 
-## Tomcat性能调优
+## 13. Tomcat性能调优
 
 ```xml
 <Connector port="8080"  

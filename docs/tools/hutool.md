@@ -227,7 +227,7 @@ try {
 }
 ```
 
-### 其他工具类
+### 2.13 其他工具类
 - hutool-aop JDK 动态代理封装，提供非 IOC 下的切面支持
 - hutool-bloomFilter 布隆过滤，提供一些 Hash 算法的布隆过滤
 - hutool-cache 缓存

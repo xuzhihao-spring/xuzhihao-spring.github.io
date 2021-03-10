@@ -13,7 +13,7 @@
 
 原理：
 
-## 启动解析，加载配置信息
+## 1. 启动解析加载配置信息
   
 Dubbo 服务框架的 Schema 的解析通过 DubboNamespaceHandler 和 DubboBeanDefinitionParser 实现。其中，DubboNamespaceHandler 扩展了 Spring 的 `NamespaceHandlerSupport`，通过重写它的 init() 方法给各个标签注册对应的解析器
 
@@ -84,7 +84,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
 }
 ```
   
-## 服务暴露
+## 2. 服务暴露
 
 ![](../images/distributed/dubbo/dubbo-export.jpg)
 
@@ -527,7 +527,7 @@ public void createPersistent(String path) {
 ```
 
 
-## 服务引用
+## 3. 服务引用
 
 服务引用的入口方法为 ReferenceBean 的 getObject 方法
 
@@ -1105,11 +1105,11 @@ protected void doOpen() throws Throwable {
 
 channelhandler.wrap 里面会调用Dispatcher 的扩展，进行dispatch操作，实际是对handler 的包装动态化
 
-## 服务调用
+## 4. 服务调用
 
-## SPI机制原理
+## 5. SPI机制原理
 
-## 容错原理
+## 6. 容错原理
 
 超时策略：
 - 精确优先（方法优先，接口次之，全局配置再次）
@@ -1122,7 +1122,7 @@ channelhandler.wrap 里面会调用Dispatcher 的扩展，进行dispatch操作�
 
 **容错**
 
-## 负载均衡
+## 7. 负载均衡
 
 1. 权重随机
 2. 权重轮询

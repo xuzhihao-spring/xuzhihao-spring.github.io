@@ -1,7 +1,8 @@
 # Set源码
 
-## HashSet
-HashMap初始化容量大小与阿里巴巴Java开发手册约定计算公式一致
+## 1.1 HashSet
+
+HashSet初始化容量大小与阿里巴巴Java开发手册约定计算公式一致
 
 即initialCapacity = (需要存储的元素个数 / 负载因子) + 1
 
@@ -11,6 +12,6 @@ public HashSet(Collection<? extends E> c) {
     addAll(c);
 }
 ```
-## TreeSet
+## 1.2 TreeSet
 
-## LinkedHashSet
+## 1.3 LinkedHashSet

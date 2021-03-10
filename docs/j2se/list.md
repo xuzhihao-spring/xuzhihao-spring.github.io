@@ -1,8 +1,8 @@
 
 # List源码
 
-## ArrayList
+## 1.1 ArrayList
 
-## LinkedList
+## 1.2 LinkedList
 
-## CopyOnWriteArrayList
+## 1.3 CopyOnWriteArrayList

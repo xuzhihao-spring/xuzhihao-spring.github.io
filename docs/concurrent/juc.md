@@ -1,6 +1,6 @@
 # 并发常用工具类
 
-线程通讯几种方式
+## 1. 线程通讯几种方式
 - 1、`synchronized`加wait/notify 休眠唤醒方式
 - 2、`ReentrantLock`加Condition方式
 - 3、`CountDownLatch` 闭锁方式
@@ -105,7 +105,7 @@ private int i = 0;// 打印的数
 	}
 ```
 
-## CountDownLatch源码解析和使用场景
+## 2. CountDownLatch源码解析和使用场景
 - countDownLatch这个类使一个线程等待其他线程各自执行完毕后再执行。
 - 是通过一个计数器来实现的，计数器的初始值是线程的数量。每当一个线程执行完毕后，计数器的值就-1，当计数器的值为0时，表示所有线程都执行完毕，然后在闭锁上等待的线程就可以恢复工作了。
 
@@ -154,7 +154,7 @@ private CountDownLatch countDownLatch = new CountDownLatch(2);
 	}
 ```
 
-## CyclicBarrier源码解析和使用场景
+## 3. CyclicBarrier源码解析和使用场景
 ```java
 
 	private CyclicBarrier cyclicBarrier = new CyclicBarrier(3);
@@ -185,7 +185,7 @@ private CountDownLatch countDownLatch = new CountDownLatch(2);
 	}
 ```
 
-## Semphore源码解析和使用场景
+## 4. Semphore源码解析和使用场景
 - 控制对某组资源的访问权限、秒杀车位、流量控制,一组线程40个，每10个一组执行
 ```java
 static class Work implements Runnable {
@@ -223,7 +223,7 @@ static class Work implements Runnable {
 	}
 ```
 
-## AtomicBoolean、AtomicInteger、AtomicLong(基本类型)
+## 5. AtomicBoolean、AtomicInteger、AtomicLong(基本类型)
 
 ```java
 public class AtomicBooleanTest {
@@ -325,12 +325,12 @@ public class AtomicLongAdderTest {
 }
 ```
 
-## AtomicIntegerArray、AtomicLongArray、AtomicReferenceArray（数组类型）
+## 6. AtomicIntegerArray、AtomicLongArray、AtomicReferenceArray（数组类型）
 
 
 
-## AtomicReference、AtomicStampedRerence、AtomicMarkableReference（引用类型）
+## 7. AtomicReference、AtomicStampedRerence、AtomicMarkableReference（引用类型）
 
 
 
-## AtomicIntegerFieldUpdater、AtomicLongFieldUpdater、AtomicReferenceFieldUpdater（属性原子修改器）
+## 8. AtomicIntegerFieldUpdater、AtomicLongFieldUpdater、AtomicReferenceFieldUpdater（属性原子修改器）

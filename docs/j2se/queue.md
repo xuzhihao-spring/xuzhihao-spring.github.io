@@ -1,5 +1,6 @@
 
 # Queue源码
+
 BlockingQueue的核心方法：
 ```java
 public interface BlockingQueue<E> extends Queue<E> {
@@ -47,7 +48,7 @@ public interface BlockingQueue<E> extends Queue<E> {
 
 
 
-## ArrayBlockingQueue 数组阻塞队列
+## 1.1 ArrayBlockingQueue 数组阻塞队列
 - 数据结构：静态数组固定长度无扩容机制
 - 存取同一把锁互斥 操作同一个对象
 - 阻塞：出队为0时，无元素可取，阻塞在notEmpty 入队为数组长度时，无法刚入，阻塞在notFull
@@ -55,7 +56,7 @@ public interface BlockingQueue<E> extends Queue<E> {
 - 出队：队首获取元素记录takeIndex 唤醒 notFull
 - 先进先出 读写互相排斥
 
-## LinkedBlockingQueue 链表阻塞队列
+## 1.2 LinkedBlockingQueue 链表阻塞队列
 - 数据结构：链表 可以指定容量默认Integer.MAX_VALUE
 - 锁分离存取互不排斥takeLock、putLock
 - 阻塞同ArrayBlockingQueue
@@ -64,7 +65,7 @@ public interface BlockingQueue<E> extends Queue<E> {
 - 删除的时候两把锁一起加
 - 先进先出
   
-## SynchronousQueue 同步队列、无缓冲阻塞队列
+## 1.3 SynchronousQueue 同步队列、无缓冲阻塞队列
 - 存取和调用都使用transfer方法
   - put、offer为生产者，携带了数据e,为Data模式1，设置到QNode中
   - tale、pool为消费者，不携带数据e,为REQUEST模式0，设置到QNode中
@@ -86,14 +87,14 @@ public SynchronousQueue(boolean fair) {
     }
 ```
 
-## LinkedTransferQueue 由链表结构组成的无界阻塞
+## 1.4 LinkedTransferQueue 由链表结构组成的无界阻塞
 - 数据结构：链表Node
 - 锁：CAS + 自旋
 - 阻塞：`LockSupport`
 - 可以看作LinkedBlockingQueue、SynchronousQueue（公平模式）、ConcurrentLinkedQueue三者的集合体
 - 对于入队之后，先自旋一定次数后再调用LockSupport.park()或LockSupport.parkNanos阻塞
 
-## PriorityBlockingQueue 优先级阻塞队列 
+## 1.5 PriorityBlockingQueue 优先级阻塞队列 
 - 数据结构：数组+平衡二叉堆 小堆顶 
 - 可以指定容量，自动扩容，容量小于64则翻倍，大于64增加一半，最大容量Integer.MAX_VALUE
 - 锁：ReentrantLock存取同一把锁
@@ -101,14 +102,14 @@ public SynchronousQueue(boolean fair) {
 - 入队：不阻塞，永远返回成功，无界。有比较器的时候根据比较器进行堆化，没有使用默认比较器，自下而上堆化
 - 出队：弹出堆顶元素，自上而下重新堆化，为空则阻塞
 
-## DelayQueue 延迟队列
+## 1.6 DelayQueue 延迟队列
 - 数据结构：Priority 与PriorityBlockingQueue类似，没有阻塞功能
 - 锁：ReentrantLock
 - 阻塞：Condition available
 - 入队：不阻塞，与优先级队列相同，唤醒available
 - 出队：为空的时候阻塞available。检测堆顶元素过期时间，小于等于0则取出，大于0阻塞，判断leader线程是否为空
   
-## LinkedBlockingDeque 链表阻塞双端队列
+## 1.7 LinkedBlockingDeque 链表阻塞双端队列
 - 数据结构：同LinkedBlockingQueue
 - 锁定：同ArrayBlockingQueue
 - 阻塞：同ArrayBlockingQueue

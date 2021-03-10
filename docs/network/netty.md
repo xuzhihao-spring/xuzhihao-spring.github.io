@@ -2,7 +2,7 @@
 
 # NETTY原理和源码
 
-## 概念体系
+## 1. 概念体系
 
 - 设计 
  - 统一的 API，支持多种传输类型，阻塞的和非阻塞的
@@ -63,7 +63,7 @@
 >2. UDT的拥塞控制算法，能够实现在慢启动阶段快速增长抢占带宽，而在接近饱和时逐渐降低增长速度，使它趋于稳定。
 >3. UDT对包丢失的处理算法，和对噪声链路的容忍性，使得在网络波动比较大的环境中，它比传统的TCP协议更加的稳定。
 
-## Netty中的三种Reactor（反应堆）
+## 2. Netty中的三种Reactor（反应堆）
 
 1.Reactor单线程模型,指的是所有的I/O操作都在同一个NIO线程上面完成，NIO线程的职责如下:
 - 作为NIO服务端，接收客户端的TCP连接
@@ -95,19 +95,19 @@
 
 ![](../images/network/netty/netty3.png)
 
-## Netty大数据量的传输，压缩，解压缩
+## 3. Netty大数据量的传输，压缩，解压缩
 
-## 复合缓冲和其他缓冲的原理和使用场景
+## 4. 复合缓冲和其他缓冲的原理和使用场景
 
-## Netty的http支持，实现tomcat容器，对socket实现
+## 5. Netty的http支持，实现tomcat容器，对socket实现
 
 EventLoopGroup实现了Cloneable，在一个已经配置完成的引导类实例上调用clone()方法将返回另一个可以立即使用的引导类实例
 
 这种方式只会创建引导类实例的EventLoopGroup的一个浅拷贝，因为通常这些克隆的Channel的生命周期都很短暂，一个典型的场景是——创建一个Channel以进行一次HTTP请求
 
-## Netty和RPC原理分析，Netty和websocket原理分析
+## 6. Netty和RPC原理分析，Netty和websocket原理分析
 
-## RPC框架使用和原理分析
+## 7. RPC框架使用和原理分析
 
 RPC是一种技术思想不是具体实现，就像调用本地方法一样调用远程方法，核心是通讯和序列化
 
@@ -117,9 +117,9 @@ RPC是一种技术思想不是具体实现，就像调用本地方法一样调�
 
 WebService一般属于基于HTTP的、XML文本的、跨平台（平台中立）的，功能完善、体系成熟、支持事务、支持安全机制，广泛应用在金融电信（中国电信一个省级分公司就有几千个WS），传统企业的业务系统，ESB/SOA体系等。缺点：过于复杂，性能不是最优的，互联网用的较少
 
-## Netty的Scattering和Gathering的原理分析
+## 8. Netty的Scattering和Gathering的原理分析
 
-## NIO的零copy如何实现的、NIO的buffer和channel的应用和原理
+## 9. NIO的零copy如何实现的、NIO的buffer和channel的应用和原理
 
 **Channel的生命周期**
 - ChannelUnregistered Channel 已经被创建，但还未注册到 EventLoop
@@ -153,13 +153,13 @@ setWriteHighWaterMark()和 Channel.config().setWriteLowWaterMark()方法来设�
   - write(ChannelHandlerContext,Object,ChannelPromise)当请求通过 Channel 将数据写到远程节点时被调用
 
 
-## 堆外内存，文件通道，selector的源码深入
+## 10. 堆外内存，文件通道，selector的源码深入
 
-## Netty实现高性能弹幕
+## 11. Netty实现高性能弹幕
 
-## 源码分析，粘包拆包以及自定义协议
+## 12. 源码分析，粘包拆包以及自定义协议
 
-## SPDY
+## 13. SPDY
 
 2012年google如一声惊雷提出了SPDY的方案，优化了HTTP1.X的请求延迟，解决了HTTP1.X的安全性，具体如下：
 

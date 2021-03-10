@@ -1,7 +1,7 @@
 
 # 分布式理论与算法
 
-## CAP理论
+## 1. CAP理论
 
 CAP，BASE和最终一致性是NoSQL数据库存在的三大基石。而五分钟法则是内存数据存储的理论依据。这个是一切的源头
 
@@ -13,7 +13,7 @@ ZooKeeper是典型的CP模型
 
 Redis是AP模型遵循BASE理论，放弃的C是强一致性，百万并发下分布式锁失效的根本原因
 
-## BASE理论
+## 2. BASE理论
 
 核心思想：分布式事务中只需要到最终一致性即可
 - 基本可用(Basically Available) 服务器故障期间，集群整体仍可对外提供服务
@@ -25,7 +25,7 @@ Redis是AP模型遵循BASE理论，放弃的C是强一致性，百万并发下�
 - ACID 是传统数据库常用的设计理念，追求强一致性模型。BASE 支持的是大型分布式系统，提出通过牺牲强一致性获得高可用性
 - ACID 和 BASE 代表了两种截然相反的设计哲学，在分布式系统设计的场景中，系统组件对一致性要求是不同的，因此 ACID 和 BASE 又会结合使用
 
-## 2PC、3PC、XA协议
+## 3. 2PC、3PC、XA协议
 
 DTP模型：X/Open DTP(X/Open Distributed Transaction Processing Reference Model) 是X/Open 这个组织定义的一套`分布式事务的标准`，也就是了定义了规范和API接口，由厂商进行具体的实现
 
@@ -96,7 +96,7 @@ XA规范的作用定义了RM和TM的接口交互规范，java的实现方式叫�
 4. DoCommit阶段
    - 同2PC
 
-## POXOS算法、Raft算法、Zab协议
+## 4. POXOS算法、Raft算法、Zab协议
 
 **Zab协议**
 1. ZAB 协议全称：Zookeeper Atomic Broadcast（Zookeeper 原子广播协议）
@@ -108,7 +108,7 @@ XA规范的作用定义了RM和TM的接口交互规范，java的实现方式叫�
 整个Zookeeper就是在这两个模式之间切换。 简而言之，当Leader服务可以正常使用，就进入消息广播模式，当Leader不可用时,则进入崩溃恢复模式
 
 
-## 分布式事务解决方案
+## 5. 分布式事务解决方案
 1. 2PC
   - XA方案
   - Seata方案（AT、TCC）

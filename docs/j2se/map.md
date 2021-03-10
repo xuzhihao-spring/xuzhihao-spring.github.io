@@ -1,15 +1,15 @@
 
 # Map源码
 
-## 1.7HashMap源码
+## 1.1 HashMap源码1.7
 
-## 1.8HashMap源码
+## 1.2 HashMap源码1.8
 
-## 红黑树原理
+## 1.3 红黑树原理
 
-## 1.7ConcurrentHashMap源码
+## 1.4 ConcurrentHashMap源码1.7
 
-## 1.8ConcurrentHashMap源码
+## 1.5 ConcurrentHashMap源码1.8
 
-## LinkedHashMap源码
+## 1.6 LinkedHashMap源码
 

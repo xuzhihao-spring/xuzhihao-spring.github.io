@@ -1,6 +1,8 @@
 
 # 线程池源码
 
+## 1. 线程池
+
 队列分为：阻塞式队列(有界)、非阻塞式队列(无界),遵循着先进先出。阻塞队列与非阻塞队列区别：
 -  1.非阻塞式队列超出队列总数会丢失。
 -  2.阻塞式队列超出总数会进入等待（等待时间=设置超时时间）。
@@ -18,7 +20,7 @@
    - 4、减少用户态到内核态的转换
 
 
-## 创建线程的四种方式
+## 2. 创建线程的四种方式
 - 继承Thread类
 ```java
 class tThread extends Thread {
@@ -212,7 +214,7 @@ private boolean addIfUnderCorePoolSize(Runnable firstTask) {
 - 如果线程池中的线程数量大于 corePoolSize时，如果某线程空闲时间超过keepAliveTime，线程将被终止，直至线程池中的线程数目不大于corePoolSize；如果允许为核心池中的线程设置存活时间，那么核心池中的线程空闲时间超过keepAliveTime，线程也会被终止。
 
 
-## newCachedThreadPool
+## 3. newCachedThreadPool
 可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程。
 ```java
     //可缓存、定时、定长、单例 
@@ -229,7 +231,7 @@ private boolean addIfUnderCorePoolSize(Runnable firstTask) {
     }
 ```
 
-## newFixedThreadPool 定长线程池
+## 4. newFixedThreadPool 定长线程池
 定长线程池，可控制线程最大并发数，超出的线程会在队列中等待。
 ```java
     //可定长线程,核心线程5个,最多创建5个线程 (只会创建5个线程,其他线程共享这5个线程)
@@ -246,7 +248,7 @@ private boolean addIfUnderCorePoolSize(Runnable firstTask) {
     }
 ```
 
-## newScheduledThreadPool 可定时线程池
+## 5. newScheduledThreadPool 可定时线程池
 可定时线程池，支持定时及周期性任务执行。
 ```java
     //可定时线程 =>核心线程数3 (延迟三秒执行)
@@ -265,7 +267,7 @@ private boolean addIfUnderCorePoolSize(Runnable firstTask) {
     }
 ```
 
-## newSingleThreadExecutor 单例线程池
+## 6. newSingleThreadExecutor 单例线程池
 单例线程池，它只会用唯一的工作线程来执行任务，保证所有任务按照指定顺序(FIFO, LIFO, 优先级)执行。
 ```java
     //单例线程 =>核心线程数1 最大线程数1
@@ -282,7 +284,7 @@ private boolean addIfUnderCorePoolSize(Runnable firstTask) {
     }
 ```
 
-## 自定义线程池
+## 7. 自定义线程池
 ```java
  public ThreadPoolExecutor(int corePoolSize,//核心线程数
                               int maximumPoolSize,//最大线程数
@@ -293,14 +295,14 @@ private boolean addIfUnderCorePoolSize(Runnable firstTask) {
                               RejectedExecutionHandler handler)//拒绝策略 默认AbortPolicy
 ```
 
-## 如何合理配置线程池的大小
+## 8. 如何合理配置线程池的大小
 
 如果是CPU密集型任务，就需要尽量压榨CPU，参考值可以设为 NCPU+1
 
 如果是IO密集型任务，参考值可以设置为2*NCPU
 
-## Fork Join源码解析和使用场景
+## 9. Fork Join源码解析和使用场景
 
-## Disruptor
+## 10. Disruptor
 
 序列号%数组大小=所需元素角标
