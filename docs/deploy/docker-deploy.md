@@ -2,7 +2,7 @@
 
 ## 1. Docker环境安装
 
-- 安装`yum-utils`：
+- 安装yum-utils：
 
 ```bash
 yum install -y yum-utils device-mapper-persistent-data lvm2
