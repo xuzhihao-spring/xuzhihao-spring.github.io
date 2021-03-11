@@ -13,7 +13,7 @@ FastDFS是用c语言编写的一款开源的分布式文件系统，它是由淘
 
 FastDFS架构包括 Tracker server和Storageserver。客户端请求Tracker server进行文件上传、下载，通过Tracker server调度最终由Storage server完成文件上传和下载。
 
-![](../images/distributed/dfs/fastdfs_1.png)
+![](../../images/share/distributed/dfs/fastdfs_1.png)
 
 1. Tracker
   - Tracker Server作用是负载均衡和调度，通过Tracker server在文件上传时可以根据一些策略找到Storage server提供文件上传服务。可以将tracker称为追踪服务器或调度服务器。
@@ -27,11 +27,11 @@ FastDFS架构包括 Tracker server和Storageserver。客户端请求Tracker serv
 
 ### 1.2  文件上传流程
 
-![](../images/distributed/dfs/fastdfs_2.png)
+![](../../images/share/distributed/dfs/fastdfs_2.png)
 
 客户端上传文件后存储服务器将文件ID返回给客户端，此文件ID用于以后访问该文件的索引信息。文件索引信息包括：组名，虚拟磁盘路径，数据两级目录，文件名。
 
-![](../images/distributed/dfs/fastdfs_3.png)
+![](../../images/share/distributed/dfs/fastdfs_3.png)
 
 1. 组名：文件上传后所在的storage组名称，在文件上传成功后有storage服务器返回，需要客户端自行保存。
 2. 虚拟磁盘路径：storage配置的虚拟路径，与磁盘选项store_path*对应。如果配置了store_path0则是M00，如果配置了store_path1则是M01，以此类推。
@@ -41,11 +41,11 @@ FastDFS架构包括 Tracker server和Storageserver。客户端请求Tracker serv
 
 ### 1.3  文件下载流程
 
-![](../images/distributed/dfs/fastdfs_4.png)
+![](../../images/share/distributed/dfs/fastdfs_4.png)
 
 tracker根据请求的文件路径即文件ID 来快速定义文件。比如请求下边的文件：
 
-![](../images/distributed/dfs/fastdfs_3.png)
+![](../../images/share/distributed/dfs/fastdfs_3.png)
 
 1. 通过组名tracker能够很快的定位到客户端需要访问的存储服务器组是group1，并选择合适的存储服务器提供客
 户端访问。

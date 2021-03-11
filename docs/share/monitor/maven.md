@@ -14,7 +14,7 @@ docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sona
 
 ## 2. 为什么要搭建私有仓库
 
-![](../images/monitor/maven/maven1.png)
+![](../../images/share/monitor/maven/maven1.png)
 
 通常都是通过本机的Maven直接访问到中央仓库，并没有使用到虚线标识的区域，直接使用中央仓库可能会给我们带来的问题
 - 网络问题
@@ -28,15 +28,15 @@ docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sona
 
 ### 3.1 创建本地库
 
-![](../images/monitor/maven/createRepository1.png)
+![](../../images/share/monitor/maven/createRepository1.png)
 
 第二步
 
-![](../images/monitor/maven/createRepository2.png)
+![](../../images/share/monitor/maven/createRepository2.png)
 
 第三步
 
-![](../images/monitor/maven/createRepository2.png)
+![](../../images/share/monitor/maven/createRepository2.png)
 
 第四步
 

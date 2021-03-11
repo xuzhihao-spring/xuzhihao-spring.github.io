@@ -16,7 +16,7 @@
 
 缺点：  节点里面数组数据：每个数据的结构=索引数据+数据记录（即叶子节点存储键值和数据记录）
 
-![](../images/database/mysql/btree.png)
+![](../../images/share/database/mysql/btree.png)
 
 ### 1.2 B+Tree
 
@@ -25,7 +25,7 @@
    - `所有叶子节点之间都有一个链指针`
    - 数据记录都存放在叶子节点中
 
-![](../images/database/mysql/b+tree.png)
+![](../../images/share/database/mysql/b+tree.png)
 
 ## 2. mysql为什么用整型自增作为索引比较好。而UUID作为索引效率比较低
    - 索引存储在磁盘，而且树的每个节点分配的空间有大小。整型占空间比较小，这样可以存放多个键值。反之然后UUID占空间比较大
@@ -48,7 +48,7 @@ myisam数据索引分离 innodb在一起
 >trx_id：每次对某条记录进行改动时，都会把对应的事务id赋值给trx_id隐藏列。
 >roll_pointer：每次对某条记录进行改动时，这个隐藏列会存一个指针，可以通过这个指针找到该记录修改前的信息 
 
-![](../images/database/mysql/mysql_version.png)
+![](../../images/share/database/mysql/mysql_version.png)
 
 **readView 结构:**
 1. m_ids: 一个列表, 存储当前系统活跃的事务id (重点)

@@ -1,13 +1,13 @@
 # JVM底层原理
 
 ## 1. JVM内存模型
-![](../images/jvm/jvm.jpg)
+![](../../images/share/jvm/jvm.jpg)
 
-![](../images/jvm/jvm1.png)
+![](../../images/share/jvm/jvm1.png)
 
-![](../images/jvm/jvm2.png)
+![](../../images/share/jvm/jvm2.png)
 
-![](../images/jvm/jvm3.png)
+![](../../images/share/jvm/jvm3.png)
 
 ### 1.1 方法区(元空间/永久代)-常量池
 ### 1.2 Java虚拟机栈及栈帧内部结构
@@ -19,7 +19,7 @@
 
 ## 2. 垃圾收集器分类和算法
 
-![](../images/jvm/gc.jpg)
+![](../../images/share/jvm/gc.jpg)
 1. 并行（Parallel）
     指多条垃圾收集线程并行工作，但此时用户线程仍然处于等待状态（挂起）；
     如ParNew、Parallel Scavenge、Parallel Old；

@@ -6,7 +6,7 @@
 
 HTTP 超文本传输协议 请求报文由请求行、请求头部、空行 和 请求包体 4 个部分组成
 
-![](../images/network/net/http1.jpg)
+![](../../images/share/network/net/http1.jpg)
 
 ```html
 POST /examples/default.jsp HTTP/1.1 
@@ -39,7 +39,7 @@ lastName=Franks&firstName=Michael
 请求包体：请求包体不在 GET 方法中使用，而是在POST 方法中使用。POST 方法适用于需要客户填写表单的场合。与请求包体相关的最常使用的是包体类型 Content-Type 和包体长度 Content-Length;
 
 HTTP 响应报文由状态行、响应头部、空行 和 响应包体 4 个部分组成，如下图所示：
-![](../images/network/net/http2.jpg)
+![](../../images/share/network/net/http2.jpg)
 
 ```html
 HTTP/1.1 200 OK 
@@ -162,7 +162,7 @@ HTTP代理分为正向代理、反向代理和透明代理；
 OSI（Open System Interconnect），即开放式系统互联。 一般都叫OSI参考模型，是ISO（国际标准化组织）组织在1985年研究的网络互连模型。ISO为了更好的使网络应用更为普及，推出了OSI参考模型。其含义就是推荐所有公司使用这个规范来控制网络。这样所有公司都有相同的规范，就能互联了。
 OSI定义了网络互连的七层框架（物理层、数据链路层、网络层、传输层、会话层、表示层、应用层），即ISO开放互连系统参考模型
 
-![](../images/network/net/osi.png)
+![](../../images/share/network/net/osi.png)
 
 OSI七层和TCP/IP四层的关系
 
@@ -174,7 +174,7 @@ OSI是一种理论下的模型，而TCP/IP已被广泛使用，成为网络互�
  - TCP：transmission control protocol 传输控制协议
  - UDP：user data protocol 用户数据报协议
 
-![](../images/network/net/osi7.png)
+![](../../images/share/network/net/osi7.png)
 
 OSI七层和TCP/IP的区别
 
@@ -182,7 +182,7 @@ OSI七层和TCP/IP的区别
  - TCP/IP是由一些交互性的模块做成的分层次的协议，其中每个模块提供特定的功能；OSi则指定了哪个功能是属于哪一层的。
  - TCP/IP是五层结构，而OSI是七层结构。OSI的最高三层在TCP中用应用层表示。
 
-![](../images/network/net/osiall.png)
+![](../../images/share/network/net/osiall.png)
 
 ### 8. TCP协议详解
 

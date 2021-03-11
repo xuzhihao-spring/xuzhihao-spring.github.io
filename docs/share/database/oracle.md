@@ -86,7 +86,7 @@ MYSQL里用 字段名 like '%字符串%'；ORACLE里也可以用 字段名 like 
 # 2. Oracle实例
 
 ## 2.1 物理存储结构
-![](../images/share/oracle2.png)
+![](../../images/share/share/oracle2.png)
 
 - Data File 数据文件
 - Control File 控制文件
@@ -108,7 +108,7 @@ show parameter memory
 ```
 
 ## 2.2 内存结构
-![](../images/share/oracle.png)
+![](../../images/share/share/oracle.png)
 
 
 是一种数据库访问机制，主要由内存结构和进程结构组成

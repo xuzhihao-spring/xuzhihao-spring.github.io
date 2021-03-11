@@ -353,7 +353,7 @@ Timer 是中介者
 
 下面的图可以看出Java中的装饰者类和被装饰者类以及它们之间的关系，这里只列出了InputStream中的关系：
 
-![](../images/design/design17_1.png)
+![](../../images/share/designpattern/design/design17_1.png)
 
 由上图可以看出只要继承了FilterInputStream的类就是装饰者类，可以用于包装其他的流，装饰者类还可以对装饰者和类进行再包装
 
@@ -430,15 +430,15 @@ public class UpperCaseInputStream extends FilterInputStream {
 
 OutputStream类图
 
-![](../images/design/design17_2.png)
+![](../../images/share/designpattern/design/design17_2.png)
 
 Reader类图
 
-![](../images/design/design17_3.png)
+![](../../images/share/designpattern/design/design17_3.png)
 
 Writer类图
 
-![](../images/design/design17_4.png)
+![](../../images/share/designpattern/design/design17_4.png)
 
 ##### 2. spring cache 中的装饰者模式
 
@@ -478,7 +478,7 @@ public class TransactionAwareCacheDecorator implements Cache {
 
 spring cache中类图关系
 
-![](../images/design/design17_5.png)
+![](../../images/share/designpattern/design/design17_5.png)
 
 该类的主要功能：通过 Spring 的`TransactionSynchronizationManager`将其`put/evict/clear`操作与 Spring 管理的事务同步，仅在成功的事务的`after-commit`阶段执行实际的缓存`put/evict/clear`操作。如果没有事务是`active`的，将立即执行`put/evict/clear`操作
 
@@ -509,7 +509,7 @@ public class ServletRequestWrapper implements ServletRequest {
 
 可以看到该类对 ServletRequest 进行了包装，这里是一个装饰者模式，再看下图，spring session 中 SessionRepositoryFilter 的一个内部类 SessionRepositoryRequestWrapper 与 ServletRequestWrapper 的关系
 
-![](../images/design/design17_6.png)
+![](../../images/share/designpattern/design/design17_6.png)
 
 可见 ServletRequestWrapper 是第一层包装，HttpServletRequestWrapper 通过继承进行包装，增加了 HTTP 相关的功能，SessionRepositoryRequestWrapper 又通过继承进行包装，增加了 Session 相关的功能
 
@@ -517,7 +517,7 @@ public class ServletRequestWrapper implements ServletRequest {
 
 `org.apache.ibatis.cache` 包的文件结构如下所示
 
-![](../images/design/design17_7.png)
+![](../../images/share/designpattern/design/design17_7.png)
 
 我们通过类所在的包名即可判断出该类的角色，Cache 为抽象构件类，PerpetualCache 为具体构件类，decorators 包下的类为装饰类，没有抽象装饰类
 
