@@ -469,3 +469,14 @@ docker run -d -it --init -p 3000:3000 -v "/mydata/vscode:/home/project:cached" t
 ```
 
 ![](../images/deploy/docker/21.Theia.png)
+
+
+## 22. Nexus3安装
+
+```bash
+docker pull sonatype/nexus3
+mkdir -p /home/mvn/nexus-data  && chown -R 200 /home/mvn/nexus-data
+docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sonatype/nexus3
+```
+
+![](../images/deploy/docker/22.Nexus3.png)
