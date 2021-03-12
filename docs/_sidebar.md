@@ -10,9 +10,9 @@
   * [Kubernetes常用命令](linux/kubernetes_command.md)
 
 * 数据库
-  * [Oracle常用](database/oracle_command.md)
-  * [Redis命令](database/redis_command.md)
-  * [MySQL](database/mysql_command.md)
+  * [Oracle常用](command/oracle_command.md)
+  * [Redis命令](command/redis_command.md)
+  * [MySQL](command/mysql_command.md)
 
 * 系统部署
   * [Linux基于Docker部署](deploy/docker-deploy.md)
