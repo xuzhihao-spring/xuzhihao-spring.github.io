@@ -1,1 +1,3 @@
-# [Grafana安装](deploy/grafana)
+# grafana
+
+[Grafana安装](deploy/grafana)

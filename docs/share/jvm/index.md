@@ -21,7 +21,40 @@ Java7及以前版本的Hotspot中方法区位于永久代中
 - -XX:MaxMetaspaceSize，最大空间 默认是没有限制的。
 
 ### 1.2 Java虚拟机栈及栈帧内部结构
+
+栈的大小通过-Xss来设置，当栈中存储数据比较多时，需要适当调大这个值，否则会出现java.lang.StackOverflowError异常。常见的出现这个异常的是无法返回的递归，因为此时栈中保存的信息都是方法返回的记录点
+
+为什么要把堆和栈区分出来呢？栈中不是也可以存储数据吗？
+
+第一，从软件设计的角度看，栈代表了处理逻辑，而堆代表了数据。这样分开，使得处理逻辑更为清晰。分而治之的思想。这种隔离、模块化的思想在软件设计的方方面面都有体现。
+
+第二，堆与栈的分离，使得堆中的内容可以被多个栈共享（也可以理解为多个线程访问同一个对象）。这种共享的收益是很多的。一方面这种共享提供了一种有效的数据交互方式(如：共享内存)，另一方面，堆中的共享常量和缓存可以被所有栈访问，节省了空间。
+
+第三，栈因为运行时的需要，比如保存系统运行的上下文，需要进行地址段的划分。由于栈只能向上增长，因此就会限制住栈存储内容的能力。而堆不同，堆中的对象是可以根据需要动态增长的，因此栈和堆的拆分，使得动态增长成为可能，相应栈中只需记录堆中的一个地址即可。
+
+第四，面向对象就是堆和栈的完美结合。其实，面向对象方式的程序与以前结构化的程序在执行上没有任何区别。但是，面向对象的引入，使得对待问题的思考方式发生了改变，而更接近于自然方式的思考。当我们把对象拆开，你会发现，对象的属性其实就是数据，存放在堆中；而对象的行为（方法），就是运行逻辑，放在栈中。我们在编写对象的时候，其实即编写了数据结构，也编写的处理数据的逻辑。不得不承认，面向对象的设计，确实很美。
+
+
 ### 1.3 堆内存分代机制详解
+
+```java
+Object ob = new Object();
+```
+
+它所占的空间为：4byte+8byte,4byte是Java栈中保存引用的所需要的空间。而那8byte则是Java堆中对象的信息。因为所有的Java非基本类型的对象都需要默认继承Object对象，因此不论什么样的Java对象，其大小都必须是大于8byte。
+
+有了Object对象的大小，我们就可以计算其他对象的大小了。
+```java
+Class NewObject { //空对象大小(8byte)
+    int count; //int大小(4byte)
+    boolean flag;//Boolean大小(1byte)
+    Object ob;//空Object引用的大小(4byte)
+}
+//8+4+1+4=17byt,Java在对对象内存分配时都是以8的整数倍来分,因此大于17byte的最接近8的整数倍的是24，因此此对象的大小为24byte
+```
+
+`对象空间占用理论上是可以计算出来的，因为无限的叠加，出现了java对象的管理工具spring,来控制对象的数量和复用，java存在一天，spring不会消失`
+
 ### 1.4 程序计数器详解
 ### 1.5 本地方法栈详解
 
@@ -205,7 +238,212 @@ CMS收集器的优点：并发收集、低停顿
 
 
 ### 4.3 手写自定义类加载器以及自定义类加载器的使用场景分析
+
+- 两个模块依赖于某个类库的不同版本，如果分别被不同的容器加载实现模块隔离
+- 热加载和部署，tomcat
+- 自定义生成字节码混淆加密实现对jar的保护
+
+```java
+package com.xuzhihao.design.mode;
+
+public class Attachment {
+	public void say() {
+		System.out.println("Attachment Say Hello !" + System.currentTimeMillis());
+	}
+}
+```
+
+```java
+package com.xuzhihao.design.mode;
+
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+public class DecodeClassLoader extends ClassLoader {
+
+	private String pathDir;
+
+	public DecodeClassLoader(String pathDir) {
+		this.pathDir = pathDir;
+	}
+
+	@Override
+	protected Class<?> findClass(String name) throws ClassNotFoundException {
+		String classFileName = pathDir + "\\" + name.substring(0, name.lastIndexOf(".")) + ".class";
+		System.out.println(classFileName);
+		try {
+			FileInputStream fis = new FileInputStream(classFileName);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			cypher(fis, bos);
+//			uncypher(fis, bos);
+			fis.close();
+			byte[] bytes = bos.toByteArray();
+			return defineClass(null, bytes, 0, bytes.length);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return super.findClass(name);
+	}
+
+	public static void cypher(InputStream ips, OutputStream ops) throws IOException {
+		int b = -1;
+		while ((b = ips.read()) != -1) {
+			ops.write(b ^ 0xff);
+		}
+	}
+
+	public static void uncypher(InputStream ips, OutputStream ops) throws IOException {
+		int b = -1;
+		while ((b = ips.read()) != -1) {
+			ops.write(b & 0xff);
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		// 源文件路径
+		String srcPath = "E:\\gitlocal2\\shop\\shop\\design-learn\\target\\classes\\com\\xuzhihao\\design\\mode\\Attachment.class";
+		// 目标文件的目录
+		String descDir = "D:\\";
+		// 目标文件名称
+		String descFileName = srcPath.substring(srcPath.lastIndexOf("\\"));
+		String descPath = descDir + descFileName;
+		FileInputStream fis = new FileInputStream(srcPath);
+		FileOutputStream fos = new FileOutputStream(descPath);
+		DecodeClassLoader.cypher(fis, fos);
+		fis.close();
+		fos.close();
+
+		DecodeClassLoader dcl = new DecodeClassLoader("D:\\");
+		Class<?> aClass = dcl.loadClass("Attachment.class");
+		Object o = aClass.newInstance();
+		System.out.println(o.getClass().getName());
+		System.out.println(o.getClass().getClassLoader());
+		aClass.getMethod("say", null).invoke(o, null);
+
+	}
+}
+```
+
 ### 4.4 双亲委派模型及如何打破，什么场景下需要打破双亲委派
+
+#### 4.4.1 父类委托的优点
+
+1. 防止重复加载同一个.class。通过委托去向上查找，加载过了，就不用再加载一遍。保证数据安全。
+2. 保证核心.class不能被篡改，`这也是为什么不能重写java.lang.String 中toString方法的根本原因`
+
+#### 4.4.2 经典案例
+   
+1. 驱动加载
+>我们在使用 JDBC 时，都需要加载 Driver 驱动，不知道你注意到没有，不写
+Class.forName("com.mysql.jdbc.Driver")，也是可以让 com.mysql.jdbc.Driver 正确加载的
+
+在启动类加载DriverManager时候，加载Mysql驱动
+```java
+public class DriverManager {
+    // 注册驱动的集合
+    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers= new CopyOnWriteArrayList<>();
+    // 初始化驱动
+    static {
+        loadInitialDrivers();
+        println("JDBC DriverManager initialized");
+```
+
+```java
+private static void loadInitialDrivers() {
+    String drivers;
+    try {
+        drivers = AccessController.doPrivileged(new PrivilegedAction<String>
+                () {
+            public String run() {
+                return System.getProperty("jdbc.drivers");
+            }
+        });
+    } catch (Exception ex) {
+        drivers = null;
+    }
+    // 1）使用 ServiceLoader 机制加载驱动，即 SPI
+    AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        public Void run() {
+            ServiceLoader<Driver> loadedDrivers =
+                    ServiceLoader.load(Driver.class);
+            Iterator<Driver> driversIterator = loadedDrivers.iterator();
+            try{
+                while(driversIterator.hasNext()) {
+                    driversIterator.next();
+                }
+            } catch(Throwable t) {
+            // Do nothing
+            } return null;
+        }
+    });
+    println("DriverManager.initialize: jdbc.drivers = " + drivers);
+    // 2）使用 jdbc.drivers 定义的驱动名加载驱动
+    if (drivers ** null || drivers.equals("")) {
+        return;
+    } 
+    String[] driversList = drivers.split(":");
+    println("number of Drivers:" + driversList.length);
+    for (String aDriver : driversList) {
+        try {
+            println("DriverManager.Initialize: loading " + aDriver);
+            // 这里的 ClassLoader.getSystemClassLoader() 就是应用程序类加载器
+            Class.forName(aDriver, true,
+                    ClassLoader.getSystemClassLoader());
+          //Class.forName的源码
+          //public static Class<?> forName(String name, boolean initialize,ClassLoader loader)
+        } catch (Exception ex) {
+            println("DriverManager.Initialize: load failed: " + ex);
+        }
+    }
+}
+```
+
+2. Service Provider Interface（SPI）
+
+约定如下，在jar包的META-INF/services包下，以接口全限定名名为文件，文件内容是实现类名称
+
+![](../../images/share/jvm/spi1.png)
+
+>使用SPI思想，就可以用下面的方式，来加载类
+
+```java
+ServiceLoader<接口类型> allImpls = ServiceLoader.load(接口类型.class);
+Iterator<接口类型> iter = allImpls.iterator();
+while(iter.hasNext()) {
+    iter.next();
+}
+```
+
+>接着看 ServiceLoader.load 方法：
+发现，在加载的时候，是获取当前线程的类加载器（当前线程的类加载器，就是应用程序类加载器）
+
+```java
+public static <S> ServiceLoader<S> load(Class<S> service) {
+    // 获取线程上下文类加载器
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    return ServiceLoader.load(service, cl);
+}
+```
+
+3. tomcat类加载器模型
+   1. commonLoader：Tomcat最基本的类加载器，加载路径中的class可以被Tomcat容器本身以及各个Webapp访问；
+   2. catalinaLoader：Tomcat容器私有的类加载器，加载路径中的class对于Webapp不可见；
+   3. sharedLoader：各个Webapp共享的类加载器，加载路径中的class对于所有Webapp可见，但是对于Tomcat容器不可见；
+   4. WebappClassLoader：各个Webapp私有的类加载器，加载路径中的class只对当前Webapp可见；
+
+![](../../images/share/jvm/tomcat_load.png)
+
+CommonClassLoader能加载的类都可以被Catalina ClassLoader和SharedClassLoader使用，从而实现了公有类库的共用，而CatalinaClassLoader和Shared ClassLoader自己能加载的类则与对方相互隔离。
+
+WebAppClassLoader可以使用SharedClassLoader加载到的类，但各个WebAppClassLoader实例之间相互隔离。
+
+而JasperLoader的加载范围仅仅是这个JSP文件所编译出来的那一个.Class文件，它出现的目的就是为了被丢弃：当Web容器检测到JSP文件被修改时，会替换掉目前的JasperLoader的实例，并通过再建立一个新的Jsp类加载器来实现JSP文件的HotSwap功能。
+
 
 ## 5. JVM调优工具
 
@@ -213,6 +451,17 @@ CMS收集器的优点：并发收集、低停顿
 ### 5.2 Jvisualvm、Jconsole调优工具详解
 ### 5.3 阿里巴巴JVM调优工具Arthas详解
 
+[阿里开源的诊断神器Arthas](tools/arthas.md)
+
 ## 6. GC日志分析
+
+- -XX:+PrintGC 输出GC日志
+- -XX:+PrintGCDetails 输出GC的详细日志
+- -XX:+PrintGCTimeStamps 输出GC的时间戳（以基准时间的形式）
+- -XX:+PrintGCDateStamps 输出GC的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800）
+- -XX:+PrintHeapAtGC 在进行GC的前后打印出堆的信息
+- -Xloggc:../logs/gc.log 日志文件的输出路径
+
+Tomcat则直接加在JAVA_OPTS变量里
 
 ### 6.1 GCEasy日志分析工具使用
