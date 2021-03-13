@@ -480,3 +480,45 @@ docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sona
 ```
 
 ![](../images/deploy/docker/22.Nexus3.png)
+
+## 23. 项目管理zentao
+
+```bash
+mkdir -p /data/zbox
+
+docker run -d -p 8080:80 -p 3316:3306 -e USER="admin" -e PASSWD="admin" -e BIND_ADDRESS="false" -e SMTP_HOST="163.177.90.125 smtp.exmail.qq.com" -v /data/zbox/:/opt/zbox/ --name zentao-server idoop/zentao:latest 
+```
+
+- 8080 访问禅道外部端口号
+- 3316 把容器3306数据库端口映射到主机3316端口
+- USER 设置登录账号 admin
+- PASSWD 设置登录密码 123456
+- BIND_ADDRESS 设置为false
+
+## 24. Registry部署
+
+修改Docker Daemon的配置文件，文件位置为/etc/docker/daemon.json，由于Docker默认使用HTTPS推送镜像，而我们的镜像仓库没有支持，所以需要添加如下配置，改为使用HTTP推送
+
+```
+{
+  "insecure-registries": ["192.168.3.200:5000"]
+}
+```
+
+REGISTRY_STORAGE_DELETE_ENABLED=true 开启删除镜像的功能
+
+```bash
+docker run -p 5000:5000 --name registry2 \
+--restart=always \
+-e REGISTRY_STORAGE_DELETE_ENABLED="true" \
+-d registry:2
+```
+
+```bash
+docker run -p 8280:80 --name registry-ui \
+--link registry2:registry2 \
+-e REGISTRY_URL="http://registry2:5000" \
+-e DELETE_IMAGES="true" \
+-e REGISTRY_TITLE="Registry2" \
+-d joxit/docker-registry-ui:static
+```

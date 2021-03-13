@@ -25,11 +25,24 @@ lower_case_table_names=1
 
 ```
 
-![](../../images/share/command/mysql_command/mysql-mysqld.png)
 
-···
+## 2. 备份恢复
 
-## 2. 函数
+```bash
+mysqldump -uroot -p123456 -hlocalhost -P3306  --default-character-set=utf8   --flush-privileges  --hex-blob  --routines  --triggers  --tz-utc  --no-create-db jeecmsv9 > d:/aa.dump
+
+mysqldump -uroot -proot --all-databases >/tmp/all.sql
+
+mysqldump -uroot -proot --databases db1 db2 >/tmp/user.sql
+
+mysqldump -uroot -proot --databases db1 --tables a1 --where='id=1'  >/tmp/a1.sql
+
+mysqldump -uroot -proot --no-data --databases db1 >/tmp/db1.sql
+
+```
+
+
+## 3. 函数
 ```sql
 CREATE FUNCTION `F_ACTUSER`(v_FLOWCID varchar(40)) RETURNS longtext CHARSET utf8
 BEGIN

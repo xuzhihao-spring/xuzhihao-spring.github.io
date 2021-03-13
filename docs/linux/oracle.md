@@ -8,8 +8,8 @@ sqlplus /nolog
 connect / as sysdba
 shutdown immediate
 startup
-execute dbms_stats.delete_schema_stats('xxx');
 ```
+
 ## 2.查询死锁
 
 ```sql
@@ -35,16 +35,33 @@ SELECT 'ALTER SYSTEM KILL SESSION ''' || SID || ',' || SERIAL# || '''' || ';'
 ```
 ## 3.备份还原
 
-```bash
-expdp kh_jdhz0227/123456@ORCL directory=oradmp dumpfile=tables_menu_0331.dmp tables=tb_system_menu_info,tb_system_menu_base,TB_SYSTEM_MENU,TB_SYSTEM_MENUQX_INFO
-impdp system/123456 directory=oradmp dumpfile=tables_menu_0331.dmp tables=kh_jdhz0227.tb_system_menu_info,kh_jdhz0227.tb_system_menu_base,kh_jdhz0227.TB_SYSTEM_MENU,kh_jdhz0227.TB_SYSTEM_MENUQX_INFO REMAP_SCHEMA=kh_jdhz0227:kh_jdhz0331 table_exists_action=replace
 
-impdp VJSP_JSWZ_191111_TMP/123456 directory=ORADMP dumpfile=VJSP_JSWZ_191111_1.dmp  schemas=VJSP_JSWZ_191111   REMAP_SCHEMA=VJSP_JSWZ_191111:VJSP_JSWZ_191111_TMP  REMAP_TABLESPACE=USERS:USERS
+```bash
+#按表名导出
+expdp kh_jdhz0227/123456@ORCL directory=oradmp dumpfile=tables_menu_0331.dmp 
+tables=tb_system_menu_info,tb_system_menu_base,TB_SYSTEM_MENU,TB_SYSTEM_MENUQX_INFO
+
+#按表名导入
+impdp system/123456 directory=oradmp dumpfile=tables_menu_0331.dmp 
+tables=kh_jdhz0227.tb_system_menu_info,kh_jdhz0227.tb_system_menu_base,kh_jdhz0227.TB_SYSTEM_MENU,kh_jdhz0227.TB_SYSTEM_MENUQX_INFO 
+REMAP_SCHEMA=kh_jdhz0227:kh_jdhz0331 table_exists_action=replace
+
+#整库导入
+impdp VJSP_JSWZ_191111_TMP/123456 directory=ORADMP dumpfile=VJSP_JSWZ_191111_BAK.dmp  
+schemas=VJSP_JSWZ_191111 REMAP_SCHEMA=VJSP_JSWZ_191111:VJSP_JSWZ_191111_TMP REMAP_TABLESPACE=USERS:USERS
+
+#导入无法使用
+execute dbms_stats.delete_schema_stats('xxx');
 ```
-```sql
-select * from qrtz_job_details_local t  where dbms_lob.instr(job_data,utl_raw.cast_to_raw('declarano'),1,1)<>0;--blob查询
-```
+
 ## 4.函数
+
+```sql
+--blob查询
+select * from qrtz_job_details_local t 
+where dbms_lob.instr(job_data,utl_raw.cast_to_raw('declarano'),1,1)<>0;
+```
+
 ```sql
 CREATE OR REPLACE FUNCTION FUN_OTO_ORDERBYSHOP(P_USERID IN CHAR)
   RETURN VARCHAR2 AS
@@ -248,8 +265,12 @@ EOF"
 etime=`date +'%Y-%m-%d %H:%M:%S'`
 echo 'PROC_WZCHECK_COUNT_BY_MONTH_WG完成时间-'$etime >> /data/kh_shell/proc_debug.log
 
-
-
-
-
 ```
+
+## 8.
+
+## 8.
+
+## 8.
+
+## 8.

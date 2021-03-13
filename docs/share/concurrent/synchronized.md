@@ -212,11 +212,13 @@ synchronized未优化之前，效率低的原因。
 ### 2.8 synchronized与lock的区别
 - synchronized是一个关键字，而lock是一个接口。
 - synchronized会自动释放锁，而lock必须手动释放锁。
-- synchronized是不可中断的，而lock是可中断也可不中断。
+- synchronize等待不中断，而lock等待可中断。lock方法是不可中断的，tryLock方法是可中断的
 - 通过lock可以知道线程是否拿到锁，而synchronized不能。
 - synchronized可以锁住方法和代码块，而lock只能锁住代码块。
 - synchronized是非公平锁（就是调用任意一个等待线程，不是先来先调），ReentrantLock可以控制是否公平。
 - lock可以使用读锁来提高多线程效率。（ReentrantReadWriteLock）
+- `synchronize是jvm实现cmpxchg_ptr ，包括锁膨胀的过程，lock是基于AQS实现的`
+
 
 ## 3. synchronized膨胀升级过程
 
@@ -391,6 +393,8 @@ java jdk并发包中的ReentrantLock可以指定构造函数的boolean类型来�
 
 ## 5. CAS使用场景和实现原理
 
+CAS `cmpxchg` 并非真的无锁,实际锁定 `北桥芯片`
+
 ```java
 	private static sun.misc.Unsafe unsafe;
 	private static long offset;
@@ -504,6 +508,9 @@ if(cas(state, 0 , 1)){ // 1 加锁成功，只有一个线程能成功加锁
 
 
 ## 6. ReentrantLock源码分析
+
+ReentrantLock的自旋、cas、park在`线程交替执行没有竞争的情况下其实和队列无关，在jdk的层面上就解决了同步的问题`
+
 > ReentrantLock实现了Lock接口，并使用内部类Sync(Sync继承AbstractQueuedSynchronizer)来实现同步操作
 
 ![](../../images/share/concurrent/reentrantlock_1.png)  

@@ -102,7 +102,8 @@ docker-compose -f docker-compose-env.yml up -d
 ```Shell
 # vi /etc/docker/daemon.json
 {
-    "registry-mirrors":[ "https://registry.docker-cn.com" ]
+    "registry-mirrors":["https://registry.docker-cn.com"],
+    "insecure-registries": ["192.168.3.200:5000"]
 }
 sudo systemctl daemon-reload
 sudo systemctl restart docker 
@@ -111,3 +112,54 @@ sudo systemctl restart docker
 ## 12. 常用地址
 
 doc仓库：https://hub.docker.com/r/samuelebistoletti/docker-statsd-influxdb-grafana
+
+## 13. registry
+
+```bash
+docker pull busybox 
+docker tag busybox 192.168.3.200:5000/busybox:v1.0
+docker push 192.168.3.200:5000/busybox:v1.0
+```
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.33.0</version>
+            <configuration>
+                <!-- Docker 远程管理地址-->
+                <dockerHost>http://192.168.3.200:2375</dockerHost>
+                <!-- Docker 推送镜像仓库地址-->
+                <pushRegistry>http://192.168.3.200:5000</pushRegistry>
+                <images>
+                    <image>
+                        <!--由于推送到私有镜像仓库，镜像名需要添加仓库地址-->
+                        <name>192.168.3.200:5000/shop/${project.name}:${project.version}</name>
+                        <!--定义镜像构建行为-->
+                        <build>
+                            <!--定义基础镜像-->
+                            <from>java:8</from>
+                            <args>
+                                <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
+                            </args>
+                            <!--定义哪些文件拷贝到容器中-->
+                            <assembly>
+                                <!--定义拷贝到容器的目录-->
+                                <targetDir>/</targetDir>
+                                <!--只拷贝生成的jar包-->
+                                <descriptorRef>artifact</descriptorRef>
+                            </assembly>
+                            <!--定义容器启动命令-->
+                            <entryPoint>["java", "-jar","/${project.build.finalName}.jar"]</entryPoint>
+                            <!--定义维护者-->
+                            <maintainer>macrozheng</maintainer>
+                        </build>
+                    </image>
+                </images>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```

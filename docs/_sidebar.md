@@ -1,18 +1,19 @@
 * 序章
-  * [技术栈](catalog/framework.md)
-  * [学习路线](catalog/mindmap.md)
+  * [技术栈](share/framework.md)
+  * [学习路线](share/mindmap.md)
 
 * Linux
-  * [Linux常用命令](linux/linux_command.md)
-  * [Windows常用命令](linux/windows_command.md)
-  * [Docker常用命令](linux/docker_command.md)
-  * [Node.js常用命令](linux/node_command.md)
-  * [Kubernetes常用命令](linux/kubernetes_command.md)
+  * [Linux](linux/linux.md)
+  * [Windows](linux/windows.md)
+  * [Docker](linux/docker.md)
+  * [Node.js](linux/node.md)
+  * [Kubernetes](linux/kubernetes.md)
 
 * 数据库
-  * [Oracle常用](command/oracle_command.md)
-  * [Redis命令](command/redis_command.md)
-  * [MySQL](command/mysql_command.md)
+  * [Oracle](linux/oracle.md)
+  * [PostgreSQL](linux/postgre.md)
+  * [MySQL](linux/mysql.md)
+  * [Redis](linux/redis.md)
 
 * 系统部署
   * [Linux基于Docker部署](deploy/docker-deploy.md)
