@@ -1,6 +1,6 @@
 # Spring Cloud Alibaba
 
-## 1. Sentinel
+## 1. Sentinel分布式系统流量防卫兵
 
 ```bash
 java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard.jar

@@ -1,6 +1,6 @@
 # Spring Cloud Netflix
 
-## 1. Eureka的源码分析服务注册和服务发现以及心跳机制和保护机制
+## 1. Eureka的源码分析
 
 ### 1.1 服务器端
 
@@ -182,7 +182,11 @@ public interface EurekaHttpClient {
 
 ![](../../images/share/microservice/springcloud/serverDiscovery.png)
 
-## 2. Feign的源码分析
+
+
+## 2. Ribbon源码分析和客服端负载均衡
+
+## 3. Feign的源码分析
 
 ![](../../images/share/microservice/springcloud/feign.png)
 
@@ -425,7 +429,7 @@ public class ReflectiveFeign extends Feign {
       return dispatch.get(method).invoke(args);
     }
     ...
-```   
+```
 
 ```java
 final class SynchronousMethodHandler implements MethodHandler {
@@ -456,11 +460,11 @@ final class SynchronousMethodHandler implements MethodHandler {
       }
     }
   }
-```    
+```
 
-## 3. Hystrix 熔断、降级、限流
+## 4. Hystrix 熔断、降级、限流
 
-### 3.1 熔断
+### 4.1 熔断
 
 熔断这一概念来源于电子工程中的断路器（Circuit Breaker）。在互联网系统中，当下游服务因访问压力过大而响应变慢或失败，上游服务为了保护系统整体的可用性，可以暂时切断对下游服务的调用。这种牺牲局部，保全整体的措施就叫做熔断
 
@@ -491,7 +495,7 @@ hystrix:
                   timeoutInMilliseconds: 5000 # 熔断器超时时间，默认：1000/毫秒
 ```
 
-### 3.2 降级
+### 4.2 降级
 
 所谓降级，就是当某个服务熔断之后，服务器将不再被调用，此时客户端可以自己准备一个本地的fallback回调，返回一个缺省值。 也可以理解为兜底
 `因为熔断所以降级`
@@ -526,7 +530,7 @@ return product;
 ```
 
 
-### 3.3 限流
+### 4.3 限流
 
 Hystrix能做什么
 
@@ -598,9 +602,9 @@ public class HelloService {
 ```
 
 
-## 4. Hystrix Doashboard、聚合监控Turbine
+## 5. Hystrix Doashboard、聚合监控Turbine
 
-### 4.1 Hystrix配置
+### 5.1 Hystrix配置
 
 ```xml
 <dependency>
@@ -620,15 +624,407 @@ clusterNameExpression: "'default'"
 
 ![](../../images/share/microservice/springcloud/hystrixdashboard.png)
 
-### 4.2 Hystrix替代方案 [Sentinel](/share/microservice/springclouda?id=_1-sentinel)
+### 5.2 Hystrix替代方案 
 
-Sentinel与Hystrix的区别
+[Alibaba Sentinel分布式系统流量防卫兵](/share/microservice/springclouda?id=_1-sentinel分布式系统的流量防卫兵)
+
 ![](../../images/share/microservice/springcloud/sentinel-hystrix.png)
 
-## 5. GateWay
+## 6. GateWay
 
-路由 断言 过滤器 漏桶 令牌桶
+### 6.1 核心概念
 
-## 6. 配置中心
+1. 路由（route） 路由是网关最基础的部分，路由信息由一个ID、一个目的URL、一组断言工厂和一组Filter组成。如果断言为真，则说明请求URL和配置的路由匹配。
+2. 断言（predicates） Java8中的断言函数，Spring Cloud Gateway中的断言函数输入类型是Spring5.0框架中的ServerWebExchange。Spring Cloud Gateway中的断言函数允许开发者去定义匹配来自Http Request中的任何信息，比如请求头和参数等。`实现灰度发布`
 
-## 7. 链路跟踪
+![](../../images/share/microservice/springcloud/predicates.png)
+
+3. 过滤器（filter） 一个标准的Spring webFilter，Spring Cloud Gateway中的Filter分为两种类型，分别是Gateway Filter和Global Filter。过滤器Filter可以对请求和响应进行处理。
+
+### 6.2 配置文件
+
+```yml
+server:
+   port: 8201
+spring:
+   zipkin:
+      base-url: http://debug-registry:9411/ #zipkin server的请求地址
+      discoveryClientEnabled: false #让nacos把它当成一个URL，而不要当做服务名
+   sleuth:
+      sampler:
+         probability: 1.0 #采样的百分比
+   cloud:
+      nacos:
+          discovery:
+            server-addr: http://debug-registry:8848
+          config:
+            server-addr: http://debug-registry:8848
+            file-extension: yaml
+      gateway:
+         discovery:
+            locator:
+               enabled: true
+               lower-case-service-id: true #使用小写service-id
+         routes: #配置路由路径
+         -  id: shop-auth
+            uri: lb://shop-auth
+            predicates:
+            - After=2017-01-20T17:42:47.789-07:00[America/Denver]
+            - Before=2017-01-20T17:42:47.789-07:00[America/Denver]
+            - Between=2017-01-20T17:42:47.789-07:00[America/Denver], 2017-01-21T17:42:47.789-07:00[America/Denver]
+            - Cookie=chocolate, ch.p
+            - Header=X-Request-Id, \d+
+            - Host=**.somehost.org,**.anotherhost.org
+            - Method=GET
+            - Path=/foo/{segment},/bar/{segment}
+            - Query=baz
+            - RemoteAddr=192.168.3.200/24
+            - Path=/shop-auth/**
+            filters:
+            - StripPrefix=1
+         -  id: shop-admin
+            uri: lb://shop-admin
+            predicates:
+            - Path=/shop-admin/**
+            filters:
+            - StripPrefix=1
+   security:
+      oauth2:
+         resourceserver:
+            jwt:
+               jwk-set-uri: http://127.0.0.1:8201/shop-auth/rsa/publicKey #配置RSA的公钥访问地址
+   redis:
+      host: debug-registry # Redis服务器地址
+      database: 10 # Redis数据库索引（默认为0）
+      port: 6379 # Redis服务器连接端口
+      password: null # Redis服务器连接密码（默认为空）
+      timeout: 3000ms # 连接超时时间（毫秒
+      pool:
+         max-active: 8 # 连接池最大连接数（使用负值表示没有限制）
+         max-wait: -1 # 连接池最大阻塞等待时间（使用负值表示没有限制）
+         max-idle: 8 # 连接池中的最大空闲连接
+         min-idle: 0 # 连接池中的最小空闲连接
+secure:
+   ignore:
+      urls: #配置白名单路径
+      - /doc.html
+      - /swagger-resources/**
+      - /**/*.css
+      - /shop-admin/minio/upload
+management:
+   endpoints:
+      web:
+         exposure:
+            include: '*'
+   endpoint:
+      health:
+         show-details: always
+```
+
+### 6.3 统一鉴权
+
+```java
+/**
+ * 将登录用户的JWT转化成用户信息的全局过滤器
+ */
+@Component
+public class AuthGlobalFilter implements GlobalFilter, Ordered {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(AuthGlobalFilter.class);
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String token = exchange.getRequest().getHeaders().getFirst(AuthConstant.JWT_TOKEN_HEADER);
+        if (StrUtil.isEmpty(token)) {
+            return chain.filter(exchange);
+        }
+        try {
+            //从token中解析用户信息并设置到Header中去
+            String realToken = token.replace(AuthConstant.JWT_TOKEN_PREFIX, "");
+            JWSObject jwsObject = JWSObject.parse(realToken);
+            String userStr = jwsObject.getPayload().toString();
+            LOGGER.info("AuthGlobalFilter.filter() user:{}",userStr);
+            ServerHttpRequest request = exchange.getRequest().mutate().header(AuthConstant.USER_TOKEN_HEADER, userStr).build();
+            exchange = exchange.mutate().request(request).build();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+}
+```
+
+集成Oauth2.0
+
+```java
+/**
+ * 鉴权管理器，用于判断是否有资源的访问权限
+ */
+@Component
+public class AuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private IgnoreUrlsConfig ignoreUrlsConfig;
+
+    @Override
+    public Mono<AuthorizationDecision> check(Mono<Authentication> mono, AuthorizationContext authorizationContext) {
+        ServerHttpRequest request = authorizationContext.getExchange().getRequest();
+        URI uri = request.getURI();
+        PathMatcher pathMatcher = new AntPathMatcher();
+        //白名单路径直接放行
+        List<String> ignoreUrls = ignoreUrlsConfig.getUrls();
+        for (String ignoreUrl : ignoreUrls) {
+            if (pathMatcher.match(ignoreUrl, uri.getPath())) {
+                return Mono.just(new AuthorizationDecision(true));
+            }
+        }
+        //对应跨域的预检请求直接放行
+        if(request.getMethod()==HttpMethod.OPTIONS){
+            return Mono.just(new AuthorizationDecision(true));
+        }
+        //不同用户体系登录不允许互相访问
+        try {
+            String token = request.getHeaders().getFirst(AuthConstant.JWT_TOKEN_HEADER);
+            if(StrUtil.isEmpty(token)){
+                return Mono.just(new AuthorizationDecision(false));
+            }
+            String realToken = token.replace(AuthConstant.JWT_TOKEN_PREFIX, "");
+            JWSObject jwsObject = JWSObject.parse(realToken);
+            String userStr = jwsObject.getPayload().toString();
+            UserDto userDto = JSONUtil.toBean(userStr, UserDto.class);
+            if (AuthConstant.ADMIN_CLIENT_ID.equals(userDto.getClientId()) && !pathMatcher.match(AuthConstant.ADMIN_URL_PATTERN, uri.getPath())) {
+                return Mono.just(new AuthorizationDecision(false));
+            }
+            if (AuthConstant.PORTAL_CLIENT_ID.equals(userDto.getClientId()) && pathMatcher.match(AuthConstant.ADMIN_URL_PATTERN, uri.getPath())) {
+                return Mono.just(new AuthorizationDecision(false));
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return Mono.just(new AuthorizationDecision(false));
+        }
+        //非管理端路径直接放行
+        if (!pathMatcher.match(AuthConstant.ADMIN_URL_PATTERN, uri.getPath())) {
+            return Mono.just(new AuthorizationDecision(true));
+        }
+        //管理端路径需校验权限
+        Map<Object, Object> resourceRolesMap = redisTemplate.opsForHash().entries(AuthConstant.RESOURCE_ROLES_MAP_KEY);
+        Iterator<Object> iterator = resourceRolesMap.keySet().iterator();
+        List<String> authorities = new ArrayList<>();
+        while (iterator.hasNext()) {
+            String pattern = (String) iterator.next();
+            if (pathMatcher.match(pattern, uri.getPath())) {
+                authorities.addAll(Convert.toList(String.class, resourceRolesMap.get(pattern)));
+            }
+        }
+        authorities = authorities.stream().map(i -> i = AuthConstant.AUTHORITY_PREFIX + i).collect(Collectors.toList());
+        //认证通过且角色匹配的用户可访问当前路径
+        return mono
+                .filter(Authentication::isAuthenticated)
+                .flatMapIterable(Authentication::getAuthorities)
+                .map(GrantedAuthority::getAuthority)
+                .any(authorities::contains)
+                .map(AuthorizationDecision::new)
+                .defaultIfEmpty(new AuthorizationDecision(false));
+    }
+
+}
+```
+
+### 6.4 网关限流
+
+#### 6.4.1 限流算法
+
+1. 计数器
+2. 漏桶算法
+3. 令牌桶算法
+
+#### 6.4.2 基于Filter的限流
+
+```xml
+<!--redis的依赖-->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+</dependency>
+```
+
+```yml
+server:
+  port: 8888
+
+spring:
+  application:
+    name: shop-gateway
+  cloud:
+    ## Spring Cloud Gateway 配置项，对应 GatewayProperties 类
+    gateway:
+      # 路由配置项，对应 RouteDefinition 数组
+      routes:
+        - id: shop-search
+          uri: lb://shop-search # 路由到的目标地址
+          predicates: # 断言，作为路由的匹配条件，对应 RouteDefinition 数组
+            - Path=/shop-search/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 1 # 令牌桶的每秒放的数量/每秒填充平均速率
+                redis-rate-limiter.burstCapacity: 2 # 令牌桶的最大令牌数
+                key-resolver: "#{@ipKeyResolver}" # 获取限流 KEY 的 Bean 的名字/使用SpEL从容器中获取对象
+  ##### Redis 配置项 #####
+  redis:
+    host: 127.0.0.1
+    port: 6379
+```
+
+配置KeyResolver
+
+```java
+@Configuration
+public class KeyResolverConfiguration {
+	/**
+	 * 基于请求路径的限流
+	 */
+	@Bean
+	public KeyResolver pathKeyResolver() {
+		return exchange -> Mono.just(exchange.getRequest().getPath().toString());
+	}
+
+	/**
+	 * 基于请求ip地址的限流
+	 */
+	@Bean
+	public KeyResolver ipKeyResolver() {
+		return exchange -> Mono.just(exchange.getRequest().getHeaders().getFirst("X-Forwarded-For"));
+	}
+
+	/**
+	 * 基于用户的限流
+	 */
+	@Bean
+	public KeyResolver userKeyResolver() {
+		return exchange -> Mono.just(exchange.getRequest().getQueryParams().getFirst("user"));
+	}
+}
+```
+
+### 6.5 限流实现request_rate_limiter.lua
+
+源码位置在spring-cloud-gateway-core包下； 基于lua脚本实现
+
+```lua
+local tokens_key = KEYS[1]     -- 存放令牌数量的key
+local timestamp_key = KEYS[2]   -- 存放最近一次拿令牌的时间
+--redis.log(redis.LOG_WARNING, "tokens_key " .. tokens_key)
+
+local rate = tonumber(ARGV[1])          -- 每秒往桶里放的令牌数
+local capacity = tonumber(ARGV[2])     -- 桶最大容量
+local now = tonumber(ARGV[3])         -- 当前时间
+local requested = tonumber(ARGV[4])        -- 每次算几个令牌
+
+local fill_time = capacity/rate       -- 从零开始多久满
+local ttl = math.floor(fill_time*2)    -- key的存活时间，如果过了这个时间，肯定就满了，每必要存了
+
+--redis.log(redis.LOG_WARNING, "rate " .. ARGV[1])
+--redis.log(redis.LOG_WARNING, "capacity " .. ARGV[2])
+--redis.log(redis.LOG_WARNING, "now " .. ARGV[3])
+--redis.log(redis.LOG_WARNING, "requested " .. ARGV[4])
+--redis.log(redis.LOG_WARNING, "filltime " .. fill_time)
+--redis.log(redis.LOG_WARNING, "ttl " .. ttl)
+
+local last_tokens = tonumber(redis.call("get", tokens_key))   -- 目前桶里的令牌数
+if last_tokens == nil then
+  last_tokens = capacity
+end
+--redis.log(redis.LOG_WARNING, "last_tokens " .. last_tokens)
+
+local last_refreshed = tonumber(redis.call("get", timestamp_key))  --最近一次取令牌的时间
+if last_refreshed == nil then
+  last_refreshed = 0
+end
+--redis.log(redis.LOG_WARNING, "last_refreshed " .. last_refreshed)
+
+local delta = math.max(0, now-last_refreshed)          --上次取令牌到现在过了多少秒
+local filled_tokens = math.min(capacity, last_tokens+(delta*rate))    -- 放新令牌后的总数
+local allowed = filled_tokens >= requested       -- 现在桶里令牌够不够执行一次
+local new_tokens = filled_tokens      -- 当前令牌数
+local allowed_num = 0
+if allowed then
+  new_tokens = filled_tokens - requested       -- 拿走一次令牌后剩余令牌数
+  allowed_num = 1
+end
+
+--redis.log(redis.LOG_WARNING, "delta " .. delta)
+--redis.log(redis.LOG_WARNING, "filled_tokens " .. filled_tokens)
+--redis.log(redis.LOG_WARNING, "allowed_num " .. allowed_num)
+--redis.log(redis.LOG_WARNING, "new_tokens " .. new_tokens)
+
+if ttl > 0 then
+  redis.call("setex", tokens_key, ttl, new_tokens)  -- 更新令牌数
+  redis.call("setex", timestamp_key, ttl, now)      -- 更新最后一次执行时间
+end
+
+-- return { allowed_num, new_tokens, capacity, filled_tokens, requested, new_tokens }
+return { allowed_num, new_tokens }
+```
+
+## 7. Zuul和Gateway的区别
+
+### 7.1 二者联系
+
+spring-cloud-Gateway是spring-cloud的一个子项目。而zuul则是netflix公司的项目，只是spring将zuul集成在spring-cloud中使用而已。因为zuul2.0连续跳票和zuul1的性能表现不是很理想，所以催生了spring团队开发了Gateway项目
+
+Zuul：
+
+使用的是阻塞式的 API，不支持长连接，比如 websockets。
+
+底层是servlet，Zuul处理的是http请求
+
+没有提供异步支持，流控等均由hystrix支持。
+
+依赖包spring-cloud-starter-netflix-zuul。
+
+Gateway：
+
+Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servlet容器一起使用，也不能打包成一个WAR包。
+
+依赖spring-boot-starter-webflux和/ spring-cloud-starter-gateway
+
+提供了异步支持，提供了抽象负载均衡，提供了抽象流控，并默认实现了RedisRateLimiter。
+
+### 7.2 相同
+
+1、底层都是servlet
+
+2、两者均是web网关，处理的是http请求
+
+
+### 7.3 不同
+
+1. 内部实现：
+  - gateway对比zuul多依赖了spring-webflux，在spring的支持下，功能更强大，内部实现了限流、负载均衡等，扩展性也更强，但同时也限制了仅适合于Spring Cloud套件
+  - zuul则可以扩展至其他微服务框架中，其内部没有实现限流、负载均衡等。
+2. 是否支持异步
+  - zuul仅支持同步
+  - gateway支持异步。理论上gateway则更适合于提高系统吞吐量（但不一定能有更好的性能），最终性能还需要通过严密的压测来决定
+3. 框架设计的角度
+  - gateway具有更好的扩展性，并且其已经发布了2.0.0的RELESE版本，稳定性也是非常好的
+4. 性能
+  - WebFlux 模块的名称是 spring-webflux，名称中的 Flux 来源于 Reactor 中的类 Flux。Spring webflux 有一个全新的非堵塞的函数式Reactive Web框架，可以用来构建异步的、非堵塞的、事件驱动的服务，在伸缩性方面表现非常好。使用非阻塞API。 Websockets得到支持，并且由于它与Spring紧密集成，所以将会是一个更好的开发体验。
+  - Zuul 1.x，是一个基于阻塞io的API Gateway。Zuul已经发布了Zuul 2.x，基于Netty，也是非阻塞的，支持长连接，但Spring Cloud暂时还没有整合计划。
+
+### 7.4 总结
+
+总的来说，在微服务架构，如果使用了Spring Cloud生态的基础组件，则Spring Cloud Gateway相比而言更加具备优势，单从流式编程+支持异步上就足以让开发者选择它了。
+　　
+对于小型微服务架构或是复杂架构（不仅包括微服务应用还有其他非Spring Cloud服务节点），zuul也是一个不错的选择。
+
+## 7. 配置中心
+
+## 8. 链路跟踪
