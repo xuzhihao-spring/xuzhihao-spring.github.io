@@ -1025,6 +1025,263 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 　　
 对于小型微服务架构或是复杂架构（不仅包括微服务应用还有其他非Spring Cloud服务节点），zuul也是一个不错的选择。
 
-## 7. 配置中心
+## 8. 配置中心
 
-## 8. 链路跟踪
+### 8.1 服务器配置
+
+```yml
+spring:
+   cloud:
+      config:
+         server:
+            git:
+               uri: https://gitee.com/xuzhihao-spring/springcloud-config
+               clone-on-start: true #开启启动时直接从git获取配置
+   rabbitmq:
+      host: debug-registry
+      port: 5672
+      username: guest
+      password: guest
+```
+
+### 8.2 客户端配置
+
+```yml
+spring:
+   cloud:
+      config: #Config客户端配置
+         name: admin-client #应用名称,需要对应git中配置文件名称的前半部分
+         profile: dev #启用配置后缀名称
+         label: master #分支名称
+         discovery:
+            enabled: true #开启服务发现
+            service-id: config-server
+  rabbitmq:
+      host: debug-registry
+      port: 5672
+      username: guest
+      password: guest  
+```
+
+### 8.3 高可用配置
+
+手动刷新：客户端使用post去触发refresh，获取最新数据，需要依赖springboot-starter-actuator
+
+自动刷新：依赖rabbitmq完成，post去触发config服务器的bus-refresh端点完成全局通知s
+
+![](../../images/share/microservice/springcloud/config-mq.png)
+
+
+## 9. 链路跟踪
+
+### 9.1 Sleuth
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-sleuth</artifactId>
+</dependency>
+```
+
+```yml
+logging:
+  level:
+    root: INFO
+      org.springframework.web.servlet.DispatcherServlet: DEBUG
+      org.springframework.cloud.sleuth: DEBUG
+```
+
+### 9.2 Zipkin
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-zipkin</artifactId>
+</dependency>
+```
+
+```yml
+spring:
+   zipkin:
+      base-url: http://debug-registry:9411/ #zipkin server的请求地址
+      discoveryClientEnabled: false #让nacos把它当成一个URL，而不要当做服务名
+   sleuth:
+      sampler:
+         probability: 1.0 #采样的百分比
+```
+
+### 9.3 Zipkin+RabbitMQ
+
+```bash
+java -jar zipkin-server-2.12.9-exec.jar --RABBIT_ADDRESSES=127.0.0.1:5672
+```
+
+客户端配置
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-sleuth</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-zipkin</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-sleuth-zipkin</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.amqp</groupId>
+    <artifactId>spring-rabbit</artifactId>
+</dependency>
+
+```
+
+```yml
+  zipkin:
+    base-url: http://127.0.0.1:9411/  #zipkin server的请求地址
+    sender:
+      type: rabbit
+      type: web  #请求方式,默认以http的方式向zipkin server发送追踪数据
+  sleuth:
+    sampler:
+      probability: 1.0  #采样的百分比
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:  #这里配置了重试策略
+      direct:
+        retry:
+          enabled: true
+      simple:
+        retry:
+          enabled: true
+```
+### 9.4 存储跟踪数据
+
+可以从官网找到Zipkin Server持久mysql的数据库脚本
+
+```sql
+/*
+SQLyog Ultimate v11.33 (64 bit)
+MySQL - 5.5.58 : Database - zipkin
+*********************************************************************
+*/
+
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`zipkin` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `zipkin`;
+
+/*Table structure for table `zipkin_annotations` */
+
+DROP TABLE IF EXISTS `zipkin_annotations`;
+
+CREATE TABLE `zipkin_annotations` (
+  `trace_id_high` bigint(20) NOT NULL DEFAULT '0' COMMENT 'If non zero, this means the trace uses 128 bit traceIds instead of 64 bit',
+  `trace_id` bigint(20) NOT NULL COMMENT 'coincides with zipkin_spans.trace_id',
+  `span_id` bigint(20) NOT NULL COMMENT 'coincides with zipkin_spans.id',
+  `a_key` varchar(255) NOT NULL COMMENT 'BinaryAnnotation.key or Annotation.value if type == -1',
+  `a_value` blob COMMENT 'BinaryAnnotation.value(), which must be smaller than 64KB',
+  `a_type` int(11) NOT NULL COMMENT 'BinaryAnnotation.type() or -1 if Annotation',
+  `a_timestamp` bigint(20) DEFAULT NULL COMMENT 'Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp',
+  `endpoint_ipv4` int(11) DEFAULT NULL COMMENT 'Null when Binary/Annotation.endpoint is null',
+  `endpoint_ipv6` binary(16) DEFAULT NULL COMMENT 'Null when Binary/Annotation.endpoint is null, or no IPv6 address',
+  `endpoint_port` smallint(6) DEFAULT NULL COMMENT 'Null when Binary/Annotation.endpoint is null',
+  `endpoint_service_name` varchar(255) DEFAULT NULL COMMENT 'Null when Binary/Annotation.endpoint is null',
+  UNIQUE KEY `trace_id_high` (`trace_id_high`,`trace_id`,`span_id`,`a_key`,`a_timestamp`) COMMENT 'Ignore insert on duplicate',
+  KEY `trace_id_high_2` (`trace_id_high`,`trace_id`,`span_id`) COMMENT 'for joining with zipkin_spans',
+  KEY `trace_id_high_3` (`trace_id_high`,`trace_id`) COMMENT 'for getTraces/ByIds',
+  KEY `endpoint_service_name` (`endpoint_service_name`) COMMENT 'for getTraces and getServiceNames',
+  KEY `a_type` (`a_type`) COMMENT 'for getTraces',
+  KEY `a_key` (`a_key`) COMMENT 'for getTraces',
+  KEY `trace_id` (`trace_id`,`span_id`,`a_key`) COMMENT 'for dependencies job'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED;
+
+/*Data for the table `zipkin_annotations` */
+
+/*Table structure for table `zipkin_dependencies` */
+
+DROP TABLE IF EXISTS `zipkin_dependencies`;
+
+CREATE TABLE `zipkin_dependencies` (
+  `day` date NOT NULL,
+  `parent` varchar(255) NOT NULL,
+  `child` varchar(255) NOT NULL,
+  `call_count` bigint(20) DEFAULT NULL,
+  UNIQUE KEY `day` (`day`,`parent`,`child`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED;
+
+/*Data for the table `zipkin_dependencies` */
+
+/*Table structure for table `zipkin_spans` */
+
+DROP TABLE IF EXISTS `zipkin_spans`;
+
+CREATE TABLE `zipkin_spans` (
+  `trace_id_high` bigint(20) NOT NULL DEFAULT '0' COMMENT 'If non zero, this means the trace uses 128 bit traceIds instead of 64 bit',
+  `trace_id` bigint(20) NOT NULL,
+  `id` bigint(20) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `parent_id` bigint(20) DEFAULT NULL,
+  `debug` bit(1) DEFAULT NULL,
+  `start_ts` bigint(20) DEFAULT NULL COMMENT 'Span.timestamp(): epoch micros used for endTs query and to implement TTL',
+  `duration` bigint(20) DEFAULT NULL COMMENT 'Span.duration(): micros used for minDuration and maxDuration query',
+  UNIQUE KEY `trace_id_high` (`trace_id_high`,`trace_id`,`id`) COMMENT 'ignore insert on duplicate',
+  KEY `trace_id_high_2` (`trace_id_high`,`trace_id`,`id`) COMMENT 'for joining with zipkin_annotations',
+  KEY `trace_id_high_3` (`trace_id_high`,`trace_id`) COMMENT 'for getTracesByIds',
+  KEY `name` (`name`) COMMENT 'for getTraces and getSpanNames',
+  KEY `start_ts` (`start_ts`) COMMENT 'for getTraces ordering and range'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED;
+
+/*Data for the table `zipkin_spans` */
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+```
+
+```bash
+java -jar zipkin-server-2.12.9-exec.jar --STORAGE_TYPE=mysql --MYSQL_HOST=127.0.0.1 --MYSQL_TCP_PORT=3306 --MYSQL_DB=zipkin --MYSQL_USER=root --MYSQL_PASS=111111
+```
+
+- STORAGE_TYPE : 存储类型
+- MYSQL_HOST： mysql主机地址
+- MYSQL_TCP_PORT：mysql端口
+- MYSQL_DB： mysql数据库名称
+- MYSQL_USER：mysql用户名
+- MYSQL_PASS ：mysql密码
+
+
+## 10. 开源配置中心Apollo
+
+Apollo（阿波罗）是携程框架部门研发的分布式配置中心，通过官网提供的[下载](https://github.com/nobodyiam/apollo-build-scripts)连接下载安装包
+
+```xml
+<dependency>
+    <groupId>com.ctrip.framework.apollo</groupId>
+    <artifactId>apollo-client</artifactId>
+    <version>1.1.0</version>
+</dependency>
+```
+
+```yml
+apollo:
+  bootstrap:
+    enabled: true
+  meta: http://debug-registry:8080
+app:
+  id: platform-search
+```

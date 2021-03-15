@@ -1,6 +1,6 @@
 # 消息队列
 
-## RocketMq
+## RocketMQ
 
 Zookeeper集群分布式、主从,支持顺序，延时，事务消息，支持查询重试
 
@@ -8,6 +8,6 @@ Zookeeper集群分布式、主从,支持顺序，延时，事务消息，支持�
 
 Name Server分布式、主从
 
-## RabbitMq
+## RabbitMQ
 
 Erlang集群主从

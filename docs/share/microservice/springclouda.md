@@ -27,3 +27,24 @@ spring:
             data-type: json
             rule-type: flow
 ```
+
+## 2. Nacos动态服务发现、配置管理
+
+## 3. RocketMQ
+
+[消息队列/RocketMQ](/share/distributed/mq?id=rocketmq)
+
+## 4. Dubbo：Apache Dubbo
+
+[Dubbo源码解析](/share/distributed/dubbo)
+
+
+## 5. Seata高性能微服务分布式事务解决方案
+
+## 6. Alibaba Cloud ACM
+
+## 7. Alibaba Cloud OSS
+
+## 8. Alibaba Cloud SchedulerX
+
+## 9. Alibaba Cloud SMS
