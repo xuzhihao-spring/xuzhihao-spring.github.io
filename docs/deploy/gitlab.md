@@ -157,13 +157,41 @@ git push origin dev
 
 ### 3.7 其他常用命令
 
+1. Git全局设置
 ```bash
-# 切换到dev分支
-git checkout dev
-# 查看本地仓库文件状况
-git status
-# 查看本地所有分支
-git branch
-# 查看提交记录
-git log
+git config --global user.name "zhangsan"
+git config --global user.email "xcg992224@163.com"
+```
+
+2. 创建仓库
+```bash
+git clone http://172.17.17.50:82/vjsp/web_demo.git
+cd web_demo
+touch README.md
+git add README.md
+git commit -m "add README"
+```
+
+3. 推送现有文件夹
+```bash
+cd existing_folder
+git init
+git remote add origin http://172.17.17.50:82/vjsp/web_demo.git
+git add .
+git commit -m "Initial commit"
+```
+
+4. 本地代码推送到仓库
+```bash
+cd existing_repo
+git remote rename origin old-origin
+git remote add origin http://172.17.17.50:82/vjsp/web_demo.git
+```
+
+5. 其他
+```bash
+git checkout dev # 切换到dev分支
+git status # 查看本地仓库文件状况
+git branch # 查看本地所有分支
+git log # 查看提交记录
 ```
