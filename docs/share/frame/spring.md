@@ -1,8 +1,95 @@
 # Spring的底层原理与源码实现
 
-## 1. 常用注解
+## 1. Spring核心体系结构
 
-### 1.1 @Import
+### 1.1 Spring核心知识点
+
+![](../../images/share/frame/spring/spring.png)
+
+### 1.2 Bean的生命周期原理详解与源码分析
+
+![](../../images/share/frame/spring/bean.png)
+
+### 1.3 依赖注入的工作流程
+
+![](../../images/share/frame/spring/ioc.png)
+
+#### 1.3.1 依赖注入方式到底有几种？
+
+1. 手动注入
+   - setter注入
+   - 构造器注入
+
+```java
+public class UserService{
+
+	private OrderService orderService;//必须提供set方法
+
+	public void setOrderService(OrderService orderService){
+		this.orderService = orderService;
+	}
+	public void test(){
+		System.out.println(orderService);
+	}
+}
+```
+
+```xml
+<bean id="userService" class="com.xuzhihao.service.UserService"></bean>
+
+<bean id="orderService" class="com.xuzhihao.service.OrderService">
+	<property name="userService" ref="userService"></property> //第一种setter注入
+	<constructor-arg index="0" ref="userService"></constructor-arg>    //第二种方式注入属性值
+</bean>
+
+```
+1. 自动注入
+   - XML自动注入
+     - setter注入
+     - 构造器注入
+   - @Autowired注解的自动注入
+     - 属性
+     - 构造方法
+     - 普通方法
+
+```java
+public class UserService{
+
+	// @Autowired
+	private OrderService orderService;//必须提供set方法
+
+	public void setOrderService(OrderService orderService){
+		this.orderService = orderService;
+	}
+	public void test(){
+		System.out.println(orderService);
+	}
+}
+```
+
+```xml
+<bean id="userService" class="com.xuzhihao.service.UserService"></bean>
+
+<bean id="orderService" class="com.xuzhihao.service.OrderService" autowird="byName">
+</bean>
+
+```
+
+
+
+
+
+### 1.4 BeanFactory架构
+
+![](../../images/share/frame/spring/beanfactory.png)
+
+### 1.4 事务隔离级别
+
+![](../../images/share/frame/spring/transaction.png)
+
+## 2. 常用注解
+
+### 2.1 @Import
 
 实现ImportSelector接口是springboot自动装配的核心原来
 
@@ -116,24 +203,3 @@ System.out.println(ac.getBean("Stock2"));
 
 ```
 
-
-
-## 1. Spring核心知识点
-
-![](../../images/share/frame/spring/spring.png)
-
-## 2. Bean的生命周期原理详解与源码分析
-
-![](../../images/share/frame/spring/bean.png)
-
-## 3. 依赖注入的工作流程
-
-![](../../images/share/frame/spring/ioc.png)
-
-## 4. BeanFactory架构
-
-![](../../images/share/frame/spring/beanfactory.png)
-
-## 4. 事务隔离级别
-
-![](../../images/share/frame/spring/transaction.png)
