@@ -58,25 +58,30 @@ eureka信息查看 get: {ip:port}/eureka/status
 
 注册到eureka的具体的服务查看
 >get: {ip:port}/eureka/apps/{appname}/{id}
+<br>
 >对应eureka源码的：InstanceResource.getInstanceInfo
 
 
 服务续约
 >put：{ip:port}/eureka/apps/{appname}/{id}?lastDirtyTimestamp={}&status=up
+<br>
 >对应eureka源码的：InstanceResource.renewLease
 
 
 更改服务状态
 >put：{ip:port}/eureka/apps/{appname}/{id}/status?lastDirtyTimestamp={}&value={UP/DOWN}
+<br>
 >对应eureka源码的：InstanceResource.statusUpdate
 
 
 删除状态更新
 >delete：{ip:port}/eureka/apps/{appname}/{id}/status?lastDirtyTimestamp={}&value={UP/DOWN}
+<br>
 >对应eureka源码的：InstanceResource.deleteStatusUpdate
 
 删除服务
 >delete: {ip:port}/eureka/apps/{appname}/{id}
+<br>
 >对应eureka源码的：InstanceResource.cancelLease
 
 

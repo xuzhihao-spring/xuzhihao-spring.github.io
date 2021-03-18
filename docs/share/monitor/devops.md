@@ -53,14 +53,12 @@ firewall-cmd --reload
 
 2. 下载jenkins安装
 
-下载页面：https://jenkins.io/zh/download/
-
-安装文件：jenkins-2.190.3-1.1.noarch.rpm
+下载页面：https://mirrors.tuna.tsinghua.edu.cn/jenkins/redhat/jenkins-2.282-1.1.noarch.rpm
 
 ```bash
 rpm -qa |grep jenkins
-rpm -e --nodeps jenkins-2.190.3-1.1.noarch
-rpm -ivh jenkins-2.190.3-1.1.noarch.rpm
+rpm -e --nodeps jenkins-2.282-1.1.noarch
+rpm -ivh jenkins-2.282-1.1.noarch.rpm
 ```
 
 3. 修改Jenkins配置
@@ -105,3 +103,323 @@ systemctl restart jenkins
 
 安装Role-based Authorization Strategy插件，开启权限全局安全配置，授权策略切换为"Role-Based Strategy"，创建角色
 
+![](../../images/share/monitor/devops/jenkins_role1.png)
+
+![](../../images/share/monitor/devops/jenkins_role2.png)
+
+
+### 1.5 Jenkins凭证管理
+
+#### 1.5.1 安装Credentials Binding插件
+
+![](../../images/share/monitor/devops/jenkins_secret.png)
+
+#### 1.5.2 安装Git插件和Git工具
+
+![](../../images/share/monitor/devops/jenkins_git.png)
+
+```bash
+yum install git -y
+```
+
+#### 1.5.3 用户密码类型凭证
+
+![](../../images/share/monitor/devops/jenkins_git2.png)
+
+
+代码的构建目录
+> /var/lib/jenkins/workspace
+
+#### 1.5.4 SSH密钥类型凭证
+
+![](../../images/share/monitor/devops/jenkins_ssh.png)
+
+1. gitlab服务器使用root用户生成公钥和私钥在/root/.ssh/目录
+
+> ssh-keygen -t rsa
+
+id_rsa：私钥文件
+
+id_rsa.pub：公钥文件
+
+2. 把生成的公钥放在Gitlab中
+
+![](../../images/share/monitor/devops/jenkins_git_secret.png)
+
+3. 在Jenkins中添加凭证，配置私钥
+
+![](../../images/share/monitor/devops/jenkins_git_ssh.png)
+
+### 1.6 Maven安装和配置
+
+#### 1.6.1 Maven安装
+
+```bash
+tar -xzf apache-maven-3.6.2-bin.tar.gz #解压
+mkdir -p /opt/maven #创建目录
+mv apache-maven-3.6.2/* /opt/maven #移动文件
+
+vi /etc/profile
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+export MAVEN_HOME=/opt/maven
+export PATH=$PATH:$JAVA_HOME/bin:$MAVEN_HOME/bin
+
+source /etc/profile #配置生效
+mvn -v #查找Maven版本
+```
+
+#### 1.6.2 全局工具配置关联
+
+JDK配置
+![](../../images/share/monitor/devops/jenkins_jdk.png)
+
+Maven配置
+![](../../images/share/monitor/devops/jenkins_maven.png)
+
+添加Jenkins全局变量
+![](../../images/share/monitor/devops/jenkins_env.png)
+
+修改Maven的settings.xml
+
+```bash
+mkdir /root/repo #仓库目录
+vi /opt/maven/conf/settings.xml
+```
+
+```xml
+<localRepository>/root/repo/</localRepository>
+
+<mirrors>
+    <mirror>
+            <id>nexus-aliyun</id>
+            <mirrorOf>*,!jeecg,!jeecg-snapshots</mirrorOf>
+            <name>Nexus aliyun</name>
+            <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+    </mirror>
+</mirrors>
+```
+
+测试Maven是否配置成功
+
+> mvn clean package
+
+![](../../images/share/monitor/devops/jenkins_mvn_build.png)
+
+![](../../images/share/monitor/devops/jenkins_mvn_suc.png)
+
+
+### 1.7 Tomcat安装和配置
+
+#### 1.7.1 安装Tomcat8.5.47
+
+```bash
+yum install java-1.8.0-openjdk* -y #安装JDK
+tar -xzf apache-tomcat-8.5.47.tar.gz #解压
+mkdir -p /opt/tomcat 创建目录
+mv /root/apache-tomcat-8.5.47/* /opt/tomcat #移动
+/opt/tomcat/bin/startup.sh #启动
+```
+
+#### 1.7.2 配置Tomcat用户角色权限
+
+> vi /opt/tomcat/conf/tomcat-users.xml
+
+```xml
+<tomcat-users>
+    <role rolename="tomcat"/>
+    <role rolename="role1"/>
+    <role rolename="manager-script"/>
+    <role rolename="manager-gui"/>
+    <role rolename="manager-status"/>
+    <role rolename="admin-gui"/>
+    <role rolename="admin-script"/>
+    <user username="tomcat" password="tomcat" roles="manager-gui,manager-script,tomcat,admin-gui,admin-script"/>
+</tomcat-users>
+```
+
+> vi /opt/tomcat/webapps/manager/META-INF/context.xml
+
+掉注释
+```xml
+<!--
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+-->
+```
+
+## 2. Jenkins构建Maven项目
+
+### 2.1 自由风格软件项目（FreeStyle Project）
+
+> 拉取代码->编译->打包->部署
+
+![](../../images/share/monitor/devops/jenkins_free_build.png)
+
+```bash
+echo "开始编译和打包"
+mvn clean package
+echo "编译和打包结束"
+```
+
+安装 Deploy to container插件
+
+![](../../images/share/monitor/devops/jenkins_tomcat_auth.png)
+
+![](../../images/share/monitor/devops/jenkins_tomcat_build.png)
+
+### 2.2 Maven项目（Maven Project）
+
+安装Maven Integration插件
+
+拉取代码和远程部署的过程和自由风格项目一样，只是"构建"部分不同
+
+![](../../images/share/monitor/devops/jenkins_maven_build.png)
+
+
+### 2.3 流水线项目（Pipeline Project）
+
+- Pipeline 脚本是由 Groovy 语言实现的
+- Pipeline 支持两种语法：Declarative(声明式)和 Scripted Pipeline(脚本式)语法
+- Pipeline 也有两种创建方法：可以直接在 Jenkins 的 Web UI 界面中输入脚本；也可以通过创建一个 Jenkinsfile 脚本文件放入项目源码库中（一般我们都推荐在 Jenkins 中直接从源代码控制(SCM)中直接载入 Jenkinsfile Pipeline 这种方法）。
+
+#### 2.3.1 Declarative声明式-Pipeline
+
+安装 Pipeline 插件
+
+> 流水线->选择HelloWorld模板
+
+```shell
+pipeline {
+   agent any
+
+   stages {
+      stage('代码拉取') {
+         steps {
+            checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: '282b054d-d655-471e-96af-e7231c2386e3', url: 'git@172.17.17.50:vjsp/web_demo.git']]])
+         }
+      }
+      stage('编译构建') {
+         steps {
+            sh 'mvn clean package'
+         }
+      }
+      stage('项目部署') {
+         steps {
+            deploy adapters: [tomcat8(credentialsId: 'f303f062-1ef0-4a1c-969b-972bb57244a2', path: '', url: 'http://172.17.17.80:8080')], contextPath: '/cms003_p01', war: 'target/*.war'
+         }
+      }
+   }
+}
+```
+
+stages：代表整个流水线的所有执行阶段。通常stages只有1个，里面包含多个stage
+
+stage：代表流水线中的某个阶段，可能出现n个。一般分为拉取代码，编译构建，部署等阶段。
+
+steps：代表一个阶段内需要执行的逻辑。steps里面是shell脚本，git拉取代码，ssh远程发布等任意内容。
+
+
+
+#### 2.3.2 Scripted Pipeline脚本式-Pipeline
+
+```shell
+node {
+    def mvnHome
+    stage('拉取代码') { // for display purposes
+        echo '拉取代码'
+    }
+    stage('编译构建') {
+        echo '编译构建'
+    }
+    stage('项目部署') {
+        echo '项目部署'
+    }
+}
+```
+Node：节点，一个 Node 就是一个 Jenkins 节点，Master 或者 Agent，是执行 Step 的具体运行环境，后续讲到Jenkins的Master-Slave架构的时候用到。
+
+Stage：阶段，一个 Pipeline 可以划分为若干个 Stage，每个 Stage 代表一组操作，比如：Build、Test、Deploy，Stage 是一个逻辑分组的概念。
+
+Step：步骤，Step 是最基本的操作单元，可以是打印一句话，也可以是构建一个 Docker 镜像，由各类 Jenkins 插件提供，比如命令：sh ‘make’，就相当于我们平时 shell 终端中执行 make 命令
+一样。
+
+
+#### 2.3.3 Pipeline Script from SCM
+
+在项目根目录建立Jenkinsfile文件，把内容复制到该文件中并上传到Gitlab
+
+```shell
+pipeline {
+   agent any
+
+   stages {
+      stage('代码拉取') {
+         steps {
+            checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: '282b054d-d655-471e-96af-e7231c2386e3', url: 'git@172.17.17.50:vjsp/web_demo.git']]])
+         }
+      }
+      stage('编译构建') {
+         steps {
+            sh 'mvn clean package'
+         }
+      }
+      stage('项目部署') {
+         steps {
+            deploy adapters: [tomcat8(credentialsId: 'f303f062-1ef0-4a1c-969b-972bb57244a2', path: '', url: 'http://172.17.17.80:8080')], contextPath: '/cms003S', war: 'target/*.war'
+         }
+      }
+   }
+}
+```
+
+![](../../images/share/monitor/devops/jenkins_scm.png)
+
+
+### 2.4 常用的构建触发器
+
+#### 2.4.1 触发远程构建
+
+![](../../images/share/monitor/devops/jenkins_build_triger1.png)
+
+触发构建url：http://172.17.17.50:8888/job/cms003_SCM/build?token=xuzhihao
+
+
+#### 2.4.2 其他工程构建后触发
+
+#### 2.4.3 定时构建（Build periodically）
+
+#### 2.4.4 轮询SCM（Poll SCM）
+
+#### 2.4.5 Git hook自动触发构建(*)
+
+利用Gitlab的webhook实现代码push到仓库，立即触发项目自动构建
+
+安装插件：Gitlab Hook和GitLab
+
+
+### 2.5 Jenkins的参数化构建
+
+![](../../images/share/monitor/devops/jenkins_build_param.png)
+
+![](../../images/share/monitor/devops/jenkins_build_param2.png)
+
+![](../../images/share/monitor/devops/jenkins_build_withparam.png)
+
+
+### 2.6 配置邮箱服务器发送构建结果
+
+安装Email Extension Template插件
+
+Jenkins设置邮箱相关参数
+
+> Manage Jenkins->Configure System
+
+![](../../images/share/monitor/devops/jenkins_main_admin.png)
+
+> 邮件相关全局参数参考列表系统设置->Extended E-mail Notification->Content Token Reference，点击旁边的?号
+
+### 2.7 SonarQube代码审查
+
+#### 2.7.1 安装SonarQube
+
+#### 2.7.2 代码审查配置
