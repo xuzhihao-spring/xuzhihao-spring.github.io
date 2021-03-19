@@ -206,7 +206,7 @@ EOF"
 
 ## 7.调试 proc-debug.sh
 
-```bash
+```shell
 #!/bin/bash
 starttime=`date +'%Y-%m-%d %H:%M:%S'`
 echo '开始执行时间-'$starttime >> /data/kh_shell/proc_debug.log
@@ -214,13 +214,8 @@ echo '开始执行时间-'$starttime >> /data/kh_shell/proc_debug.log
 su - oracle -c "sqlplus VJSP_JSWZ_190601/wzld9999<< EOF
 var a1 VARCHAR2;
 var a2 VARCHAR2;
-var a3 VARCHAR2;
-var a4 VARCHAR2;
-var a5 VARCHAR2;
-var a6 VARCHAR2;
-var a7 VARCHAR2;
-var V8 refcursor;
-CALL PROC_WZCHECK_COUNT_BY_MONTH(:a1,:a2,:a3,:a4,:a5,:a6,:a7,:V8);
+var V3 refcursor;
+CALL PROC_WZCHECK_COUNT_BY_MONTH(:a1,:a2,:V3);
 commit;
 disconnect
 quit
@@ -228,49 +223,48 @@ EOF"
 
 etime=`date +'%Y-%m-%d %H:%M:%S'`
 echo 'PROC_WZCHECK_COUNT_BY_MONTH完成时间-'$etime >> /data/kh_shell/proc_debug.log
-########################################################
-su - oracle -c "sqlplus VJSP_JSWZ_190601/wzld9999<< EOF
-var a1 VARCHAR2;
-var a2 VARCHAR2;
-var a3 VARCHAR2;
-var a4 VARCHAR2;
-var a5 VARCHAR2;
-var a6 VARCHAR2;
-var a7 VARCHAR2;
-var V8 refcursor;
-CALL PROC_WZCHECK_COUNT_BY_MONTH_SQ(:a1,:a2,:a3,:a4,:a5,:a6,:a7,:V8);
-commit;
-disconnect
-quit
-EOF"
+```
 
-etime=`date +'%Y-%m-%d %H:%M:%S'`
-echo 'PROC_WZCHECK_COUNT_BY_MONTH_SQ完成时间-'$etime >> /data/kh_shell/proc_debug.log
-########################################################
-su - oracle -c "sqlplus VJSP_JSWZ_190601/wzld9999<< EOF
-var a1 VARCHAR2;
-var a2 VARCHAR2;
-var a3 VARCHAR2;
-var a4 VARCHAR2;
-var a5 VARCHAR2;
-var a6 VARCHAR2;
-var a7 VARCHAR2;
-var V8 refcursor;
-CALL PROC_WZCHECK_COUNT_BY_MONTH_WG(:a1,:a2,:a3,:a4,:a5,:a6,:a7,:V8);
-commit;
-disconnect
-quit
-EOF"
+```sql
+CREATE OR REPLACE PROCEDURE PROC_WZCHECK_COUNT_BY_MONTH(USERID    OUT VARCHAR2,
+                                                   USERTYPE  OUT VARCHAR2,
+                                                   V_OUTLIST OUT SYS_REFCURSOR) AS
 
-etime=`date +'%Y-%m-%d %H:%M:%S'`
-echo 'PROC_WZCHECK_COUNT_BY_MONTH_WG完成时间-'$etime >> /data/kh_shell/proc_debug.log
+  V_STR VARCHAR2(800);
+  V_DATE    DATE;
+  V_NUM    NUMBER; ---回访数
+BEGIN
+  OPEN V_OUTLIST FOR
+    SELECT * FROM EMP;
+END;
 
 ```
 
-## 8.
+## 8.创建用户
 
-## 8.
+```sql
+-- Create the user 
+create user ORAC_XUZHIHAO identified by 123456
+  default tablespace USERS
+  temporary tablespace TEMP
+  profile DEFAULT
+  password  expire;
+  
+-- Grant/Revoke role privileges 
+grant aq_administrator_role to  ORAC_XUZHIHAO  with admin option;
+grant connect to ORAC_XUZHIHAO  with admin option;
+grant dba to ORAC_XUZHIHAO  with admin option;
+grant mgmt_user to ORAC_XUZHIHAO  with admin option;
+grant resource to ORAC_XUZHIHAO  with admin option;
+-- Grant/Revoke system privileges 
+grant create materialized view to ORAC_XUZHIHAO  with admin option;
+grant create table to ORAC_XUZHIHAO  with admin option;
+grant debug any procedure to ORAC_XUZHIHAO  with admin option;
+grant debug connect session to ORAC_XUZHIHAO  with admin option;
+grant global query rewrite to ORAC_XUZHIHAO  with admin option;
+grant select any table to ORAC_XUZHIHAO  with admin option;
+grant unlimited tablespace to ORAC_XUZHIHAO  with admin option;
 
-## 8.
+```
 
-## 8.
+## 9.

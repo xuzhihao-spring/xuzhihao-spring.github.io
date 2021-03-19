@@ -73,6 +73,8 @@ docker cp [local_path] rabbitmq:/[container_path]/
 docker cp [local_path] rabbitmq:/[container_path]
 ## 挂载宿主机的一个目录
 docker run -it -v /[local_path]:/[container_path] [imageid] /bin/bash
+## 修改容器自动启动
+docker update --restart=always [container_id]
 ```
 
 ## 8. 生成镜像

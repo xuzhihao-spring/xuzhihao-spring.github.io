@@ -1,6 +1,6 @@
 # Linux基于Docker部署
 
-## 1. Docker环境安装
+## 1. Docker
 
 - 安装yum-utils：
 
@@ -26,26 +26,26 @@ yum install docker-ce
 systemctl start docker
 ```
 
-## 2. Fastdfs安装
+## 2. Fastdfs
 
 ```bash
 netstat -unltp | grep fdfs  #检测fdfs
 docker run -dti --network=host --name tracker -v /var/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
 docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /var/fdfs/storage:/var/fdfs delron/fastdfs storage
 ```
-## 3. Zookeeper安装
+## 3. Zookeeper
 
 ```bash
 docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
 ```
 
-## 4. Dubbo-admin安装
+## 4. Dubbo-admin
 
 ```bash
 docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 -e dubbo.admin.root.password=root -e dubbo.admin.guest.password=guest chenchuxin/dubbo-admin 
 ```
 
-## 5. Portainer安装
+## 5. Portainer
 
 ```bash
 docker run -p 9000:9000 -p 8000:8000 --name portainer \
@@ -65,7 +65,7 @@ systemctl restart docker #重启docker
 ![](../images/deploy/docker/5.portainer.png)
 
 
-## 6. MinIO安装
+## 6. MinIO
 默认Access Key和Secret都是minioadmin
 
 ```bash
@@ -75,7 +75,7 @@ docker run -p 9090:9000 --name minio \
   -d minio/minio server /data
 ```
 
-## 7. nginx-fancyindex安装
+## 7. nginx-fancyindex
 
 ```bash
 docker run -d \
@@ -90,25 +90,25 @@ docker run -d \
   80x86/nginx-fancyindex
 ```
 
-## 8. activemq安装
+## 8. activemq
 
 ```bash
-docker run -d --name activemq2 -p 61616:61616 -p 8161:8161 webcenter/activemq
+docker run -d --name activemq -p 61616:61616 -p 8161:8161 webcenter/activemq
 ```
 
-## 9. zipkin安装
+## 9. zipkin
 
 ```bash
-docker run -d -p  9411:9411 openzipkin/zipkin:2.17.2
+docker run -d --name zipkin -p  9411:9411 openzipkin/zipkin
 ```
 
-## 10. Kafka安装
+## 10. Kafka
 
 ```bash
 docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 --link zookeeper -e 	KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -t wurstmeister/kafka
 ```
 
-## 11. MySQL安装
+## 11. MySQL
 
 - 下载MySQL`5.7`的docker镜像：
 
@@ -177,7 +177,7 @@ source /shop.sql;
 grant all privileges on *.* to 'reader' @'%' identified by '123456';
 ```
 
-## 12. Redis安装
+## 12. Redis
 
 - 下载Redis`5.0`的docker镜像：
 
@@ -201,7 +201,7 @@ docker exec -it redis redis-cli
 
 ![](../images/deploy/docker/mall_linux_deploy_01.png)
 
-## 13. Nginx安装
+## 13. Nginx
 
 - 下载Nginx`1.10`的docker镜像：
 
@@ -247,7 +247,7 @@ docker run -p 80:80 -p 443:443 --name nginx \
 -d nginx:1.10
 ```
 
-## 14. RabbitMQ安装
+## 14. RabbitMQ
 
 - 下载rabbitmq`3.7.15`的docker镜像：
 
@@ -299,7 +299,7 @@ firewall-cmd --reload
 
 ![](../images/deploy/docker/mall_linux_deploy_07.png)
 
-## 15. Elasticsearch安装
+## 15. Elasticsearch
 
 - 下载Elasticsearch`7.6.2`的docker镜像：
 
@@ -350,7 +350,7 @@ firewall-cmd --reload
 
 ![](../images/deploy/docker/mall_linux_deploy_08.png)
 
-## 16. Logstash安装
+## 16. Logstash
 
 - 下载Logstash`7.6.2`的docker镜像：
 
@@ -390,7 +390,7 @@ docker run --name logstash -p 4560:4560 -p 4561:4561 -p 4562:4562 -p 4563:4563 \
 logstash-plugin install logstash-codec-json_lines
 ```
 
-## 17. Kibana安装
+## 17. Kibana
 
 - 下载Kibana`7.6.2`的docker镜像：
 
@@ -417,7 +417,7 @@ firewall-cmd --reload
 
 ![](../images/deploy/docker/mall_linux_deploy_09.png)
 
-## 18. MongoDB安装
+## 18. MongoDB
 
 - 下载MongoDB`4.2.5`的docker镜像：
 
@@ -433,7 +433,7 @@ docker run -p 27017:27017 --name mongo \
 -d mongo:4.2.5
 ```
 
-## 19. Openfire安装
+## 19. Openfire
 ```bash
 docker pull gizmotronic/openfire
 
@@ -446,7 +446,7 @@ docker run --name openfire -d --restart=always \
 ![](../images/deploy/docker/19.openfire.png)
 
 
-## 20. eclipse/che安装
+## 20. eclipse/che
 
 http://ip:8080
 
@@ -461,7 +461,7 @@ eclipse/che start
 
 ![](../images/deploy/docker/20.eclipse-che.png)
 
-## 21. Theia安装
+## 21. Theia
 
 ```bash
 docker pull theiaide/theia-full
@@ -471,7 +471,7 @@ docker run -d -it --init -p 3000:3000 -v "/mydata/vscode:/home/project:cached" t
 ![](../images/deploy/docker/21.Theia.png)
 
 
-## 22. Nexus3安装
+## 22. Nexus3
 
 ```bash
 docker pull sonatype/nexus3
@@ -481,7 +481,7 @@ docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sona
 
 ![](../images/deploy/docker/22.Nexus3.png)
 
-## 23. 项目管理zentao
+## 23. zentao
 
 ```bash
 mkdir -p /data/zbox
@@ -495,7 +495,7 @@ docker run -d -p 8080:80 -p 3316:3306 -e USER="admin" -e PASSWD="admin" -e BIND_
 - PASSWD 设置登录密码 123456
 - BIND_ADDRESS 设置为false
 
-## 24. Registry部署
+## 24. Registry
 
 修改Docker Daemon的配置文件，文件位置为/etc/docker/daemon.json，由于Docker默认使用HTTPS推送镜像，而我们的镜像仓库没有支持，所以需要添加如下配置，改为使用HTTP推送
 
@@ -521,4 +521,43 @@ docker run -p 8280:80 --name registry-ui \
 -e DELETE_IMAGES="true" \
 -e REGISTRY_TITLE="Registry2" \
 -d joxit/docker-registry-ui:static
+```
+
+## 24. postgres
+
+```bash
+docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
+docker run --name postgres -e POSTGRES_PASSWORD=123456 -d -p 54321:5432 -v /etc/data/pgdata:/var/lib/postgresql/data-d postgres
+默认用户：postgres 密码：POSTGRES_PASSWORD
+
+/var/lib/postgresql/data  #镜像的data目录
+/usr/lib/postgresql/??/bin #进入postgresql的工具目录
+psql -Upostgres # 连接数据库
+
+-it -d 这两个参数一般同时使用，保证 container 以交互的方式在后台运行。
+--rm 这个参数是指在 container 停止时自动将 container 删除。
+--name 你在使用 docker ps 命令时看到的 container 的名字。
+-e POSTGRES_USER=dbuser 这个是设置 container 中的环境变量用的参数，指的是设计数据库用户为 dbuser 。之后登录数据库时就是使用这个用户名。
+-e POSTGRES_PASSWORD=password 同上，也是设置 container 中的环境变量，这个是设置你登录数据库的密码，这里设置的密码为"password"。
+-e POSTGRES_DB=testdb 同上，初始化一个新的数据库，其名字为 testdb。
+-p 5432:5432 这个是将主机的端口与 container 暴露的端口进行映射。其格式为 -p 主机端口: container 端口。即 : 前为主机端口，后为 container 端口。
+-v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
+```
+
+## 24. sonarqube
+
+```bash
+docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.6-community #H2默认存储
+
+#postgres外挂存储
+docker run -d --name sonarqube \
+    --link postgres2 \
+    -p 9000:9000 \
+    -e sonar.jdbc.url=jdbc:postgresql://172.17.17.80:5432/sonardb \
+    -e sonar.jdbc.username=sonar \
+    -e sonar.jdbc.password=123456 \
+    -v /data/sonarqube/sonarqube_extensions:/opt/sonarqube/extensions \
+    -v /data/sonarqube/sonarqube_logs:/opt/sonarqube/logs \
+    -v /data/sonarqube/sonarqube_data:/opt/sonarqube/data \
+    sonarqube:8.6-community
 ```

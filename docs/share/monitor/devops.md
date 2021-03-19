@@ -422,4 +422,80 @@ Jenkins设置邮箱相关参数
 
 #### 2.7.1 安装SonarQube
 
+解压sonar，并设置权限
+
+```bash
+unzip sonarqube-6.7.4.zip #解压
+mkdir /opt/sonar #创建目录
+mv sonarqube-6.7.4/* /opt/sonarqube-6.7.4 #移动文件
+useradd sonar #创建sonar用户，必须sonar用于启动，否则报错
+chown -R sonar. /opt/sonarqube-6.7.4 #更改sonar目录及文件权限
+```
+
+修改sonar配置文件
+
+> vi /opt/sonarqube-6.7.4/conf/sonar.properties
+
+```
+sonar.jdbc.username=root 
+sonar.jdbc.password=root
+sonar.jdbc.url=jdbc:mysql://172.17.17.80:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
+```
+
+启动sonar
+
+```bash
+cd /opt/sonarqube-6.7.4
+su sonar /opt/sonarqube-6.7.4/bin/linux-x86-64/sonar.sh start #启动
+su sonar /opt/sonarqube-6.7.4/bin/linux-x86-64/sonar.sh status #查看状态
+su sonar /opt/sonarqube-6.7.4/bin/linux-x86-64/sonar.sh stop #停止
+tail -f logs/sonar.logs 查看日志
+firewall-cmd --zone=public --add-port=9000/tcp --permanent
+firewall-cmd --reload
+
+```
+
+默认账户：admin/admin
+
+xuzhihao: 571ca3e519108b01b9c7cbc8f621c34e9edc7d64
+
+
 #### 2.7.2 代码审查配置
+
+安装SonarQube Scanner插件
+
+![](../../images/share/monitor/devops/jenkins_sonarqube_scanner.png)
+
+添加SonarQube凭证
+
+![](../../images/share/monitor/devops/jenkins_sonarqube_auth.png)
+
+Jenkins进行SonarQube配置
+
+> Manage Jenkins->Configure System->SonarQube servers
+
+![](../../images/share/monitor/devops/jenkins_sonarqube_server.png)
+
+> Manage Jenkins->Global Tool Configuration
+
+![](../../images/share/monitor/devops/jenkins_sonarqube_config.png)
+
+在项目添加SonaQube代码审查（非流水线项目）
+
+```properties
+sonar.projectKey=web_demo
+sonar.projectName=web_demo
+sonar.projectVersion=1.0-SNAPSHOT
+sonar.sourceEncoding=UTF-8
+sonar.sources=.
+sonar.exclusions=**/test/**,**/target/**
+sonar.java.source=1.8
+sonar.java.target=1.8
+sonar.login=admin
+sonar.password=admin
+sonar.java.binaries=target/classes
+```
+
+![](../../images/share/monitor/devops/jenkins_sonarqube_free.png)
+
+在项目添加SonaQube代码审查（流水线项目）
