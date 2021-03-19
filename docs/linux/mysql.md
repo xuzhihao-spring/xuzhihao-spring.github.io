@@ -25,8 +25,16 @@ lower_case_table_names=1
 
 ```
 
+## 2. 用户授权
 
-## 2. 备份恢复
+```sql
+CREATE DATABASE sonar CHARACTER SET utf8 COLLATE utf8_general_ci;
+GRANT ALL ON sonar.* TO 'sonar'@'%' IDENTIFIED BY '123456';
+GRANT ALL ON sonar.* TO 'sonar'@'localhost' IDENTIFIED BY '123456';
+flush privileges;
+```
+
+## 3. 备份恢复
 
 ```bash
 mysqldump -uroot -p123456 -hlocalhost -P3306  --default-character-set=utf8   --flush-privileges  --hex-blob  --routines  --triggers  --tz-utc  --no-create-db jeecmsv9 > d:/aa.dump
@@ -42,7 +50,7 @@ mysqldump -uroot -proot --no-data --databases db1 >/tmp/db1.sql
 ```
 
 
-## 3. 函数
+## 4. 函数
 ```sql
 CREATE FUNCTION `F_ACTUSER`(v_FLOWCID varchar(40)) RETURNS longtext CHARSET utf8
 BEGIN
@@ -76,7 +84,7 @@ BEGIN
 END
 ```
 
-## 2. 存储过程
+## 5. 存储过程
 
 ```sql
 CREATE PROCEDURE `PROC_INIT_FLOW_SINGLE`(IN V_PARTNERID VARCHAR(40),

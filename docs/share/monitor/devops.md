@@ -498,4 +498,26 @@ sonar.java.binaries=target/classes
 
 ![](../../images/share/monitor/devops/jenkins_sonarqube_free.png)
 
-在项目添加SonaQube代码审查（流水线项目）
+在项目添加SonaQube代码审查（流水线项目）`巨坑`
+
+项目根目录中配置sonar-project.properties
+
+```properties
+sonar.projectKey=web_demo
+sonar.projectName=web_demo
+sonar.projectVersion=1.0-SNAPSHOT
+
+
+sonar.sources=.
+sonar.exclusions=**/test/**,**/target/**
+
+sonar.java.source=1.8
+sonar.java.target=1.8
+
+sonar.sourceEncoding=UTF-8
+sonar.java.binaries=target/classes
+
+sonar.forceAuthentication=true
+sonar.login=令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌
+sonar.password=
+```

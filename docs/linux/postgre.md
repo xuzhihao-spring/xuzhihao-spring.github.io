@@ -6,6 +6,7 @@
 create user "sonar" with password '123456';
 create database "sonardb" template template1 owner "sonar";
 grant all privileges on database "sonardb" to "sonar";
+flush privileges;
 ```
 
 ## 2. 备份恢复
