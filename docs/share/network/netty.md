@@ -155,6 +155,8 @@ setWriteHighWaterMark()和 Channel.config().setWriteLowWaterMark()方法来设�
 
 ## 10. 堆外内存，文件通道，selector的源码深入
 
+`DirectBuffer` 基于cas进行对外内存的分配
+
 ## 11. Netty实现高性能弹幕
 
 ## 12. 源码分析，粘包拆包以及自定义协议

@@ -38,6 +38,7 @@
 * 技术分享
   * [开源协议](share/openSource.md)
   * [服务端高并发分布式架构演进之路](share/thevolve.md)
+  * [算法函数](share/function.md)
   * [参考](share/参考.md)
 
 * 学习笔记
