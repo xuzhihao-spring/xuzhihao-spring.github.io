@@ -289,10 +289,6 @@ public class CustomBeanPostProcessor implements BeanPostProcessor {
 
 `dubbo`
 
-#### 2.7.2 
-
-#### 2.7.3 
-
 ## 3. 总结
 
 ### 3.1 依赖注入方式到底有几种？
@@ -378,18 +374,6 @@ public class UserService{
 
 cglib核心代理处理ObjenesisCglibAopProxy.java
 
-
-### 3.3 
-
-### 3.3 
-
-### 3.3 
-
-### 3.3 
-
-### 3.3 
-
-### 3.3 
 
 ### 3.3 
 
