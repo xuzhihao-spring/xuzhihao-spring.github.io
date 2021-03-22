@@ -83,15 +83,50 @@ docker update --restart=always [container_id]
 docker commit -a="DeepInThought" -m="my redis" [redis容器ID]  myredis:v1.1
 ```
 
-## 9. 镜像构建
+## 9. Dockerfile常见命令
+
 ```bash
-#-f :指定要使用的Dockerfile路径；
-cd /docker/dockerfile
-vim mycentos
-docker build -f /docker/dockerfile/mycentos -t mycentos:1.1
+FROM    #设置基础镜像
+MAINTAINER    #设置维护者信息
+ADD    #设置需要添加容器中的文件（自动解压）
+COPY    #设置复制到容器中的文件（不会解压）
+USER    #设置运行RUN指令的用户
+ENV    #设置环境变量可在RUN  指令中使用
+RUN    #设置镜像制作过程中需要运行的指令
+ENTRYPOINT    #设置容器启动时运行的命令(无法覆盖)
+CMD    #设置容器启动时运行的命令(可以覆盖)
+WORKDIR    #设置进入容器的工作目录
+EXPOSE    #设置可被暴露的端口号（端口映射）
+VOLUME    #设置可被挂载的数据卷（目录映射）
+ONBUILD    #设置在构建时需要自动执行的命令
 ```
 
-## 10. Docker-compose
+在jar包所在的目录下创建一个名为 Dockerfile 的文件，文件内容如下：
+
+```bash
+# 基于openjdk 镜像
+FROM openjdk:8-jdk-alpine
+
+ARG JAR_FILE
+# 复制文件到容器
+COPY ${JAR_FILE} app.jar
+# 声明需要暴露的端口
+EXPOSE 9001
+# 配置容器启动后执行的命令
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+构建镜像
+
+```shell
+#-f :指定要使用的Dockerfile路径；
+docker build --build-arg JAR_FILE=eureka-server-0.0.1-SNAPSHOT.jar -t eureka:v0.0.1 .
+docker images       #查看镜像是否创建成功
+docker run -i --name=eureka -p 10086:9001 eureka:v0.0.1        #创建容器
+http://192.168.3.200:10086
+```
+
+## 10. docker-compose
 ```bash
 docker-compose -f docker-compose-env.yml up -d  
 ```

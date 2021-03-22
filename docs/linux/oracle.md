@@ -267,4 +267,15 @@ grant unlimited tablespace to ORAC_XUZHIHAO  with admin option;
 
 ```
 
-## 9.
+## 9. AWR报告
+
+```shell
+su - oracle
+sqlplus / as sysdb
+@?/rdbms/admin/awrrpt.sql
+
+# 要求填写要生成的报告格式，支持html和text，html是默认值可直接回车
+# 输入要导出最近几天的报告
+# 输入启和止的Snap ID
+# 输入报告名称
+```

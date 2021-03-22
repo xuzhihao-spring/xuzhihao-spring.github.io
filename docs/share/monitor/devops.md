@@ -521,3 +521,131 @@ sonar.forceAuthentication=true
 sonar.login=令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌令牌
 sonar.password=
 ```
+
+## 3. 微服务持续集成
+
+### 3.1 docker安装
+
+[Docker安装](linux/docker.md)
+
+### 3.2 使用Dockerfile制作微服务镜像
+
+[构建镜像](linux/docker.md?id=_9-dockerfile常见命令)
+
+### 3.3 Harbor镜像仓库安装及使用
+
+#### 3.3.1 Harbor安装
+
+> wget https://github.com/goharbor/harbor/releases/download/v2.0.1/harbor-offline-installer-v2.0.1.tgz
+
+```shell
+tar xf harbor-offline-installer-v2.0.1.tgz
+mkdir /opt/harbor
+mv harbor/* /opt/harbor
+cd /opt/harbor
+# 复制配置文件
+cp harbor.yml.tmpl harbor.yml
+# 编辑
+vi harbor.yml
+```
+
+```yml
+#修改配置文件(如果不用https就注释掉https的几项，我是用的http就注释掉了https的，其他几项修改为自己的信息)
+···
+hostname: 192.168.3.200
+···
+# http related config
+http:
+  # port for http, default is 80. If https enabled, this port will redirect to https port
+  port: 88
+···
+# https related config
+#https:
+  # https port for harbor, default is 443
+  #port: 443
+  # The path of cert and key files for nginx
+  #certificate: /your/certificate/path
+  #private_key: /your/private/key/path
+····
+harbor_admin_password: Harbor12345
+···
+data_volume: /data
+···
+```
+
+安装
+
+```shell
+./install.sh 
+docker-compose up -d #启动
+docker-compose stop #停止
+docker-compose restart #重新启动
+```
+
+默认账户密码：admin/Harbor12345
+
+#### 3.3.2 在Harbor创建用户和项目
+
+#### 3.3.3 把镜像上传到Harbor
+
+```bash
+docker tag eureka:v0.0.1 192.168.3.200:88/test/eureka:v0.0.1
+
+docker push 192.168.3.200:88/test/eureka:v0.0.1
+
+vi /etc/docker/daemon.json
+
+{
+"registry-mirrors": ["xxx.xxx.xxx.xxx"],
+"insecure-registries": ["192.168.3.200:88"]
+}
+
+sudo systemctl daemon-reload
+sudo systemctl restart docker 
+
+
+docker login -u 用户名 -p 密码 192.168.3.200:88
+
+```
+
+
+#### 3.3.2 从Harbor下载镜像
+
+```bash
+vi /etc/docker/daemon.json
+
+{
+"registry-mirrors": ["xxx.xxx.xxx.xxx"],
+"insecure-registries": ["192.168.3.200:88"]
+}
+
+docker login -u 用户名 -p 密码 192.168.3.200:88
+
+docker pull 192.168.3.200:88/test/eureka:v0.0.1
+
+```
+
+
+### 3.4 微服务持续集成1
+
+创建Jenkinsfile文件
+
+```
+//gitlab的凭证
+def git_auth = "282b054d-d655-471e-96af-e7231c2386e3"
+
+node {
+   stage('拉取代码') {
+   checkout([$class: 'GitSCM', branches: [[name: '*/${branch}']],
+   doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [],
+   userRemoteConfigs: [[credentialsId: "${git_auth}", url:
+   'git@172.17.17.50:zhangsan/springcloud-platform.git']]])
+   }
+}
+```
+
+### 3.5 微服务持续集成2
+
+### 3.6 微服务持续集成3
+
+### 3.7 微服务持续集成4

@@ -522,8 +522,57 @@ docker run -p 8280:80 --name registry-ui \
 -e REGISTRY_TITLE="Registry2" \
 -d joxit/docker-registry-ui:static
 ```
+## 25. Harbor
 
-## 24. postgres
+> wget https://github.com/goharbor/harbor/releases/download/v2.0.1/harbor-offline-installer-v2.0.1.tgz
+
+```shell
+tar xf harbor-offline-installer-v2.0.1.tgz
+mkdir /opt/harbor
+mv harbor/* /opt/harbor
+cd /opt/harbor
+# 复制配置文件
+cp harbor.yml.tmpl harbor.yml
+# 编辑
+vi harbor.yml
+```
+
+```yml
+#修改配置文件(如果不用https就注释掉https的几项，我是用的http就注释掉了https的，其他几项修改为自己的信息)
+···
+hostname: 192.168.3.200
+···
+# http related config
+http:
+  # port for http, default is 80. If https enabled, this port will redirect to https port
+  port: 88
+···
+# https related config
+#https:
+  # https port for harbor, default is 443
+  #port: 443
+  # The path of cert and key files for nginx
+  #certificate: /your/certificate/path
+  #private_key: /your/private/key/path
+····
+harbor_admin_password: Harbor12345
+···
+data_volume: /data
+···
+```
+
+安装
+
+```shell
+./install.sh 
+docker-compose up -d #启动
+docker-compose stop #停止
+docker-compose restart #重新启动
+```
+
+默认账户密码：admin/Harbor12345
+
+## 26. postgres
 
 ```bash
 docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
@@ -544,7 +593,7 @@ psql -Upostgres # 连接数据库
 -v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
 ```
 
-## 24. sonarqube
+## 27. sonarqube
 
 ```bash
 docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.6-community #H2默认存储
@@ -561,3 +610,4 @@ docker run -d --name sonarqube \
     -v /data/sonarqube/sonarqube_data:/opt/sonarqube/data \
     sonarqube:8.6-community
 ```
+
