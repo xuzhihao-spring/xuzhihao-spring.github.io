@@ -358,6 +358,18 @@ pipeline {
             checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: '282b054d-d655-471e-96af-e7231c2386e3', url: 'git@172.17.17.50:vjsp/web_demo.git']]])
          }
       }
+	  stage('code checking') {
+         steps {
+            script {
+                 //引入SonarQubeScanner工具
+                scannerHome = tool 'sonarqube-scanner'
+            }
+            //引入SonarQube的服务器环境
+            withSonarQubeEnv('sonarqube6.7.4') {
+                sh "${scannerHome}/bin/sonar-scanner"
+            }
+         }
+      }  
       stage('编译构建') {
          steps {
             sh 'mvn clean package'
@@ -368,6 +380,15 @@ pipeline {
             deploy adapters: [tomcat8(credentialsId: 'f303f062-1ef0-4a1c-969b-972bb57244a2', path: '', url: 'http://172.17.17.80:8080')], contextPath: '/cms003S', war: 'target/*.war'
          }
       }
+   }
+   post {
+         always {
+            emailext(
+               subject: '构建通知：${PROJECT_NAME} - Build # ${BUILD_NUMBER} - ${BUILD_STATUS}!',
+               body: '${FILE,path="email.html"}',
+               to: 'xcg992224@163.com'
+            )
+         }
    }
 }
 ```
@@ -626,26 +647,524 @@ docker pull 192.168.3.200:88/test/eureka:v0.0.1
 ```
 
 
-### 3.4 微服务持续集成1
+### 3.4 拉取镜像发布应用
 
-创建Jenkinsfile文件
+#### 3.4.1 安装 Publish Over SSH 插件
+
+拷贝公钥到远程服务器
+
+> ssh-copy-id 192.168.66.103
+
+系统配置->添加远程服务器
+
+![](../../images/share/monitor/devops/jenkins_ssh_publish.png)
+
+
+#### 3.4.2 Jenkinsfile构建脚本
+
+![](../../images/share/monitor/devops/jenkins_springcloud_pipline.png)
+
+```
+//git凭证ID
+def git_auth = "282b054d-d655-471e-96af-e7231c2386e3"
+//git的url地址
+def git_url = "git@172.17.17.50:zhangsan/springcloud-platform.git"
+//构建版本的名称
+def tag = "latest"
+//Harbor私服地址
+def harbor_url = "172.17.17.80:88"
+//Harbor的项目名称
+def harbor_project_name = "test"
+//Harbor的凭证
+def harbor_auth = "17c792fd-30fc-4320-aebe-7646cfa09008"
+//远程发布服务器名称
+def sshPublisherName="172.17.17.177"
+
+node {
+   //获取当前选择的项目名称
+   def selectedProjectNames = "${project_name}".split(",")
+   
+   //获取当前选择的服务器名称
+   //def selectedServers = "${publish_server}".split(",")
+
+   stage('拉取代码') {
+      checkout([$class: 'GitSCM', branches: [[name: "*/${branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: "${git_auth}", url: "${git_url}"]]])
+   }   
+  
+   stage('代码审查') {
+		def scannerHome = tool 'sonarqube-scanner'
+		withSonarQubeEnv('sonarqube6.7.4') {
+			sh """
+				cd ${project_name}
+				${scannerHome}/bin/sonar-scanner
+			"""
+		}
+	}
+	
+	stage('编译，构建镜像') {
+		//定义镜像名称
+		def imageName = "${project_name}:${tag}"
+		
+		//编译，安装公共工程
+		//sh "mvn -f tensquare_common clean install"
+		
+		//编译，构建本地镜像
+		sh "mvn -f ${project_name} clean package dockerfile:build"
+		
+		//给镜像打标签
+		sh "docker tag ${imageName} ${harbor_url}/${harbor_project_name}/${imageName}"
+		
+		//登录Harbor，并上传镜像
+		withCredentials([usernamePassword(credentialsId: "${harbor_auth}", passwordVariable: 'password', usernameVariable: 'username')]) {
+			   //登录到Harbor
+               sh "docker login -u ${username} -p ${password} ${harbor_url}"
+               //镜像上传
+               sh "docker push ${harbor_url}/${harbor_project_name}/${imageName}"
+		}
+		
+		//删除本地镜像
+		sh "docker rmi -f ${imageName}"
+		sh "docker rmi -f ${harbor_url}/${harbor_project_name}/${imageName}"		
+	}
+	
+	stage('远程发布') {
+		sshPublisher(publishers: [sshPublisherDesc(configName: "${sshPublisherName}",transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand:"/opt/jenkins_shell/deploy.sh $harbor_url $harbor_project_name $project_name $tag $port", execTimeout: 120000, flatten: false, makeEmptyDirs: false,noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '',remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')],usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+	}
+}
+```
+
+#### 3.4.3 编写deploy.sh部署脚本
+
+上传deploy.sh文件到/opt/jenkins_shell目录下，且文件至少有执行权限！
+
+> chmod +x deploy.sh
+
+```sh
+#! /bin/sh
+#接收外部参数
+harbor_url=$1
+harbor_project_name=$2
+project_name=$3
+tag=$4
+port=$5
+
+imageName=$harbor_url/$harbor_project_name/$project_name:$tag
+
+echo "$imageName"
+
+#查询容器是否存在，存在则删除
+containerId=`docker ps -a | grep -w ${project_name}:${tag}  | awk '{print $1}'`
+if [ "$containerId" !=  "" ] ; then
+    #停掉容器
+    docker stop $containerId
+
+    #删除容器
+    docker rm $containerId
+	
+	echo "成功删除容器"
+fi
+
+#查询镜像是否存在，存在则删除
+imageId=`docker images | grep -w $project_name  | awk '{print $3}'`
+
+if [ "$imageId" !=  "" ] ; then
+      
+    #删除镜像
+    docker rmi -f $imageId
+	
+	echo "成功删除镜像"
+fi
+
+# 登录Harbor
+docker login -u username -p password $harbor_url
+
+# 下载镜像
+docker pull $imageName
+
+# 启动容器
+docker run -di -p $port:$port $imageName
+
+echo "容器启动成功"
+
+```
+
+
+### 3.5 前端静态web网站
+
+#### 3.5.1 安装Nginx服务器
+
+[Nginx安装](deploy/nginx.md)
+
+#### 3.5.2 安装NodeJS插件
+
+![](../../images/share/monitor/devops/jenkins_plugs_nodejs.png)
+
+Manage Jenkins->Global Tool Configuration
+
+![](../../images/share/monitor/devops/jenkins_nodejs.png)
+
 
 ```
 //gitlab的凭证
 def git_auth = "282b054d-d655-471e-96af-e7231c2386e3"
+//git的url地址
+def git_url = "git@172.17.17.50:zhangsan/web.git"
 
 node {
    stage('拉取代码') {
-   checkout([$class: 'GitSCM', branches: [[name: '*/${branch}']],
-   doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [],
-   userRemoteConfigs: [[credentialsId: "${git_auth}", url:
-   'git@172.17.17.50:zhangsan/springcloud-platform.git']]])
+      checkout([$class: 'GitSCM', branches: [[name: '*/${branch}']],doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [],
+      userRemoteConfigs: [[credentialsId: "${git_auth}", url:"${git_url}"]]])
+   }
+   stage('打包，部署网站') {
+      nodejs('nodejs12'){
+         sh '''
+            npm install
+            npm run build
+         '''
+      }
+      //=====以下为远程调用进行项目部署========
+      sshPublisher(publishers: [sshPublisherDesc(configName: 'master_server',transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '',
+      execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes:false, patternSeparator: '[, ]+', remoteDirectory: '/usr/share/nginx/html',
+      remoteDirectorySDF: false, removePrefix: 'dist', sourceFiles: 'dist/**')],usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
    }
 }
 ```
 
-### 3.5 微服务持续集成2
+## 4. 微服务持续集成优化
 
-### 3.6 微服务持续集成3
+上面部署方案存在的问题：
 
-### 3.7 微服务持续集成4
+1. 一次只能选择一个微服务部署
+2. 只有一台生产者部署服务器
+3. 每个微服务只有一个实例，容错率低
+
+优化方案：
+
+1. 在一个Jenkins工程中可以选择多个微服务同时发布
+2. 在一个Jenkins工程中可以选择多台生产服务器同时部署
+3. 每个微服务都是以集群高可用形式部署
+
+
+Extended Choice Parameter插件安装
+
+![](../../images/share/monitor/devops/jenkins_extend_param.png)
+
+```
+//git凭证ID
+def git_auth = "282b054d-d655-471e-96af-e7231c2386e3"
+//git的url地址
+def git_url = "git@172.17.17.50:zhangsan/springcloud-platform-all.git"
+//构建版本的名称
+def tag = "latest"
+//Harbor私服地址
+def harbor_url = "172.17.17.80:88"
+//Harbor的项目名称
+def harbor_project = "test-all"
+//Harbor的凭证
+def harbor_auth = "17c792fd-30fc-4320-aebe-7646cfa09008"
+//远程发布服务器名称
+def sshPublisherName="172.17.17.177"
+
+node {
+   //获取当前选择的项目名称
+   def selectedProjectNames = "${project_name}".split(",")
+   
+   //获取当前选择的服务器名称
+   //def selectedServers = "${publish_server}".split(",")
+
+   stage('拉取代码') {
+      checkout([$class: 'GitSCM', branches: [[name: "*/${branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: "${git_auth}", url: "${git_url}"]]])
+	}   
+  
+   stage('代码审查') {
+		for(int i=0;i<selectedProjectNames.length;i++){
+		
+            //eureka_server@9001
+            def projectInfo = selectedProjectNames[i];
+            //当前遍历的项目名称
+            def currentProjectName = "${projectInfo}".split("@")[0]
+            //当前遍历的项目端口
+            def currentProjectPort = "${projectInfo}".split("@")[1]
+
+            def scannerHome = tool 'sonarqube-scanner'
+            withSonarQubeEnv('sonarqube6.7.4') {
+                 sh """
+                         cd ${currentProjectName}
+                         ${scannerHome}/bin/sonar-scanner
+                 """
+            }
+        }
+    }
+	
+	stage('编译，安装公共子工程') {
+      //sh "mvn -f shop_common clean install"
+    }
+	
+	stage('编译，打包微服务工程，上传镜像') {
+       for(int i=0;i<selectedProjectNames.length;i++){
+	   
+			 //eureka_server@9001
+			 def projectInfo = selectedProjectNames[i];
+			 //当前遍历的项目名称
+			 def currentProjectName = "${projectInfo}".split("@")[0]
+			 //当前遍历的项目端口
+			 def currentProjectPort = "${projectInfo}".split("@")[1]
+
+			 sh "mvn -f ${currentProjectName} clean package dockerfile:build"
+
+			 //定义镜像名称
+			 def imageName = "${currentProjectName}:${tag}"
+			 //对镜像打上标签
+			 sh "docker tag ${imageName} ${harbor_url}/${harbor_project}/${imageName}"
+
+			//把镜像推送到Harbor
+			withCredentials([usernamePassword(credentialsId: "${harbor_auth}", passwordVariable: 'password', usernameVariable: 'username')]) {
+				//登录到Harbor
+				sh "docker login -u ${username} -p ${password} ${harbor_url}"
+				//镜像上传
+				sh "docker push ${harbor_url}/${harbor_project}/${imageName}"
+
+			}
+			
+			//删除本地镜像
+			sh "docker rmi -f ${imageName}"
+			sh "docker rmi -f ${harbor_url}/${harbor_project}/${imageName}"	
+			
+			//遍历所有服务器，分别部署
+			for(int j=0;j<selectedServers.length;j++){
+				   //获取当前遍历的服务器名称
+				def currentServerName = selectedServers[j]
+
+				//加上的参数格式：--spring.profiles.active=eureka-server1/eureka-server2
+				
+				def activeProfile = "--spring.profiles.active="
+
+				//根据不同的服务名称来读取不同的Eureka配置信息
+				if(currentServerName=="master_server"){
+				  activeProfile = activeProfile+"eureka-server1"
+				}else if(currentServerName=="slave_server"){
+				  activeProfile = activeProfile+"eureka-server2"
+				}
+
+				//部署应用
+				//sshPublisher(publishers: [sshPublisherDesc(configName: "${currentServerName}", transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: "/opt/jenkins_shell/deployCluster.sh $harbor_url //$harbor_project $currentProjectName $tag $currentProjectPort $activeProfile", execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', //remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])			
+			}
+        }
+   }
+}
+```
+
+deployCluster.sh部署脚本
+
+```
+#! /bin/sh
+#接收外部参数
+harbor_url=$1
+harbor_project_name=$2
+project_name=$3
+tag=$4
+port=$5
+profile=$6
+
+imageName=$harbor_url/$harbor_project_name/$project_name:$tag
+
+echo "$imageName"
+
+#查询容器是否存在，存在则删除
+containerId=`docker ps -a | grep -w ${project_name}:${tag}  | awk '{print $1}'`
+
+if [ "$containerId" !=  "" ] ; then
+    #停掉容器
+    docker stop $containerId
+
+    #删除容器
+    docker rm $containerId
+	
+	echo "成功删除容器"
+fi
+
+#查询镜像是否存在，存在则删除
+imageId=`docker images | grep -w $project_name  | awk '{print $3}'`
+
+if [ "$imageId" !=  "" ] ; then
+      
+    #删除镜像
+    docker rmi -f $imageId
+	
+	echo "成功删除镜像"
+fi
+
+
+# 登录Harbor
+docker login -u usernmae -p password $harbor_url
+
+# 下载镜像
+docker pull $imageName
+
+# 启动容器
+docker run -di -p $port:$port $imageName $profile
+
+echo "容器启动成功"
+```
+
+## 5. 基于Kubernetes/K8S构建Jenkins持续集成
+
+### 5.1 实现Master-Slave分布式构建
+
+开启代理程序的TCP端口
+
+> Manage Jenkins -> Configure Global Security
+
+![](../../images/share/monitor/devops/jenkins_global_secret.png)
+
+![](../../images/share/monitor/devops/jenkins_agent_slave1.png)
+
+![](../../images/share/monitor/devops/jenkins_slave_url.png)
+
+安装和配置节点选择第2种
+
+自由风格和Maven风格的项目：
+
+![](../../images/share/monitor/devops/jenkins_slave_free.png)
+
+流水线风格的项目：
+
+```
+node('slave1') {
+   stage('check out') {
+   }
+}
+```
+
+传统Jenkins的Master-Slave方案的缺陷
+
+1. Master节点发生单点故障时，整个流程都不可用了
+2. 每个 Slave节点的配置环境不一样，来完成不同语言的编译打包等操作，但是这些差异化的配置导致管理起来非常不方便，维护起来也是比较费劲
+3. 资源分配不均衡，有的Slave节点要运行的job出现排队等待，而有的Slave节点处于空闲状态
+4. 资源浪费，每台Slave节点可能是实体机或者VM，当Slave节点处于空闲状态时，也不会完全释放掉资源
+
+### 5.2 Kubernates+Docker+Jenkins持续集成架
+
+大致工作流程：手动/自动构建 -> Jenkins 调度 K8S API -> 动态生成 Jenkins Slave pod -> Slave pod拉取 Git 代码／编译／打包镜像 -> 推送到镜像仓库 Harbor -> Slave 工作完成，Pod 自动销毁 -> 部署到测试或生产 Kubernetes平台。（完全自动化，无需人工干预）
+
+
+Kubernates+Docker+Jenkins持续集成方案好处
+
+1. 服务高可用：当 Jenkins Master 出现故障时，Kubernetes会自动创建一个新的Jenkins Master容器，并且将Volume分配给新创建的容器，保证数据不丢失，从而达到集群服务高可用。
+2. 动态伸缩，合理使用资源：每次运行Jo 时，会自动创建一个Jenkins Slave，Job完成后，Slave自动注销并删除容器，资源自动释放，而且Kubernetes会根据每个资源的使用情况，动态分配
+Slave到空闲的节点上创建，降低出现因某节点资源利用率高，还排队等待在该节点的情况。
+3. 扩展性好：当Kubernetes集群的资源严重不足而导致Job排队等待时，可以很容易的添加一个Kubernetes Node到集群中，从而实现扩展。
+
+### 5.3 Kubernates安装
+
+| 主机名称| IP地址 | 安装的软件 |
+| ----- | ----- | ----- |
+| k8s-master| 192.168.3.200 | kube-apiserver、kube-controller-manager、kubescheduler、docker、etcd、calico，NFS |
+| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.1-ce |
+| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.1-ce |
+
+修改三台机器的hostname及hosts文件
+```bash
+cat >> /etc/hosts  <<EOF
+192.168.3.200 k8s-master 
+192.168.3.201 k8s-node1 
+192.168.3.202 k8s-node2
+EOF
+```
+
+关闭防火墙和关闭SELinux
+```bash
+systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0
+sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
+```
+
+设置系统参数
+```bash
+vi /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1 
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1 vm.swappiness = 0
+sysctl -p /etc/sysctl.d/k8s.conf
+```
+
+kube-proxy开启ipvs的前置条件
+```
+cat > /etc/sysconfig/modules/ipvs.modules <<EOF
+#!/bin/bash
+modprobe -- ip_vs
+modprobe -- ip_vs_rr
+modprobe -- ip_vs_wrr
+modprobe -- ip_vs_sh
+modprobe -- nf_conntrack_ipv4
+EOF
+chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
+```
+
+所有节点关闭swap
+
+```bash
+swapoff -a 临时关闭
+vi /etc/fstab 永久关闭
+#注释掉以下字段
+/dev/mapper/cl-swap swap swap defaults 0 0
+```
+
+主节点安装kubelet、kubeadm、kubectl
+```bash
+yum clean all
+
+cat > /etc/yum.repos.d/kubernetes.repo <<EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+yum install -y kubelet kubeadm kubectl
+
+#kubelet设置开机启动（注意：先不启动，现在启动的话会报错）
+systemctl enable kubelet
+
+kubelet --version
+
+```
+
+Master节点需要完成
+```bash
+kubeadm init --kubernetes-version=v1.20 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
+```
+
+节点安装的命令
+
+kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
+
+启动kubelet
+```bash
+systemctl restart kubelet
+```
+
+配置kubectl工具
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+安装Calico
+```bash
+mkdir k8s
+cd k8s
+kubectl apply -f https://docs.projectcalico.org/v3.18/manifests/calico.yaml
+kubectl get pod --all-namespaces -o wide
+```
+
+Slave节点需要完成
+
+在master节点上执行kubeadm token create --print-join-command重新生成加入命令

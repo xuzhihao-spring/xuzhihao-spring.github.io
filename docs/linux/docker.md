@@ -43,6 +43,7 @@ docker stop [containerid]
 docker start [containerid]
 docker start $(docker ps -a -q)  #启动所有容器
 docker rm [containerid] #删除容器
+docker rmi $(docker images | grep "none" | awk '{print $3}')    #删除none的镜像
 
 docker stats [containerid]  #监控
 docker stats $(docker ps -a -q)  #监控所有容器
@@ -51,9 +52,12 @@ docker stats --no-stream=true $(docker ps -a -q)  #监控所有容器当前
 docker container update --restart=always [containerid]  #容器自动启动
 docker update --restart=always $(docker ps -q -a)  #更新所有容器启动时自动启动
 ```
+
 ## 5. 容器进入
 ```bash
 docker exec -it [containerid] /bin/bash
+docker run --net=host   #host模式执行容器，使用主机网络堆栈.因此无法将端口暴露给主机,因为它是主机
+docker inspect [containerid]    #容器IP查询
 ```
 
 ## 6. 容器日志

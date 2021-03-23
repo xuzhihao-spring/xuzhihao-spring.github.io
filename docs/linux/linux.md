@@ -12,6 +12,11 @@ find / -type f -size +100M #查找大文件
 find / -name memcached  #查找应用
 sed -i 's/原字符串/新字符串/' /home/1.txt
 sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
+
+cat > /etc/hosts <<EOF
+# 追加的内容
+EOF
+
 yum install -y wget  #远程下载
 tar –zcvf jpg.tar *.jpg  #压缩
 tar –xvf file.tar #解压
@@ -35,14 +40,31 @@ service iptables stop #关闭防火墙
 nginx -s reload; #重载
 ```
 
-## 1. 安装JDK
+## 1. 安装jdk、Maven
+
 ```bash
+yum install java-1.8.0-openjdk* -y
+
 vim /etc/profile
 source /etc/profile
-JAVA_HOME=/data/jdk1.8.0_131 #jdk配置
+JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk #jdk配置
 PATH=$JAVA_HOME/bin:$PATH
 CLASSPATH=$JAVA_HOME/jre/lib/ext:$JAVA_HOME/lib/tools.jar
 export PATH JAVA_HOME CLASSPATH
+source /etc/profile #配置生效
+
+##
+
+tar -xzf apache-maven-3.6.2-bin.tar.gz #解压
+mkdir -p /opt/maven #创建目录
+mv apache-maven-3.6.2/* /opt/maven #移动文件
+
+vi /etc/profile
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+export MAVEN_HOME=/opt/maven
+export PATH=$PATH:$JAVA_HOME/bin:$MAVEN_HOME/bin
+source /etc/profile #配置生效
+mvn -v #查找Maven版本
 ```
 
 ## 2. 安装Ftp
