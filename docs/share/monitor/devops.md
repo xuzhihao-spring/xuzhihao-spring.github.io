@@ -1043,7 +1043,7 @@ node('slave1') {
 3. 资源分配不均衡，有的Slave节点要运行的job出现排队等待，而有的Slave节点处于空闲状态
 4. 资源浪费，每台Slave节点可能是实体机或者VM，当Slave节点处于空闲状态时，也不会完全释放掉资源
 
-### 5.2 Kubernates+Docker+Jenkins持续集成架
+### 5.2 Kubernates+Docker+Jenkins持续集成方案
 
 大致工作流程：手动/自动构建 -> Jenkins 调度 K8S API -> 动态生成 Jenkins Slave pod -> Slave pod拉取 Git 代码／编译／打包镜像 -> 推送到镜像仓库 Harbor -> Slave 工作完成，Pod 自动销毁 -> 部署到测试或生产 Kubernetes平台。（完全自动化，无需人工干预）
 
@@ -1063,8 +1063,15 @@ Slave到空闲的节点上创建，降低出现因某节点资源利用率高，
 | k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.1-ce |
 | k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.1-ce |
 
+#### 5.3.1 三台机器都需要完成
+
 修改三台机器的hostname及hosts文件
 ```bash
+
+hostnamectl set-hostname k8s-master
+hostnamectl set-hostname k8s-node1 
+hostnamectl set-hostname k8s-node2
+
 cat >> /etc/hosts  <<EOF
 192.168.3.200 k8s-master 
 192.168.3.201 k8s-node1 
@@ -1111,7 +1118,7 @@ vi /etc/fstab 永久关闭
 /dev/mapper/cl-swap swap swap defaults 0 0
 ```
 
-主节点安装kubelet、kubeadm、kubectl
+安装kubelet、kubeadm、kubectl
 ```bash
 yum clean all
 
@@ -1135,7 +1142,8 @@ kubelet --version
 
 ```
 
-Master节点需要完成
+#### 5.3.2 Master节点需要完成
+
 ```bash
 kubeadm init --kubernetes-version=v1.20 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
 ```
@@ -1165,6 +1173,6 @@ kubectl apply -f https://docs.projectcalico.org/v3.18/manifests/calico.yaml
 kubectl get pod --all-namespaces -o wide
 ```
 
-Slave节点需要完成
+#### 5.3.3 Slave节点需要完成
 
 在master节点上执行kubeadm token create --print-join-command重新生成加入命令

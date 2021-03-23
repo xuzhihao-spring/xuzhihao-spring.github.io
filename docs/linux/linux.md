@@ -5,6 +5,7 @@ ntpdate pool.ntp.org #同步时间
 cat /etc/redhat-release #版本查看
 vi /etc/hosts #host修改
 vi /etc/resolv.conf  nameserver 192.168.0.1 #配置DNS
+hostnamectl set-hostname k8s-master
 
 lsof -i:80
 netstat -tunlp | grep 8080 #端口占用查看
