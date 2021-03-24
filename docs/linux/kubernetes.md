@@ -57,6 +57,8 @@ kubectl explain pods,svc                            # 获取 pod 和 svc 的文�
 
 ## 4. 更新
 ```bash
+kubectl get pod {podname} -n {namespace} -o yaml | kubectl replace --force -f -
+kubectl replace --force -f xxxx.yaml                            # 强制替换Pod的API对象达到重启的目的
 kubectl rolling-update python-v1 -f python-v2.json              # 滚动更新 pod frontend-v1
 kubectl rolling-update python-v1 python-v2 --image=image:v2     # 更新资源名称并更新镜像
 kubectl rolling-update python --image=image:v2                  # 更新 frontend pod 中的镜像
@@ -112,6 +114,7 @@ kubectl delete pods,services -l name=myLabel                              # 删�
 kubectl delete pods,services -l name=myLabel --include-uninitialized      # 删除具有 name=myLabel 标签的 pod 和 service，包括尚未初始化的
 kubectl -n my-ns delete po,svc --all                                      # 删除 my-ns namespace下的所有 pod 和 serivce，包括尚未初始化的
 kubectl delete pods prometheus-7fcfcb9f89-qkkf7 --grace-period=0 --force  # 强制删除
+
 kubectl delete deployment kubernetes-dashboard --namespace=kube-system
 kubectl delete svc kubernetes-dashboard --namespace=kube-system
 kubectl delete -f kubernetes-dashboard.yaml

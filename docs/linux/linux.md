@@ -1,4 +1,6 @@
 # Linux
+## 1. 基础命令
+
 ```bash
 ntpdate time.nist.gov
 ntpdate pool.ntp.org        #同步时间
@@ -41,7 +43,7 @@ firewall-cmd --reload
 systemctl enable iptables
 ```
 
-## 1. 安装jdk、Maven
+## 2. 安装jdk、Maven
 
 ```bash
 yum install java-1.8.0-openjdk* -y
@@ -67,7 +69,7 @@ source /etc/profile #配置生效
 mvn -v #查找Maven版本
 ```
 
-## 2. 安装Ftp
+## 3. 安装Ftp
 ```bash
 yum install vsftpd #ftp
 cat /etc/passwd    #新增用户
@@ -80,14 +82,14 @@ vi /etc/selinux/config
 SELINUX=disabled 
 ```
 
-## 3. 启动solr
+## 4. 启动solr
 ```bash
 cd /opt/solr-4.7.2/example  #solr启动
 nohup java -Djetty.port=8080 -jar start.jar
 ps aux|grep jetty
 ```
 
-## 4. 应用启动
+## 5. 应用启动
 
 ```bash
 memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111; #memcached启动
@@ -99,7 +101,7 @@ cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &
 java -jar sentinel-dashboard-1.7.2.jar &
 ```
 
-## 5. Centos7配置yum仓库
+## 6. Centos7配置yum仓库
 
 备份原有yum源
 
@@ -167,7 +169,7 @@ yum makecache
 
 wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 
-## 6. Gcc升级
+## 7. Gcc升级
 
 ```
 yum -y install centos-release-scl
@@ -180,7 +182,7 @@ which gcc
 gcc --version
 ```
 
-## 7. Ifstat统计网络接口流量状态
+## 8. Ifstat统计网络接口流量状态
 
 下载
 
@@ -226,7 +228,7 @@ HH:MM:ss   KB/s in  KB/s out   KB/s in  KB/s out   KB/s in  KB/s out   KB/s in  
 16:53:08      0.73      0.40    924.02   1248.91      0.00      0.00      0.00      0.00    924.76   1249.31
 ```
 
-## 8. FIO
+## 9. FIO
 
 FIO 工具常用参数：
 

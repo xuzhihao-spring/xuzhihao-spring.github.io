@@ -1211,3 +1211,58 @@ showmount -e 192.168.3.200
 ```
 
 ### 5.4 在Kubernetes安装Jenkins-Master
+
+#### 5.4.1 创建NFS client provisioner
+
+上传nfs-client部署文件
+1. [class.yaml](/file/nfs-client/class)
+2. [deployment.yaml](/file/nfs-client/deployment)
+3. [rbac.yaml](/file/nfs-client/rbac)
+
+```bash
+cd nfs-client
+kubectl create -f .
+kubectl get pods     # 查看pod是否创建成功
+```
+
+#### 5.4.2 安装Jenkins-Master
+
+上传Jenkins-Master构建文件
+1. [rbac.yaml](/file/jenkins-master/rbac)
+2. [Service.yaml](/file/jenkins-master/Service)
+3. [ServiceaAcount.yaml](/file/jenkins-master/ServiceaAcount)
+4. [StatefulSet.yaml](/file/jenkins-master/StatefulSet)
+
+创建kube-ops的namespace
+
+```bash
+kubectl create namespace kube-ops
+cd jenkins-master
+kubectl create -f .
+kubectl get pods -n kube-ops        # 查看pod是否创建成功
+kubectl get pod --namespace kube-ops -o wide
+kubectl describe pods -n kube-ops   # 查看Pod运行在那个Node上
+kubectl get service -n kube-ops     # 查看分配的端口    
+```
+
+kubernetes v1.20版本创建pvc报错，解决方法是编辑/etc/kubernetes/manifests/kube-apiserver.yaml
+```bash
+kubectl describe pvc --namespace kube-ops
+vi /etc/kubernetes/manifests/kube-apiserver.yaml
+
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+# 添加这一行
+- --feature-gates=RemoveSelfLink=false
+```
+
+
+### 5.5 Jenkins与Kubernetes整合
+
+### 5.6 构建Jenkins-Slave自定义镜像
+
+### 5.7 测试Jenkins-Slave是否可以创建
+
+### 5.8 微服务部署到K8S
