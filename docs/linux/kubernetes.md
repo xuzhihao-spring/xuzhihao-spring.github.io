@@ -1,201 +1,167 @@
+
 # Kubernetes命令
 
-## 1. k8s-kubectl命令大全
+## 1. Kubectl
 ```bash
-
-kubectl create deployment kubernetes-nginx --image=nginx:1.10 #创建pod
-kubectl get pods #查看Pod状态
-kubectl describe pods #查看Pod详细状态
-kubectl exec -ti [containerid] -- bash #进入容器
-
-kubectl exec [containerid] -- env #查看pod环境变量
-
-
-kubectl expose deployment/kubernetes-bootcamp --type="NodePort" --port 8080  #创建Service暴露端口映射
-
-kubectl get services #查看K8S中所有Service的状态
-
-kubectl describe services/kubernetes-nginx #查看service详情信息
-
-curl $(minikube ip):30158 #访问service
+# 删除kube-system 下Evicted状态的所有pod：
+kubectl get pods -n kube-system |grep Evicted| awk ‘{print $1}’|xargs kubectl delete pod -n kube-system
+systemctl daemon-reload         # 重启kubelet服务
+systemctl restart kubelet
+journalctl -u kubelet -f        # 查看日志:
+kubeadm reset -f                # 重置kubeadm
+iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X   # 清空iptables规则
 
 
+kubectl get pods --all-namespaces           # 查看所有namespace的pods运行情况
+kubectl get pods  kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system             # 查看具体pods，记得后边跟namespace名字哦
+kubectl get pods -o wide kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system      # 查看pods具体信息
+kubectl get cs                              # 查看集群健康状态
+kubectl get deployment --all-namespaces     # 获取所有deployment
+kubectl get pod /svc/deployment -n kube-system      # 查看kube-system namespace下面的pod/svc/deployment 等等（-o wide 选项可以查看存在哪个对应的节点）
+kubectl get pods --include-uninitialized            # 列出该namespace中的所有pod包括未初始化的
+kubectl get deployment nginx-app                    # 查看deployment
+kubectl get rc,services                             # 查看rc和servers
+kubectl describe pods xxxxpodsname --namespace=xxxnamespace     # 查看pods结构信息（重点，通过这个看日志分析错误）对控制器和服务，node同样有效
+kubectl logs --tail=1000 $POD_NAME                              # 查看pod日志
+kubectl exec my-nginx-5j8ok -- printenv | grep SERVICE          # 查看pod变量
+```
+
+## 2. 集群
+```bash
+kubectl get cs                          # 集群健康情况
+kubectl cluster-info                    # 集群核心组件运行情况
+kubectl get namespaces                  # 表空间名
+kubectl version                         # 版本
+kubectl api-versions                    # API
+kubectl get events                      # 查看事件
+kubectl get nodes                       # 获取全部节点
+kubectl delete node k8s2                # 删除节点
+kubectl rollout status deploy nginx-test
+kubectl get deployment --all-namespaces
+kubectl get svc --all-namespaces
+```
+
+## 3. 创建
+```bash
+kubectl create -f ./nginx.yaml                      # 创建资源
+kubectl apply -f xxx.yaml                           # 创建+更新，可以重复使用
+kubectl create -f .                                 # 创建当前目录下的所有yaml资源
+kubectl create -f ./nginx1.yaml -f ./mysql2.yaml    # 使用多个文件创建资源
+kubectl create -f ./dir                             # 使用目录下的所有清单文件来创建资源
+kubectl create -f https://git.io/vPieo              # 使用 url 来创建资源
+kubectl run -i --tty busybox --image=busybox        # 创建带有终端的pod
+kubectl run nginx --image=nginx                     # 启动一个 nginx 实例
+kubectl run mybusybox --image=busybox --replicas=5  # 启动多个pod
+kubectl explain pods,svc                            # 获取 pod 和 svc 的文档
+```
+
+## 4. 更新
+```bash
+kubectl rolling-update python-v1 -f python-v2.json              # 滚动更新 pod frontend-v1
+kubectl rolling-update python-v1 python-v2 --image=image:v2     # 更新资源名称并更新镜像
+kubectl rolling-update python --image=image:v2                  # 更新 frontend pod 中的镜像
+kubectl rolling-update python-v1 python-v2 --rollback           # 退出已存在的进行中的滚动更新
+cat pod.json | kubectl replace -f -                             # 基于stdin输入的JSON替换pod
+kubectl expose rc nginx --port=80 --target-port=8000            # 为nginx RC创建服务，启用本地80端口连接到容器上的8000端口
 
 
----------------------
-# 查看所有 pod 列表,  -n 后跟 namespace, 查看指定的命名空间
-kubectl get pod
-kubectl get pod -n kube  
-kubectl get pod -o wide
+kubectl get pod nginx-pod -o yaml | sed 's/\(image: myimage\):.*$/\1:v4/' | kubectl replace -f -    # 更新单容器 pod 的镜像版本（tag）到 v4
+kubectl label pods nginx-pod new-label=awesome                      # 添加标签
+kubectl annotate pods nginx-pod icon-url=http://goo.gl/XXBTWq       # 添加注解
+kubectl autoscale deployment foo --min=2 --max=10                   # 自动扩展 deployment “foo”
+
+# 编辑资源
+kubectl edit svc/docker-registry                            # 编辑名为 docker-registry 的 service
+KUBE_EDITOR="nano" kubectl edit svc/docker-registry         # 使用其它编辑器
+vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf   # 修改启动参数
+
+# 动态伸缩pod
+kubectl scale --replicas=3 rs/foo                   # 将foo副本集变成3个
+kubectl scale --replicas=3 -f foo.yaml              # 缩放“foo”中指定的资源。
+kubectl scale --current-replicas=2 --replicas=3 deployment/mysql    # 将deployment/mysql从2个变成3个
+kubectl scale --replicas=5 rc/foo rc/bar rc/baz     # 变更多个控制器的数量
+kubectl rollout status deploy deployment/mysql      # 查看变更进度
+
+#label 操作
+kubectl label：添加label值 kubectl label nodes node1 zone=north              # 增加节点lable值 spec.nodeSelector: zone: north #指定pod在哪个节点
+kubectl label pod redis-master-1033017107-q47hh role=master                 # 增加lable值 [key]=[value]
+kubectl label pod redis-master-1033017107-q47hh role-                       # 删除lable值
+kubectl label pod redis-master-1033017107-q47hh role=backend --overwrite    # 修改lable值
+
+# 滚动升级
+kubectl rolling-update：滚动升级 kubectl rolling-update redis-master -f redis-master-controller-v2.yaml # 配置文件滚动升级
+kubectl rolling-update redis-master --image=redis-master:2.0            # 命令升级
+kubectl rolling-update redis-master --image=redis-master:1.0 --rollback # pod版本回滚
+```
+
+## 5. etcdctl常用
+```bash
+etcdctl cluster-health                                          # 检查网络集群健康状态
+etcdctl --endpoints=https://192.168.71.221:2379 cluster-health  # 带有安全认证检查网络集群健康状态
+etcdctl member list
+etcdctl set /k8s/network/config ‘{ “Network”: “10.1.0.0/16” }’
+etcdctl get /k8s/network/config
+```
+
+## 6. 删除
+```bash
+kubectl delete pod -l app=flannel -n kube-system                          # 根据label删除：
+kubectl delete -f ./pod.json                                              # 删除 pod.json 文件中定义的类型和名称的 pod
+kubectl delete pod,service baz foo                                        # 删除名为“baz”的 pod 和名为“foo”的 service
+kubectl delete pods,services -l name=myLabel                              # 删除具有 name=myLabel 标签的 pod 和 serivce
+kubectl delete pods,services -l name=myLabel --include-uninitialized      # 删除具有 name=myLabel 标签的 pod 和 service，包括尚未初始化的
+kubectl -n my-ns delete po,svc --all                                      # 删除 my-ns namespace下的所有 pod 和 serivce，包括尚未初始化的
+kubectl delete pods prometheus-7fcfcb9f89-qkkf7 --grace-period=0 --force  # 强制删除
+kubectl delete deployment kubernetes-dashboard --namespace=kube-system
+kubectl delete svc kubernetes-dashboard --namespace=kube-system
+kubectl delete -f kubernetes-dashboard.yaml
+kubectl replace --force -f ./pod.json                                     # 强制替换，删除后重新创建资源。会导致服务中断。
+```
 
 
-# 查看 RC 和 service 列表， -o wide 查看详细信息
-kubectl get rc,svc
-kubectl get pod,svc -o wide  
-kubectl get pod <pod-name> -o yaml
+## 7. 容器日志进入
+```bash
+kubectl logs nginx-pod                                 # dump 输出 pod 的日志（stdout）
+kubectl logs nginx-pod -c my-container                 # dump 输出 pod 中容器的日志（stdout，pod 中有多个容器的情况下使用）
+kubectl logs -f nginx-pod                              # 流式输出 pod 的日志（stdout）
+kubectl logs -f nginx-pod -c my-container              # 流式输出 pod 中容器的日志（stdout，pod 中有多个容器的情况下使用）
+kubectl run -i --tty busybox --image=busybox -- sh     # 交互式 shell 的方式运行 pod
+kubectl attach nginx-pod -i                            # 连接到运行中的容器
+kubectl port-forward nginx-pod 5000:6000               # 转发 pod 中的 6000 端口到本地的 5000 端口
+kubectl exec nginx-pod -- ls /                         # 在已存在的容器中执行命令（只有一个容器的情况下）
+kubectl exec nginx-pod -c my-container -- ls /         # 在已存在的容器中执行命令（pod 中有多个容器的情况下）
+kubectl top pod POD_NAME --containers                  # 显示指定 pod和容器的指标度量
+kubectl exec -ti podName /bin/bash                     # 进入pod
+```
+
+## 7. 调度配置
+```bash
+ps -ef | grep kubelet               # 查看kubelet进程启动参数
+kubectl cordon k8s-node             # 标记 my-node 不可调度
+kubectl drain k8s-node              # 清空 my-node 以待维护
+kubectl uncordon k8s-node           # 标记 my-node 可调度
+kubectl top node k8s-node           # 显示 my-node 的指标度量
+kubectl cluster-info dump           # 将当前集群状态输出到 stdout                                    
+kubectl cluster-info dump --output-directory=/path/to/cluster-state   # 将当前集群状态输出到 /path/to/cluster-state
+kubectl taint nodes foo dedicated=special-user:NoSchedule             # 如果该键和影响的污点（taint）已存在，则使用指定的值替换
 
 
-# 显示 Node 的详细信息
-kubectl describe node 192.168.0.212
+#导出proxy
+kubectl get ds -n kube-system -l k8s-app=kube-proxy -o yaml>kube-proxy-ds.yaml
+#导出kube-dns
+kubectl get deployment -n kube-system -l k8s-app=kube-dns -o yaml >kube-dns-dp.yaml
+kubectl get services -n kube-system -l k8s-app=kube-dns -o yaml >kube-dns-services.yaml
+#导出所有 configmap
+kubectl get configmap -n kube-system -o wide -o yaml > configmap.yaml　　
+```
 
-
-# 显示 Pod 的详细信息, 特别是查看 pod 无法创建的时候的日志
-kubectl describe pod <pod-name>
-eg:
-kubectl describe pod redis-master-tqds9
-
-
-# 根据 yaml 创建资源, apply 可以重复执行，create 不行
-kubectl create -f pod.yaml
-kubectl apply -f pod.yaml
-
-
-# 基于 pod.yaml 定义的名称删除 pod 
-kubectl delete -f pod.yaml 
-
-
-# 删除所有包含某个 label 的pod 和 service
-kubectl delete pod,svc -l name=<label-name>
-
-
-# 删除所有 Pod
-kubectl delete pod --all
-
-
-# 查看 endpoint 列表
-kubectl get endpoints
-
-
-# 执行 pod 的 date 命令
-kubectl exec <pod-name> -- date
-kubectl exec <pod-name> -- bash
-kubectl exec <pod-name> -- ping 10.24.51.9
-
-
-# 通过bash获得 pod 中某个容器的TTY，相当于登录容器
-kubectl exec -it <pod-name> -c <container-name> -- bash
-eg:
-kubectl exec -it redis-master-cln81 -- bash
-
-
-# 查看容器的日志
-kubectl logs <pod-name>
-kubectl logs -f <pod-name> # 实时查看日志
-kubectl log  <pod-name>  -c <container_name> # 若 pod 只有一个容器，可以不加 -c 
-
-kubectl logs -l app=frontend # 返回所有标记为 app=frontend 的 pod 的合并日志。
-
-
-# 查看注释
-kubectl explain pod
-kubectl explain pod.apiVersion
-
-# 查看节点 labels
-kubectl get node --show-labels
-
-# 重启 pod
-kubectl get pod <POD名称> -n <NAMESPACE名称> -o yaml | kubectl replace --force -f -
-
-# 修改网络类型
-kubectl patch service istio-ingressgateway -n istio-system -p '{"spec":{"type":"NodePort"}}'
-
-# 伸缩 pod 副本
-# 可用于将Deployment及其Pod缩小为零个副本，实际上杀死了所有副本。当您将其缩放回1/1时，将创建一个新的Pod，重新启动您的应用程序。
-kubectl scale deploy/nginx-1 --replicas=0
-kubectl scale deploy/nginx-1 --replicas=1
-
-# 查看前一个 pod 的日志，logs -p 选项 
-kubectl logs --tail 100 -p user-klvchen-v1.0-6f67dcc46b-5b4qb > pre.log
-
-
-=========================================
-
-Kubectl命令行管理对象
-类型 命令 描述
-基础命令
-create 通过文件名或标准输入创建资源。
-expose 将一个资源公开为一个新的Kubernetes服务。
-run
-创建并运行一个特定的镜像，可能是副本。
-创建一个deployment或job管理创建的容器。
-set 配置应用资源。
-修改现有应用程序资源。
-get 显示一个或多个资源。
-explain 文档参考资料。
-edit 使用默认的编辑器编辑一个资源。
-delete 通过文件名、标准输入、资源名称或标签选择器来删除资源。
-部署命令
-rollout 管理资源的发布。
-rolling-update 执行指定复制控制的滚动更新。
-scale 扩容或缩容Pod数量，Deployment、ReplicaSet、RC或Job。
-autoscale 创建一个自动选择扩容或缩容并设置Pod数量。
-集群管理命令
-certificate 修改证书资源。
-cluster-info 显示集群信息。
-top 显示资源（CPU/Memory/Storage）使用。需要Heapster运行。
-cordon 标记节点不可调度。
-uncordon 标记节点可调度。
-drain 维护期间排除节点。
-taint
-
-==============================
-Kubectl命令行管理对象
-类型 命令 描述
-故障诊断和调试命令
-describe 显示特定资源或资源组的详细信息。
-logs 在pod或指定的资源中容器打印日志。如果pod只有一个容器，容器名称是可选的。
-attach 附加到一个进程到一个已经运行的容器。
-exec 执行命令到容器。
-port-forward 转发一个或多个本地端口到一个pod。
-proxy 为kubernetes API Server启动服务代理。
-cp 拷贝文件或目录到容器中。
-auth 检查授权。
-高级命令
-apply 通过文件名或标准输入对资源应用配置。
-patch 使用补丁修改、更新资源的字段。
-replace 通过文件名或标准输入替换一个资源。
-convert 不同的API版本之间转换配置文件。YAML和JSON格式都接受。
-设置命令
-label 更新资源上的标签。
-annotate 在一个或多个资源上更新注释。
-completion 用于实现kubectl工具自动补全。
-其他命令
-api-versions 打印受支持的API版本。
-config 修改kubeconfig文件（用于访问API，比如配置认证信息）。
-help 所有命令帮助。
-plugin 运行一个命令行插件。
-version 打印客户端和服务版本信息
-====================================
-Kubectl命令行管理对象
-示例：
-# 运行应用程序
-kubectl run hello-world --replicas=3 --labels="app=example" --image=nginx:1.10 --port=80
-# 显示有关Deployments信息
-kubectl get deployments hello-world
-kubectl describe deployments hello-world
-# 显示有关ReplicaSet信息
-kubectl get replicasets
-kubectl describe replicasets
-# 创建一个Service对象暴露Deployment（在88端口负载TCP流量）
-kubectl expose deployment hello-world --port=88 --type=NodePort --target-port=80 --name=example-service
-# 创建一个Service对象暴露Deployment（在4100端口负载UDP流量）
-kubectl expose deployment hello-world --port=4100 --type=NodePort --protocol=udp --target-port=80 --
-name=example-service
-# 显示有关Service信息
-kubectl describe services example-service
-# 使用节点IP和节点端口访问应用程序
-curl http://<public-node-ip>:<node-port>
-==================================
-Kubectl命令行管理对象
-示例：
-# 列出运行应用程序的pod
-kubectl get pods --selector="app=example" --output=wide
-# 查看pods所有标签
-kubectl get pods --show-labels
-# 根据标签查看pods
-kubectl get pods -l app=example
-# 扩容Pod副本数
-kubectl scale deployment --replicas=10 hello-world
-# 清理应用程序
-kubectl delete services example-service
-kubectl delete deployment hello-world
+## 8. 卸载Flannel network interface
+```bash
+ifconfig cni0 down
+ip link delete cni0
+ifconfig flannel.1 down
+ip link delete flannel.1
+rm -rf /var/lib/cni/
+rm -f /etc/cni/net.d/*
+systemctl restart kubelet
+```

@@ -1,44 +1,44 @@
 # Linux
 ```bash
 ntpdate time.nist.gov
-ntpdate pool.ntp.org #同步时间
-cat /etc/redhat-release #版本查看
-vi /etc/hosts #host修改
+ntpdate pool.ntp.org        #同步时间
+cat /etc/redhat-release     #版本查看
+vi /etc/hosts               #host修改
 vi /etc/resolv.conf  nameserver 192.168.0.1 #配置DNS
-hostnamectl set-hostname k8s-master
+service network restart
+hostnamectl set-hostname k8s-master #设置hostname
 
 lsof -i:80
-netstat -tunlp | grep 8080 #端口占用查看
-find / -type f -size +100M #查找大文件
-find / -name memcached  #查找应用
-sed -i 's/原字符串/新字符串/' /home/1.txt
-sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
+ps -ef | grep xxx           #查看启动进程参数
+netstat -tunlp | grep 8080  #端口占用查看
+find / -type f -size +100M  #查找大文件
+find / -name memcached      #查找应用
+sed -i 's/原字符串/新字符串/' /home/1.txt   #替换字符串
+sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config   #替换字符串
 
 cat > /etc/hosts <<EOF
 # 追加的内容
 EOF
 
-yum install -y wget  #远程下载
-tar –zcvf jpg.tar *.jpg  #压缩
-tar –xvf file.tar #解压
-
-scp -r vjsp.workflow root@20.255.122.15:/opt/code  #远程复制
-rpm -qa |grep jdk  #查找程序
-rpm -e --nodeps java-1.6.0-openjdk-1.6.0.0-1.66.1.13.0.el6.x86_64  #删除程序
-memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111;  #memcached启动
-nohup sh /data/kh_shell/jb.sh &  #重新执行数据库
+yum install -y wget       #远程下载
 yum -y install curl
+tar –zcvf jpg.tar *.jpg   #压缩
+tar –xvf file.tar         #解压
 
+scp -r vjsp.workflow root@20.255.122.15:/opt/code                   #远程复制
+rpm -qa |grep jdk                 #查找程序
+rpm -e --nodeps java-1.6.0-openjdk-1.6.0.0-1.66.1.13.0.el6.x86_64   #删除程序
+nohup sh /data/kh_shell/jb.sh &   #重新执行数据库
 
-#重启，启动，开机启动，状态，关闭
-systemctl restart memcached
-systemctl start memcached
-systemctl enable memcached
-systemctl status memcached
-systemctl stop memcached
-systemctl enable nginx.service 
-service iptables stop #关闭防火墙
-nginx -s reload; #重载
+systemctl start firewalld.service   #启动firewall
+systemctl restart firewalld.service #重启firewall
+systemctl stop firewalld.service    #关闭firewall
+systemctl status firewalld.service  #查看防火墙状态
+systemctl disable firewalld.service #禁止firewall随系统启动
+systemctl enable firewalld.service  #firewall随系统启动
+firewall-cmd --zone=public --add-port=80/tcp --permanent #开放端口
+firewall-cmd --reload
+systemctl enable iptables
 ```
 
 ## 1. 安装jdk、Maven
@@ -54,11 +54,10 @@ CLASSPATH=$JAVA_HOME/jre/lib/ext:$JAVA_HOME/lib/tools.jar
 export PATH JAVA_HOME CLASSPATH
 source /etc/profile #配置生效
 
-##
-
-tar -xzf apache-maven-3.6.2-bin.tar.gz #解压
-mkdir -p /opt/maven #创建目录
-mv apache-maven-3.6.2/* /opt/maven #移动文件
+##########################################
+tar -xzf apache-maven-3.6.2-bin.tar.gz  #解压
+mkdir -p /opt/maven                     #创建目录
+mv apache-maven-3.6.2/* /opt/maven      #移动文件
 
 vi /etc/profile
 export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
@@ -71,7 +70,7 @@ mvn -v #查找Maven版本
 ## 2. 安装Ftp
 ```bash
 yum install vsftpd #ftp
-cat /etc/passwd 新增用户
+cat /etc/passwd    #新增用户
 useradd vcms -g root -d /opt/VCMS/vjsp.webapp -s /sbin/nologin
 passwd sipqcl
 chmod -R 777 dir
@@ -91,6 +90,7 @@ ps aux|grep jetty
 ## 4. 应用启动
 
 ```bash
+memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111; #memcached启动
 cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload
 cd /usr/local/redis/  ./bin/redis-server redis.conf
 cd /home/nacos/bin sh startup.sh -m standalone

@@ -1145,17 +1145,19 @@ kubelet --version
 #### 5.3.2 Master节点需要完成
 
 ```bash
-kubeadm init --kubernetes-version=v1.20 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
+kubeadm init --kubernetes-version=v1.20.5 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
 ```
 
-节点安装的命令
-
+Slave节点安装的命令
+```bash
 kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
     --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
+```
 
 启动kubelet
 ```bash
 systemctl restart kubelet
+kubectl get nodes
 ```
 
 配置kubectl工具
@@ -1169,10 +1171,43 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```bash
 mkdir k8s
 cd k8s
-kubectl apply -f https://docs.projectcalico.org/v3.18/manifests/calico.yaml
+wget https://docs.projectcalico.org/v3.10/gettingstarted/kubernetes/installation/hosted/kubernetes-datastore/caliconetworking/1.7/calico.yaml
+
+sed -i 's/192.168.0.0/10.244.0.0/g' calico.yaml
+kubectl apply -f calico.yaml
 kubectl get pod --all-namespaces -o wide
 ```
 
 #### 5.3.3 Slave节点需要完成
 
 在master节点上执行kubeadm token create --print-join-command重新生成加入命令
+
+```bash
+kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
+
+systemctl start kubelet
+```
+
+### 5.3 NFS安装
+
+安装NFS服务（在所有K8S的节点都需要安装）
+```bash
+yum install -y nfs-utils
+
+# 创建共享目录
+mkdir -p /opt/nfs/jenkins
+vi /etc/exports 编写NFS的共享配置
+内容如下:
+/opt/nfs/jenkins *(rw,no_root_squash) # *代表对所有IP都开放此目录，rw是读写
+
+# 启动服务
+systemctl enable nfs
+systemctl start nfs
+
+# 查看NFS共享目录
+
+showmount -e 192.168.3.200
+```
+
+### 5.4 在Kubernetes安装Jenkins-Master

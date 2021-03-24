@@ -96,9 +96,9 @@ hlen myhash                  #长度
 lpush mylist a b c  #左插入
 rpush mylist x y z  #右插入
 lrange mylist 0 -1  #数据集合
-lpop mylist  #弹出元素
-rpop mylist  #弹出元素
-llen mylist  #长度
+lpop mylist         #弹出元素
+rpop mylist         #弹出元素
+llen mylist         #长度
 lrem mylist count value  #删除
 lindex mylist 2          #指定索引的值
 lset mylist 2 n          #索引设值
@@ -130,11 +130,11 @@ zadd zset 3 three
 zincrby zset 1 one              #增长分数
 zscore zset two                 #获取分数
 zrange zset 0 -1 withscores     #范围值
-zrangebyscore zset 10 25 withscores #指定范围的值
-zrangebyscore zset 10 25 withscores limit 1 2 #分页
-Zrevrangebyscore zset 10 25 withscores  #指定范围的值
-zcard zset  #元素数量
-Zcount zset #获得指定分数范围内的元素个数
+zrangebyscore zset 10 25 withscores             #指定范围的值
+zrangebyscore zset 10 25 withscores limit 1 2   #分页
+Zrevrangebyscore zset 10 25 withscores          #指定范围的值
+zcard zset                #元素数量
+Zcount zset               #获得指定分数范围内的元素个数
 Zrem zset one two         #删除一个或多个元素
 Zremrangebyrank zset 0 1  #按照排名范围删除元素
 Zremrangebyscore zset 0 1 #按照分数范围删除元素
