@@ -11,9 +11,9 @@ journalctl -u kubelet -f        # 查看日志:
 kubeadm reset -f                # 重置kubeadm
 iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X   # 清空iptables规则
 
-
-kubectl get pods --all-namespaces           # 查看所有namespace的pods运行情况
-kubectl get pods  kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system             # 查看具体pods，记得后边跟namespace名字哦
+kubectl api-resources
+kubectl get pods --all-namespaces -o wide  # 查看所有namespace的pods运行情况
+kubectl get pods kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system              # 查看具体pods，记得后边跟namespace名字哦
 kubectl get pods -o wide kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system      # 查看pods具体信息
 kubectl get cs                              # 查看集群健康状态
 kubectl get deployment --all-namespaces     # 获取所有deployment
@@ -24,6 +24,8 @@ kubectl get rc,services                             # 查看rc和servers
 kubectl describe pods xxxxpodsname --namespace=xxxnamespace     # 查看pods结构信息（重点，通过这个看日志分析错误）对控制器和服务，node同样有效
 kubectl logs --tail=1000 $POD_NAME                              # 查看pod日志
 kubectl exec my-nginx-5j8ok -- printenv | grep SERVICE          # 查看pod变量
+kubectl describe pods -n kube-ops   # 查看Pod运行在那个Node上
+kubectl get service -n kube-ops     # 查看分配的端口  
 ```
 
 ## 2. 集群
@@ -65,6 +67,9 @@ kubectl rolling-update python --image=image:v2                  # 更新 fronten
 kubectl rolling-update python-v1 python-v2 --rollback           # 退出已存在的进行中的滚动更新
 cat pod.json | kubectl replace -f -                             # 基于stdin输入的JSON替换pod
 kubectl expose rc nginx --port=80 --target-port=8000            # 为nginx RC创建服务，启用本地80端口连接到容器上的8000端口
+
+kubectl create deployment kubernetes-nginx --image=nginx:1.10
+kubectl expose deployment/kubernetes-nginx --type="NodePort" --port 80
 
 
 kubectl get pod nginx-pod -o yaml | sed 's/\(image: myimage\):.*$/\1:v4/' | kubectl replace -f -    # 更新单容器 pod 的镜像版本（tag）到 v4
@@ -113,9 +118,11 @@ kubectl delete pod,service baz foo                                        # 删�
 kubectl delete pods,services -l name=myLabel                              # 删除具有 name=myLabel 标签的 pod 和 serivce
 kubectl delete pods,services -l name=myLabel --include-uninitialized      # 删除具有 name=myLabel 标签的 pod 和 service，包括尚未初始化的
 kubectl -n my-ns delete po,svc --all                                      # 删除 my-ns namespace下的所有 pod 和 serivce，包括尚未初始化的
-kubectl delete pods prometheus-7fcfcb9f89-qkkf7 --grace-period=0 --force  # 强制删除
 
-kubectl delete deployment kubernetes-dashboard --namespace=kube-system
+kubectl create deployment kubernetes-nginx --image=nginx:1.10             # 创建1个Nginx应用
+
+kubectl delete pods prometheus-7fcfcb9f89-qkkf7 --grace-period=0 --force  # 强制删除
+kubectl delete deployment kubernetes-dashboard --namespace=kube-system    # 删除指定命名空间下的一个应用
 kubectl delete svc kubernetes-dashboard --namespace=kube-system
 kubectl delete -f kubernetes-dashboard.yaml
 kubectl replace --force -f ./pod.json                                     # 强制替换，删除后重新创建资源。会导致服务中断。
