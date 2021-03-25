@@ -611,3 +611,20 @@ docker run -d --name sonarqube \
     sonarqube:8.6-community
 ```
 
+## 28. Jenkins
+
+```bash
+docker pull jenkins/jenkins:lts
+docker pull jenkins/jenkins
+
+mkdir -p /data/jenkins_home/
+chown -R 1000:1000 /data/jenkins_home/
+
+docker run -d --name jenkins -p 8888:8080 -p 50000:50000 -v /data/jenkins_home:/var/jenkins_home jenkins/jenkins
+
+cd /data/jenkins_home
+vi hudson.model.UpdateCenter.xml
+# http://mirror.xmission.com/jenkins/updates/update-center.json
+
+```
+

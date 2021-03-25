@@ -735,7 +735,7 @@ node {
 
 #### 3.4.3 编写deploy.sh部署脚本
 
-上传deploy.sh文件到/opt/jenkins_shell目录下，且文件至少有执行权限！
+上传[deploy.sh](/file/jenkins-deploy/deploy)文件到/opt/jenkins_shell目录下，且文件至少有执行权限！
 
 > chmod +x deploy.sh
 
@@ -954,7 +954,7 @@ node {
 }
 ```
 
-deployCluster.sh部署脚本
+上传[deployCluster.sh](/file/jenkins-deploy/deployCluster)部署脚本
 
 ```
 #! /bin/sh
@@ -1016,6 +1016,8 @@ echo "容器启动成功"
 > Manage Jenkins -> Configure Global Security
 
 ![](../../images/share/monitor/devops/jenkins_global_secret.png)
+
+新建Slave节点
 
 ![](../../images/share/monitor/devops/jenkins_agent_slave1.png)
 
@@ -1261,8 +1263,270 @@ spec:
 
 ### 5.5 Jenkins与Kubernetes整合
 
+先安装基本的插件
+- Localization:Chinese
+- Git
+- Pipeline
+- Extended Choice Parameter
+
+安装Kubernetes插件
+
+![](../../images/share/monitor/devops/jenkins_kube.png)
+
+- kubernetes地址采用了kube的服务器发现：https://kubernetes.default.svc.cluster.local
+- namespace填kube-ops，然后点击Test Connection，如果出现 Connection test successful 的提示信息证明 Jenkins 已经可以和 Kubernetes 系统正常通信
+- Jenkins URL 地址：http://jenkins.kube-ops.svc.cluster.local:8080
+
 ### 5.6 构建Jenkins-Slave自定义镜像
+
+Jenkins-Master在构建Job的时候，Kubernetes会创建Jenkins-Slave的Pod来完成Job的构建。我们选择运行Jenkins-Slave的镜像为官方推荐镜像：jenkins/jnlp-slave:latest，但是这个镜像里面并没有Maven环境，为了方便使用，我们需要自定义一个新的镜像：
+
+![](../../images/share/monitor/devops/jenkins_jenkins_slave.png)
+
+[Dockerfile](/file/jenkins-slave/Dockerfile)，[settings.xml](/file/jenkins-slave/settings)文件内容如下：
+
+```bash
+FROM jenkins/jnlp-slave:latest
+
+MAINTAINER xuzhihao
+# 切换到 root 账户进行操作
+USER root
+
+# 安装 maven
+COPY apache-maven-3.6.2-bin.tar.gz .
+
+RUN tar -zxf apache-maven-3.6.2-bin.tar.gz && \
+    mv apache-maven-3.6.2 /usr/local && \
+    rm -f apache-maven-3.6.2-bin.tar.gz && \
+    ln -s /usr/local/apache-maven-3.6.2/bin/mvn /usr/bin/mvn && \
+    ln -s /usr/local/apache-maven-3.6.2 /usr/local/apache-maven && \
+    mkdir -p /usr/local/apache-maven/repo
+
+COPY settings.xml /usr/local/apache-maven/conf/settings.xml
+
+USER jenkins
+```
+构建出一个新镜像：jenkins-slave-maven:latest
+
+然把镜像上传到Harbor的公共库library中
+```bash
+docker build -t jenkins-slavemaven:latest .
+docker tag jenkins-slavemaven:latest 172.17.17.80:88/library/jenkins-slavemaven:latest
+docker login -u admin -p Harbor12345 172.17.17.80:88
+docker push 172.17.17.80:88/library/jenkins-slavemaven:latest
+```
 
 ### 5.7 测试Jenkins-Slave是否可以创建
 
+#### 5.7.1 从节点拉取代码
+
+创建一个Jenkins流水线项目，编写Pipeline，从GItlab拉取代码
+```bash
+def git_address = "http://172.17.17.50:82/vjsp/web_demo.git"
+def git_auth = "9d9a2707-eab7-4dc9-b106-e52f329cbc95"
+
+//创建一个Pod的模板，label为jenkins-slave
+podTemplate(label: 'jenkins-slave', cloud: 'kubernetes', containers: [
+    containerTemplate(
+        name: 'jnlp', 
+        image: "172.17.17.80:88/library/jenkins-slavemaven:latest"
+    )
+  ]
+) 
+{
+  //引用jenkins-slave的pod模块来构建Jenkins-Slave的pod
+  node("jenkins-slave"){
+      // 第一步
+      stage('拉取代码'){
+         checkout([$class: 'GitSCM', branches: [[name: 'master']], userRemoteConfigs: [[credentialsId: "${git_auth}", url: "${git_address}"]]])
+      }
+  }
+}
+```
+
+#### 5.7.2 构建镜像
+
+主节点创建NFS共享目录，让所有Jenkins-Slave构建指向NFS的Maven的共享仓库目录
+```bash
+vi /etc/exports
+
+/opt/nfs/jenkins *(rw,no_root_squash)
+/opt/nfs/maven *(rw,no_root_squash)
+systemctl restart nfs   # 重启NFS
+chown -R jenkins:jenkins /opt/nfs/maven
+chmod -R 777 /opt/nfs/maven
+chmod 777 /var/run/docker.sock
+```
+
+```bash
+
+def git_address = "http://192.168.66.100:82/itheima_group/tensquare_back_cluster.git"
+def git_auth = "9d9a2707-eab7-4dc9-b106-e52f329cbc95"
+//构建版本的名称
+def tag = "latest"
+//Harbor私服地址
+def harbor_url = "192.168.66.102:85"
+//Harbor的项目名称
+def harbor_project_name = "test"
+//Harbor的凭证
+def harbor_auth = "71eff071-ec17-4219-bae1-5d0093e3d060"
+def secret_name = "registry-auth-secret"
+//k8s凭证
+def k8s_auth = "c5fe8670-f5a7-4b1a-811c-48ab5de2aed9";
+
+
+podTemplate(label: 'jenkins-slave', cloud: 'kubernetes', containers: [
+    containerTemplate(
+        name: 'jnlp', 
+        image: "192.168.66.102:85/library/jenkins-slave-maven:latest"
+    ),
+    containerTemplate(
+        name: 'docker', 
+        image: "docker:stable",
+        ttyEnabled: true,
+        command: 'cat'
+    ),
+  ],
+  volumes: [
+    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
+    nfsVolume(mountPath: '/usr/local/apache-maven/repo', serverAddress: '192.168.66.101' , serverPath: '/opt/nfs/maven'),
+  ],
+) 
+{
+  node("jenkins-slave"){
+      // 第一步
+      stage('拉取代码'){
+         checkout([$class: 'GitSCM', branches: [[name: '${branch}']], userRemoteConfigs: [[credentialsId: "${git_auth}", url: "${git_address}"]]])
+      }
+      // 第二步
+      stage('代码编译'){
+           //编译并安装公共工程
+         sh "mvn -f shop_common clean install" 
+      }
+      // 第三步
+      stage('构建镜像，部署项目'){
+	        //把选择的项目信息转为数组
+			def selectedProjects = "${project_name}".split(',')
+			
+            for(int i=0;i<selectedProjects.size();i++){
+                //取出每个项目的名称和端口
+                def currentProject = selectedProjects[i];
+                //项目名称
+                def currentProjectName = currentProject.split('@')[0]
+                //项目启动端口
+                def currentProjectPort = currentProject.split('@')[1]
+
+                 //定义镜像名称
+                 def imageName = "${currentProjectName}:${tag}"
+				 
+				 //编译，构建本地镜像
+				 sh "mvn -f ${currentProjectName} clean package dockerfile:build"
+				 container('docker') {
+
+					 //给镜像打标签
+					 sh "docker tag ${imageName} ${harbor_url}/${harbor_project_name}/${imageName}"
+
+					 //登录Harbor，并上传镜像
+					 withCredentials([usernamePassword(credentialsId: "${harbor_auth}", passwordVariable: 'password', usernameVariable: 'username')]) {
+						  //登录
+						  sh "docker login -u ${username} -p ${password} ${harbor_url}"
+						  //上传镜像
+						  sh "docker push ${harbor_url}/${harbor_project_name}/${imageName}"
+					 }
+
+					 //删除本地镜像
+					 sh "docker rmi -f ${imageName}"
+					 sh "docker rmi -f ${harbor_url}/${harbor_project_name}/${imageName}"
+				 }
+				 
+				 def deploy_image_name = "${harbor_url}/${harbor_project_name}/${imageName}"
+				 
+				 //部署到K8S
+			     sh """
+                        sed -i 's#\$IMAGE_NAME#${deploy_image_name}#' ${currentProjectName}/deploy.yml
+						sed -i 's#\$SECRET_NAME#${secret_name}#' ${currentProjectName}/deploy.yml
+                 """
+                      
+                 kubernetesDeploy configs: "${currentProjectName}/deploy.yml", kubeconfigId: "${k8s_auth}"
+         } 
+      }
+  }
+}
+```
+
+需要手动上传父工程依赖到NFS的Maven共享仓库目录中
+
+修改每个微服务的application.yml
+
+```yml
+server:
+  port: ${PORT:10086}
+spring:
+  application:
+    name: eureka
+
+eureka:
+  server:
+    # 续期时间，即扫描失效服务的间隔时间（缺省为60*1000ms）
+    eviction-interval-timer-in-ms: 5000
+    enable-self-preservation: false
+    use-read-only-response-cache: false
+  client:
+    # eureka client间隔多久去拉取服务注册信息 默认30s
+    registry-fetch-interval-seconds: 5
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVER:http://127.0.0.1:${server.port}/eureka/}
+  instance:
+    # 心跳间隔时间，即发送一次心跳之后，多久在发起下一次（缺省为30s）
+    lease-renewal-interval-in-seconds: 5
+    # 在收到一次心跳之后，等待下一次心跳的空档时间，大于心跳间隔即可，即服务续约到期时间（缺省为90s）
+    lease-expiration-duration-in-seconds: 10
+    instance-id: ${EUREKA_INSTANCE_HOSTNAME:${spring.application.name}}:${server.port}@${random.long(1000000,9999999)}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:${spring.application.name}}
+```
+
 ### 5.8 微服务部署到K8S
+
+#### 5.8.1 安装Kubernetes Continuous Deploy插件
+
+#### 5.8.2 建立k8s认证凭证
+
+kubeconfig到k8s的Master节点复制
+```
+cat /root/.kube/config
+```
+
+#### 5.8.3 生成Docker凭证
+
+Docker凭证，用于Kubernetes到Docker私服拉取镜像
+```bash
+docker login -u admin -p Harbor12345 172.17.17.80:88
+kubectl create secret docker-registry registry-auth-secret --docker-server=172.17.17.80:88 --docker-username=admin --docker-password=admin --docker-email=xuzhihao@163.com    # 生成秘钥
+kubectl get secret    # 查看密钥
+
+```
+
+在每个项目下建立[deploy.yml](/file/jenkins-deploy/deploy-k8s)，加入密钥参数
+
+```yml
+spec:
+  serviceName: "eureka"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: eureka
+  template:
+    metadata:
+      labels:
+        app: eureka
+    spec:
+      imagePullSecrets:
+        - name: $SECRET_NAME
+```
+
+项目构建后，查看服务创建情况
+```
+kubectl get pods -owide
+kubectl get service
+```
+
