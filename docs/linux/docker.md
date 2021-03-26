@@ -22,24 +22,39 @@ curl -L https://get.daocloud.io/docker/compose/releases/download/1.25.5/docker-c
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose -v
 
+#https://hub.docker.com/
 ```
 
-## 2. 容器信息
+## 2. 添加仓库镜像地址
+
+1. Docker官方中国区： https://registry.docker-cn.com
+2. 网易：http://hub-mirror.c.163.com
+3. 中国科学技术大学：https://docker.mirrors.ustc.edu.cn
+
+```Shell
+# vi /etc/docker/daemon.json
+{
+    "registry-mirrors":["https://registry.docker-cn.com"],
+    "insecure-registries": ["192.168.3.200:5000"]
+}
+sudo systemctl daemon-reload
+sudo systemctl restart docker 
+```
+
+## 3. 命令
 ```bash
+#容器信息
 docker version              #查看docker容器版本
 docker info                 #查看docker容器信息
 docker --help               #查看docker容器帮助
 docker info |grep Cgroup    #查看驱动
-```
-## 3. 镜像操作
-```bash
+
+#镜像操作
 docker images                   #查看镜像
 docker rmi [imageid]            #删除镜像
 docker rmi $(docker images -q)  #删除本地所有镜像
-```
 
-## 4. 容器操作
-```bash
+#容器操作
 docker ps -a|-q|-l              #查看容器
 docker restart [containerid]
 docker stop [containerid]
@@ -47,30 +62,29 @@ docker start [containerid]
 docker start $(docker ps -a -q)  #启动所有容器
 docker rm [containerid]          #删除容器
 docker rmi $(docker images | grep "none" | awk '{print $3}')    #删除none的镜像
-
 docker stats [containerid]       #监控
 docker stats $(docker ps -a -q)  #监控所有容器
 docker stats --no-stream=true $(docker ps -a -q)        #监控所有容器当前
 docker container update --restart=always [containerid]  #容器自动启动
 docker update --restart=always $(docker ps -q -a)       #更新所有容器启动时自动启动
-```
 
-## 5. 容器进入
-```bash
+##基于当前redis容器创建一个新的镜像；参数：-a 提交的镜像作者；-c 使用Dockerfile指令来创建镜像；-m :提交时的说明文字；-p :在commit时，将容器暂停
+docker commit -a="DeepInThought" -m="my redis" [redis容器ID]  myredis:v1.1
+
+docker-compose -f docker-compose-env.yml up -d  
+
+#容器进入
 docker exec -it [containerid] /bin/bash
 docker run --net=host           #host模式执行容器，使用主机网络堆栈.因此无法将端口暴露给主机,因为它是主机
 docker inspect [containerid]    #容器IP查询
-```
 
-## 6. 容器日志
-```bash
+#容器日志
 docker logs -t --since="2018-02-08T13:23:37" [containerid]          #查看某时间之后的日志
 docker logs -f -t --since="2018-02-08" --tail=100 [containerid]     #查看指定时间后的日志，只显示最后100行
 docker logs --since 30m [containerid]                               #查看最近30分钟的日志
 docker logs -t --since="2018-02-08T13:23:37" --until "2018-02-09T12:23:37" [containerid]  #查看某时间段日志
-```
-## 7. 容器与主机间的数据拷贝
-```bash
+
+#容器与主机间的数据拷贝
 docker cp rabbitmq:/[container_path] [local_path]   # 将rabbitmq容器中的文件copy至本地路径
 docker cp [local_path] rabbitmq:/[container_path]/  # 将主机文件copy至rabbitmq容器
 docker cp [local_path] rabbitmq:/[container_path]   # 将主机文件copy至rabbitmq容器，目录重命名为[container_path]（注意与非重命名copy的区别）
@@ -78,13 +92,9 @@ docker run -it -v /[local_path]:/[container_path] [imageid] /bin/bash   # 挂载
 docker update --restart=always [container_id]       # 修改容器自动启动
 ```
 
-## 8. 生成镜像
-```bash
-##基于当前redis容器创建一个新的镜像；参数：-a 提交的镜像作者；-c 使用Dockerfile指令来创建镜像；-m :提交时的说明文字；-p :在commit时，将容器暂停
-docker commit -a="DeepInThought" -m="my redis" [redis容器ID]  myredis:v1.1
-```
+## 4. Dockerfile
 
-## 9. Dockerfile常见命令
+### 4.1 参数
 
 ```bash
 FROM        #设置基础镜像
@@ -102,6 +112,8 @@ VOLUME      #设置可被挂载的数据卷（目录映射）
 ONBUILD     #设置在构建时需要自动执行的命令
 ```
 
+### 4.2 本地文件构建镜像
+
 在jar包所在的目录下创建一个名为 Dockerfile 的文件，文件内容如下：
 
 ```bash
@@ -116,8 +128,6 @@ EXPOSE 9001
 ENTRYPOINT ["java","-jar","/app.jar"]
 ```
 
-构建镜像
-
 ```shell
 #-f :指定要使用的Dockerfile路径；
 docker build --build-arg JAR_FILE=eureka-server-0.0.1-SNAPSHOT.jar -t eureka:v0.0.1 .
@@ -125,39 +135,40 @@ docker images       #查看镜像是否创建成功
 docker run -i --name=eureka -p 10086:9001 eureka:v0.0.1     #创建容器
 http://192.168.3.200:10086
 ```
+### 4.3 远程下载构建镜像
 
-## 10. docker-compose
+注意：Dockerfile 的指令每执行一次都会在 docker 上新建一层。所以过多无意义的层，会造成镜像膨胀过大
+
 ```bash
-docker-compose -f docker-compose-env.yml up -d  
-```
-## 11. 添加仓库镜像地址
-
-1. Docker官方中国区： https://registry.docker-cn.com
-2. 网易：http://hub-mirror.c.163.com
-3. 中国科学技术大学：https://docker.mirrors.ustc.edu.cn
-
-```Shell
-# vi /etc/docker/daemon.json
-{
-    "registry-mirrors":["https://registry.docker-cn.com"],
-    "insecure-registries": ["192.168.3.200:5000"]
-}
-sudo systemctl daemon-reload
-sudo systemctl restart docker 
+FROM centos
+RUN yum install wget \
+    && wget -O redis.tar.gz "http://download.redis.io/releases/redis-5.0.3.tar.gz" \
+    && tar -xvf redis.tar.gz
 ```
 
-## 12. 常用地址
+```bash
+docker build -t xxx:v0.1 .
+```
 
-doc仓库：https://hub.docker.com/r/samuelebistoletti/docker-statsd-influxdb-grafana
+### 4.4 仓库下载构建镜像
 
-## 13. registry
+```bash
+FROM openjdk:9-jdk
+MAINTAINER xuzhihao <xuzhihao@gmail.com>
 
+WORKDIR workdir
+RUN wget https://github.com/eclipse/eclipse.jdt.ls/archive/v0.48.0.tar.gz \
+    && tar xvf v0.48.0.tar.gz \
+    && cd eclipse.jdt.ls-0.48.0 \
+    && ./mvnw build
+```
+
+## 5. registry
 ```bash
 docker pull busybox 
 docker tag busybox 192.168.3.200:5000/busybox:v1.0
 docker push 192.168.3.200:5000/busybox:v1.0
 ```
-
 ```xml
 <build>
     <plugins>
