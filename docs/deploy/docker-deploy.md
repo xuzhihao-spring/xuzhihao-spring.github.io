@@ -451,11 +451,9 @@ docker run --name openfire -d --restart=always \
 http://ip:8080
 
 ```bash
-docker run -it --rm \
+docker run -it -d --rm \
 -v /var/run/docker.sock:/var/run/docker.sock \
--v /d/checmd3/che/assembly/assembly-main/target/eclipse-che-7.0.0-beta-2.0/eclipse-che-7.0.0-beta-2.0:/che \
--e CHE_ASSEMBLY='/d/checmd3/che/assembly/assembly-main/target/eclipse-che-7.0.0-beta-2.0/eclipse-che-7.0.0-beta-2.0' \
--v /d/checmd3/che/tmp:/data \
+-v /mydata/che:/data \
 eclipse/che start
 ```
 
@@ -464,8 +462,7 @@ eclipse/che start
 ## 21. Theia
 
 ```bash
-docker pull theiaide/theia-full
-docker run -d -it --init -p 3000:3000 -v "/mydata/vscode:/home/project:cached" theiaide/theia-full:latest
+docker run -it -d -p 3000:3000 --name theia -v "/mydata/vscode:/home/project:cached" theiaide/theia
 ```
 
 ![](../images/deploy/docker/21.Theia.png)
