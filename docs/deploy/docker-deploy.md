@@ -462,7 +462,8 @@ eclipse/che start
 ## 21. Theia
 
 ```bash
-docker run -it -d -p 3000:3000 --name theia -v "/mydata/vscode:/home/project:cached" theiaide/theia
+docker run -it -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/theia
+docker run -d -it --init -p 4000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
 ```
 
 ![](../images/deploy/docker/21.Theia.png)
