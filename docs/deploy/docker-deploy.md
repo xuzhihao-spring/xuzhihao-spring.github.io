@@ -462,6 +462,7 @@ eclipse/che start
 ## 21. Theia
 
 ```bash
+chown -R 1000:1000 /mydata/
 docker run -it -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/theia
 docker run -d -it --init -p 4000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
 ```

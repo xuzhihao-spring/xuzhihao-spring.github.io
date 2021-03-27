@@ -66,24 +66,24 @@ JVM底层原理
  * [服务网格Service Mesh](/share/microservice/servicemesh)
 
 数据库原理调优
- * [Redis](/share/database/redis)
+ * [Redis](/linux/redis.md)
  * [MongoDB](/share/database/mongodb)
  * [Mysql](/share/database/mysql)
  * [Oracle](/share/database/oracle)
- * [Mycat](/share/database/mycat)
+ * [Mycat](/deploy/mycat)
  * [ShardingSphere](/share/database/shardingsphere)
  * [DBLE](/share/database/dble)
  * [分布式数据库OceanBase](/share/database/oceanbase)
 
 运维与监控
- * [Git](/share/monitor/git)
+ * [Git](/deploy/gitlab)
  * [Maven](/share/monitor/maven)
  * [Gradle](/share/monitor/gradle)
- * [Docker](/share/monitor/docker)
+ * [Docker](/linux/docker)
  * [Kubernetes](/share/monitor/k8s)
  * [devops](/share/monitor/devops)
  * [prometheus](/share/monitor/prometheus)
- * [grafana](/share/monitor/grafana)
+ * [grafana](/deploy/grafana)
 
 架构师思维设计架构
  * [设计模式](/share/designpattern/model)
