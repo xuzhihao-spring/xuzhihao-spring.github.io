@@ -21,12 +21,15 @@ spring:
       datasource:
         ds1:
           nacos:
-            server-addr: localhost:8848
+            server-addr: localhost:8848 #规则持久化到nacos中
             dataId: ${spring.application.name}-sentinel
             groupId: DEFAULT_GROUP
             data-type: json
             rule-type: flow
 ```
+
+@SentinelResource的使用
+
 
 ## 2. Nacos动态服务发现、配置管理
 
