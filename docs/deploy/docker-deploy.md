@@ -634,7 +634,7 @@ docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard
 ```
 
 
-## 30. Sentinel
+## 30. rocketmq
 
 开通防火墙
 ```bash
@@ -646,13 +646,13 @@ firewall-cmd --reload
 
 创建存储文件夹
 ```bash
-mkdir -p /root/rocketmq/data/namesrv/logs /root/rocketmq/data/namesrv/store /root/rocketmq/conf /root/rocketmq/data/broker/logs /root/rocketmq/data/broker/stor
+mkdir -p /mydata/rocketmq/data/namesrv/logs /root/rocketmq/data/namesrv/store /mydata/rocketmq/conf /mydata/rocketmq/data/broker/logs /mydata/rocketmq/data/broker/stor
 ```
 
 
-进入到 /root/rocketmq/conf 文件夹下 创建文件 broker.conf
+进入到 /mydata/rocketmq/conf 文件夹下 创建文件 broker.conf
 ```bash
-cd /root/rocketmq/conf
+cd /mydata/rocketmq/conf
 touch broker.conf
 vi broker.conf
 
@@ -672,9 +672,9 @@ brokerIP1 = 172.17.17.80
 docker pull rocketmqinc/rocketmq:4.4.0
 docker pull styletang/rocketmq-console-ng
 
-docker run -d -p 9876:9876 -v /root/rocketmq/data/namesrv/logs:/root/logs -v /root/rocketmq/data/namesrv/store:/root/store --name rmqnamesrv -e "MAX_POSSIBLE_HEAP=100000000" rocketmqinc/rocketmq:4.4.0 sh mqnamesrv
+docker run -d -p 9876:9876 -v /mydata/rocketmq/data/namesrv/logs:/root/logs -v /mydata/rocketmq/data/namesrv/store:/root/store --name rmqnamesrv -e "MAX_POSSIBLE_HEAP=100000000" rocketmqinc/rocketmq:4.4.0 sh mqnamesrv
 
-docker run -d -p 10911:10911 -p 10909:10909 -v  /root/rocketmq/data/broker/logs:/root/logs -v  /root/rocketmq/data/broker/store:/root/store -v  /root/rocketmq/conf/broker.conf:/opt/rocketmq-4.4.0/conf/broker.conf --name rmqbroker --link rmqnamesrv:namesrv -e "NAMESRV_ADDR=namesrv:9876" -e "MAX_POSSIBLE_HEAP=200000000" rocketmqinc/rocketmq:4.4.0 sh mqbroker -c /opt/rocketmq-4.4.0/conf/broker.conf
+docker run -d -p 10911:10911 -p 10909:10909 -v  /mydata/rocketmq/data/broker/logs:/root/logs -v  /mydata/rocketmq/data/broker/store:/root/store -v  /mydata/rocketmq/conf/broker.conf:/opt/rocketmq-4.4.0/conf/broker.conf --name rmqbroker --link rmqnamesrv:namesrv -e "NAMESRV_ADDR=namesrv:9876" -e "MAX_POSSIBLE_HEAP=200000000" rocketmqinc/rocketmq:4.4.0 sh mqbroker -c /opt/rocketmq-4.4.0/conf/broker.conf
 
 docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false" -t styletang/rocketmq-console-ng
 
