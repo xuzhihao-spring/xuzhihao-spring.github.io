@@ -665,6 +665,7 @@ fileReservedTime = 48
 brokerRole = ASYNC_MASTER
 flushDiskType = ASYNC_FLUSH
 brokerIP1 = 172.17.17.80
+messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
 ```
 
 拉取镜像
@@ -678,4 +679,19 @@ docker run -d -p 10911:10911 -p 10909:10909 -v  /mydata/rocketmq/data/broker/log
 
 docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false" -t styletang/rocketmq-console-ng
 
+```
+
+## 30. rabbitmq
+
+```bash
+docker run -d -it --name rabbitmq -p 5672:5672 -p 15672:15672 -v "/mydata/rabbitmq/data:/var/lib/rabbitmq" -v "/mydata/rabbitmq/log:/var/log/rabbitmq" -e RABBITMQ_DEFAULT_USER=guest -e RABBITMQ_DEFAULT_PASS=guest rabbitmq:3.7.15-management
+
+docker cp rabbitmq_delayed_message_exchange-3.8.0.ez rabbitmq:/plugins
+
+rabbitmq-plugins enable rabbitmq_delayed_message_exchange
+
+rabbitmq-plugins enable rabbitmq_tracing
+rabbitmq-plugins disable rabbitmq_tracing
+
+vi /etc/rabbitmq/rabbitmq.conf
 ```
