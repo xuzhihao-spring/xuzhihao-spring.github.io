@@ -6,7 +6,7 @@
   * [Linux](linux/linux.md)
   * [Docker](linux/docker.md)
   * [Kubernetes](linux/kubernetes.md)
-  * [Node.js](linux/node.md)
+  * [NodeJS](linux/node.md)
   * [Windows](linux/windows.md)
 
 * 数据库

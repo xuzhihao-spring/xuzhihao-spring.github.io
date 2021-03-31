@@ -89,19 +89,3 @@ JVM底层原理
  * [设计模式](/share/designpattern/model)
  * [架构设计](/share/designpattern/design)
  * [领域驱动模型](/share/designpattern/ddd)
-
-前端
-
-npm install typescript --registry=https://registry.npm.taobao.org
-
-npm init -y
-
-npm install typescript --registry=https://registry.npm.taobao.org
-tsc --init
-tsc -w
-Code Runner
-
-npm install ts-node -g --force --registry=https://registry.npm.taobao.org
-
-
-npm install rollup typescript rollup-plugin-typescript2 @rollup/plugin-node-resolve rollup-plugin-serve -D

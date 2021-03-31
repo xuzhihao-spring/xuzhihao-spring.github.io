@@ -1,6 +1,6 @@
-# Node.js
+# NodeJS
 
-## 1. 安装Node
+## 1. Node
 
 ```bash
 yum install -y git
@@ -17,38 +17,51 @@ node -v
 npm -v
 ```
 
-## 2. 包管理器NPM
+## 2. npm
 
 ```bash
 npm -v #查看npm安装的版本
 
 npm install --registry=https://registry.npm.taobao.org #指定仓库地址
 
+npm init                        #创建package.json
 npm install moduleName          #安装node模块
 npm install moduleName@1.0.0    #安装node模块特定版本
 npm install -g moduleName       #全局安装命令
+npm install –save               #将模块写入dependencies节点（生产环境）
+npm install –save-dev/          #将模块写入devDependencies节点（开发环境）
 npm set global=true             #设定全局安装模式
 npm get global                  #查看当前使用的安装模式
-npm install –save               #将模块写入dependencies节点（生产环境）
-npm install –save-dev           #将模块写入devDependencies节点（开发环境）
 npm outdated                    #检查包是否已经过时
 npm update moduleName           #更新node模块
 npm uninstall moudleName        #卸载node模块
-npm init                #会引导你创建一个package.json文件，包括名称、版本、作者这些信息等
+
 npm root                #查看当前包的安装路径
 npm root -g             #查看全局的包的安装路径
 npm list                #查看当前目录下已安装的node包
 npm list parseable=true #以目录的形式来展现当前安装的所有node包
 ```
 
-## 2. NODEJS
+## 3. forever
 
 ```bash
-sudo npm install forever -g #全局安装forever启动命令
+npm install forever -g      #全局安装forever启动命令
 forever start app.js        #启动进程
 forever stop  app.js        #关闭进程
+forever stopall             #关闭所有进程
 forever restart app.js      #重启进程
-forever list                #查看forever进程列表
+forever list                #查看服务进程
+forever start -w app.js     #监听文件改动
 forever start -l forever.log -o out.log -e err.log app.js #日志输出
 ```
 
+## 4. typescript
+
+```bash
+npm install -g typescript --registry=https://registry.npm.taobao.org
+npm install rollup typescript rollup-plugin-typescript2 "@rollup/plugin-node-resolve" rollup-plugin-serve -D
+npm init -y                     #创建package.json
+tsc --init                      #创建tsconfig.json
+tsc -w                          #手动编译
+npm install ts-node -g --force  #配合插件Code Runner
+```
