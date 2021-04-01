@@ -1,6 +1,6 @@
 # windows
 
-## 1. eclipse环境变量
+## 1. Eclipse环境变量
 
 ```
 JAVA_HOME
@@ -51,22 +51,36 @@ PATH
   </mirrors>
 ```
 
-## 3. VirtualBox
+## 3. Gradle环境变量
+
+https://gradle.org/releases/
+
+```
+GRADLE_HOME
+D:\java\gradle-6.8.3
+
+PATH
+%GRADLE_HOME%\bin
+
+```
+
+
+## 4. VirtualBox
 
 cd C:\Program Files\Oracle\VirtualBox
 
 VBoxManage internalcommands sethduuid "D:\VirtualBox VMs\mediasoup\c7.vdi"
 
-## 4. 证书生成
+## 5. 证书生成
 
-### 4.1 win平台测试tomcat
+### 5.1 Win平台Tomcat
 
 keytool -genkey -alias tomcat -keyalg RSA -keystore d:/tomcat.keystore
 
-### 4.2 linux平台
+### 5.2 Linux平台
 
 
-**mediasoup生成pem**
+- mediasoup生成pem
 
 ```bash
 openssl genrsa > privkey.pem
@@ -79,7 +93,7 @@ cat server.crt server.key > server.pem
 
 ```
 
-**crt和key生成**
+- crt和key生成
 
 ```bash
 openssl genrsa -des3 -out server.key 2048
