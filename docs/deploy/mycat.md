@@ -1,4 +1,4 @@
-# MyCat+HA+Keepalived
+# Mycat+Haproxy+Keepalived
 
 ## 1. MyCat下载
 

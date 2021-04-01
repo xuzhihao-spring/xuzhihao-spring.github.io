@@ -1,7 +1,8 @@
-# Redis命令
+# Redis
 
-## 1. 使用场景
+## 1. 介绍
 
+### 1.1 使用场景
 1. 取最新n个数据的操作
 2. 排行榜，取top n个数据 //最佳人气前10条
 3. 精确的设置过期时间
@@ -16,6 +17,280 @@
 - 丰富的数据类型 – Redis支持二进制案例的 Strings, Lists, Hashes, Sets 及 Ordered Sets 数据类型操作。
 - 原子 – Redis的所有操作都是原子性的，同时Redis还支持对几个操作合并后的原子性执行。（事务）
 - 丰富的特性 – Redis还支持 publish/subscribe, 通知, key 过期等等特性。
+
+### 1.2 设计规范
+
+#### 1.2.1 key的规范要点
+- 以业务名为key前缀，用冒号隔开，以防止key冲突覆盖。如，live:rank:1
+- 确保key的语义清晰的情况下，key的长度尽量小于30个字符。拒绝bigkey
+- key禁止包含特殊字符，如空格、换行、单双引号以及其他转义字符。
+
+#### 1.2.2 value的规范要点
+- string类型控制在10KB以内，hash、list、set、zset元素个数不要超过5000
+- 要选择适合的数据类型
+- 使用expire设置过期时间(条件允许可以打散过期时间，防止集中过期)，不过期的数据重点关注idletime
+
+#### 1.2.3 命令使用
+- [推荐]禁止线上使用keys、flushall、flushdb等，通过redis的rename机制禁掉命令，或者使用scan渐进式处理
+- [推荐]使用pipeline批量操作提高效率
+- [推荐]O(N)命令关注N的数量,hgetall、lrange、smembers、zrange、sinter等并非不能使用，但是需要明确N的值。有遍历的需求可以使用hscan、sscan、zscan代替
+- [建议]Redis的事务功能较弱(不支持回滚)，而且集群版本(自研和官方)要求一次事务操作的key必须在一个slot上(可以使用hashtag功能解决)不建议过多使用
+- [建议]集群版本Lua上有特殊要求:所有key，必须在1个slot上
+- [建议]必要情况下使用monitor命令时，要注意不要长时间使用
+
+#### 1.2.4 相关工具
+
+1. 数据同步工具redis-port
+2. big key搜索
+3. 性能分析redis-faina
+
+#### 1.2.5 删除bigkey
+
+##### 1.2.5.1 Hash删除: hscan + hdel
+
+```java
+public void delBigHash(String host, int port, String password, String bigHashKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		ScanParams scanParams = new ScanParams().count(100);
+		String cursor = "0";
+		do {
+			ScanResult<Entry<String, String>> scanResult = jedis.hscan(bigHashKey, cursor, scanParams);
+			List<Entry<String, String>> entryList = scanResult.getResult();
+			if (entryList != null && !entryList.isEmpty()) {
+				for (Entry<String, String> entry : entryList) {
+					jedis.hdel(bigHashKey, entry.getKey());
+				}
+			}
+			cursor = scanResult.getStringCursor();
+		} while (!"0".equals(cursor));
+
+		// 删除bigkey
+		jedis.del(bigHashKey);
+	}
+```
+##### 1.2.5.2 List删除: ltrim
+
+```java
+public void delBigList(String host, int port, String password, String bigListKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		long llen = jedis.llen(bigListKey);
+		int counter = 0;
+		int left = 100;
+		while (counter < llen) {
+			// 每次从左侧截掉100个
+			jedis.ltrim(bigListKey, left, llen);
+			counter += left;
+		}
+		// 最终删除key
+		jedis.del(bigListKey);
+	}
+```
+
+##### 1.2.5.3 Set删除: sscan + srem
+
+```java
+public void delBigSet(String host, int port, String password, String bigSetKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		ScanParams scanParams = new ScanParams().count(100);
+		String cursor = "0";
+		do {
+			ScanResult<String> scanResult = jedis.sscan(bigSetKey, cursor, scanParams);
+			List<String> memberList = scanResult.getResult();
+			if (memberList != null && !memberList.isEmpty()) {
+				for (String member : memberList) {
+					jedis.srem(bigSetKey, member);
+				}
+			}
+			cursor = scanResult.getStringCursor();
+		} while (!"0".equals(cursor));
+
+		// 删除bigkey
+		jedis.del(bigSetKey);
+	}
+```
+
+##### 1.2.5.4 SortedSet删除: zscan + zrem
+
+```java
+public void delBigZset(String host, int port, String password, String bigZsetKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		ScanParams scanParams = new ScanParams().count(100);
+		String cursor = "0";
+		do {
+			ScanResult<Tuple> scanResult = jedis.zscan(bigZsetKey, cursor, scanParams);
+			List<Tuple> tupleList = scanResult.getResult();
+			if (tupleList != null && !tupleList.isEmpty()) {
+				for (Tuple tuple : tupleList) {
+					jedis.zrem(bigZsetKey, tuple.getElement());
+				}
+			}
+			cursor = scanResult.getStringCursor();
+		} while (!"0".equals(cursor));
+
+		// 删除bigkey
+		jedis.del(bigZsetKey);
+	}
+```
+
+### 1.3 常见问题
+
+#### 1.3.1 缓存穿透(安全问题)
+
+指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，这将导致这个不存在的数据每次请求都要到数据库去查询，进而给数据库带来压力
+
+产生场景：
+1. `业务不合理的设计`，比如大多数用户都没开守护，但是你的每个请求都去缓存，查询某个userid查询有没有守护。
+2. `业务/运维/开发失误的操作`，比如缓存和数据库的数据都被误删除了。
+3. `黑客非法请求攻击`，比如黑客故意捏造大量非法请求，以读取不存在的业务数据
+
+解决方案：
+1. 如果是非法请求，我们在API入口，对参数进行校验，过滤非法值。
+2. 如果查询数据库为空，我们可以给缓存设置个空值，或者默认值。但是如有有写请求进来的话，需要更新缓存哈，以保证缓存一致性，同时，最后给缓存设置适当的过期时间。（业务上比较常用，简单有效）
+3. 使用布隆过滤器快速判断数据是否存在。即一个查询请求过来时，先通过布隆过滤器判断值是否存在，存在才继续往下查
+
+> 布隆过滤器原理：它由初始值为0的位图数组和N个哈希函数组成。一个对一个key进行N个hash算法获取N个值，在比特数组中将这N个值散列后设定为1，然后查的时候如果特定的这几个位置都为1，那么布隆过滤器判断该key存在
+
+#### 1.3.2 缓存雪奔
+
+指缓存中数据大批量到过期时间，而查询数据量巨大，请求都直接访问数据库，引起数据库压力过大甚至down机
+
+解决方案：
+1. 均匀设置过期时间解决，即让过期时间相对离散一点。如采用一个较大固定值+一个较小的随机值
+
+#### 1.3.3 缓存击穿
+
+指热点key在某个时间点过期的时候，而恰好在这个时间点对这个Key有大量的并发请求过来，从而大量的请求打到db
+
+解决方案：
+1. 使用互斥锁方案。缓存失效时，不是立即去加载db数据，而是先使用某些带成功返回的原子操作命令，如(Redis的setnx）去操作，成功的时候，再去加载db数据库数据和设置缓存。否则就去重试获取缓存。
+2. 永不过期，是指没有设置过期时间，但是热点数据快要过期时，异步线程去更新和设置过期时间。
+
+
+#### 1.3.4 缓存热key
+
+某一热点key的请求到服务器主机时，由于请求量特别大，可能会导致主机资源不足，甚至宕机，从而影响正常的服务
+
+产生场景：
+1. 用户消费的数据远大于生产的数据，如秒杀、热点新闻等读多写少的场景
+2. 请求分片集中，超过单Redi服务器的性能，比如固定名称key，Hash落入同一台服务器产生数据倾斜，瞬间访问量极大，超过机器瓶颈
+
+如何识别：
+- 预判和统计
+
+解决方案：
+1. Redis集群扩容
+2. 对热key进行hash散列，比如将一个key备份为key1,key2……keyN，同样的数据N个备份，N个备份分布到不同分片，访问时可随机访问N个备份中的一个，进一步分担读流量；
+3. 使用二级缓存，即JVM本地缓存,减少Redis的读请求
+
+#### 1.3.5 数据倾斜
+
+即热点 key，指的是在一段时间内，该 key 的访问量远远高于其他的 redis key， 导致大部分的访问流量在经过 proxy 分片之后，都集中访问到某一个 redis 实例上
+
+解决方案：
+1. 利用分片算法的特性，对key进行打散处理
+
+给hot key加上前缀或者后缀，把一个hotkey 的数量变成 redis 实例个数N的倍数M，从而由访问一个 redis key 变成访问 N * M 个redis key。N*M 个 redis key 经过分片分布到不同的实例上，将访问量均摊到所有实例
+
+```lua
+//redis 实例数
+const M = 16
+ 
+//redis 实例数倍数（按需设计，2^n倍，n一般为1到4的整数）
+const N = 2
+ 
+func main() {
+//获取 redis 实例 
+    c, err := redis.Dial("tcp", "127.0.0.1:6379")
+    if err != nil {
+        fmt.Println("Connect to redis error", err)
+        return
+    }
+    defer c.Close()
+ 
+    hotKey := "hotKey:abc"
+    //随机数
+    randNum := GenerateRangeNum(1, N*M)
+    //得到对 hot key 进行打散的 key
+    tmpHotKey := hotKey + "_" + strconv.Itoa(randNum)
+ 
+    //hot key 过期时间
+    expireTime := 50
+ 
+    //过期时间平缓化的一个时间随机值
+    randExpireTime := GenerateRangeNum(0, 5)
+ 
+    data, err := redis.String(c.Do("GET", tmpHotKey))
+    if err != nil {
+        data, err = redis.String(c.Do("GET", hotKey))
+        if err != nil {
+            data = GetDataFromDb()
+            c.Do("SET", "hotKey", data, expireTime)
+            c.Do("SET", tmpHotKey, data, expireTime + randExpireTime)
+        } else {
+            c.Do("SET", tmpHotKey, data, expireTime + randExpireTime)
+        }
+    }
+}
+```
+
+#### 1.3.6 分布不均问题、Hash Tags
+
+1. 问题原理
+
+- 对于客户端请求的key，根据公式HASH_SLOT=CRC16(key) mod 16384，计算出映射到哪个分片上，然后Redis会去相应的节点进行操作
+- keySlot算法中，如果key包含{}，就不对整个key做hash，而是使用第一个{}内部的字符串作为hash key，这样就可以保证拥有同样{}内部字符串的key就会拥有相同slot
+
+单实例上的MSET是一个原子性(atomic)操作，所有给定 key 都会在同一时间内被设置，某些给定 key 被更新而另一些给定 key 没有改变的情况，不可能发生
+
+而集群上虽然也支持同时设置多个key，但不再是原子性操作。会存在某些给定 key 被更新而另外一些给定 key 没有改变的情况。其原因是需要设置的多个key可能分配到不同的机器上。
+
+SINTERSTORE,SUNIONSTORE,ZINTERSTORE,ZUNIONSTORE
+
+这四个命令属于同一类型。它们的共同之处是都需要对一组key进行运算或操作，但要求这些key都被分配到相同机器上。
+
+这就是分片技术的矛盾之处：
+
+即要求key尽可能地分散到不同机器，又要求某些相关联的key分配到相同机器
+
+2. Hash Tags
+
+HashTag机制可以影响key被分配到的slot，从而可以使用那些被限制在slot中操作
+
+HashTag即是用{}包裹key的一个子串，如{user:}1, {user:}2，在设置了HashTag的情况下，集群会根据HashTag决定key分配到的slot， 两个key拥有相同的HashTag:{user:}, 它们会被分配到同一个slot，允许我们使用MGET命令
+
+HashTag不支持嵌套，可能会使过多的key分配到同一个slot中，造成数据倾斜影响系统的吞吐量，务必谨慎使用
+
+### 1.4 配置运维
+
+- Redis Cluster只支持db0，切换会损耗新能，迁移成本高
+- 开启 lazy-free机制，减少对主线程的阻塞
+- 设置maxmemory + 淘汰策略
+
+为了防止内存积压膨胀。避免直接挂掉，需要根据实际业务，选好maxmemory-policy(最大内存淘汰策略)，设置好过期时间。一共有8种内存淘汰策略：
+
+1. volatile-lru：当内存不足以容纳新写入数据时，从设置了过期时间的key中使用LRU（最近最少使用）算法进行淘汰
+2. allkeys-lru：当内存不足以容纳新写入数据时，从所有key中使用LRU（最近最少使用）算法进行淘汰
+3. volatile-lfu：4.0版本新增，当内存不足以容纳新写入数据时，在过期的key中，使用LFU算法进行删除key
+4. allkeys-lfu：4.0版本新增，当内存不足以容纳新写入数据时，从所有key中使用LFU算法进行淘汰
+5. volatile-random：当内存不足以容纳新写入数据时，从设置了过期时间的key中，随机淘汰数据
+6. allkeys-random：当内存不足以容纳新写入数据时，从所有key中随机淘汰数据
+7. volatile-ttl：当内存不足以容纳新写入数据时，在设置了过期时间的key中，根据过期时间进行淘汰，越早过期的优先被淘汰
+8. oeviction：默认策略，当内存不足以容纳新写入数据时，新写入操作会报错。
+
+#### 1.4.1 Redis Cluster 只支持 db0
+
 
 
 ## 2. 命令

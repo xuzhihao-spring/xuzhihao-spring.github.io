@@ -20,12 +20,11 @@
   * [Docker Compose](deploy/docker-compose-env.md)
   * [Docker安装Grafana+InfluxDb监控平台](deploy/docker-statsd-influxdb-grafana.md)
   * [Minikube安装](deploy/minikube.md)
-  * [Nginx安装](deploy/nginx.md)
   * [Nginx配置HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix安装](deploy/zabbix5.0.md)
   * [Grafana安装](deploy/grafana.md)
-  * [MyCat+HA+Keepalived搭建](deploy/mycat.md)
+  * [Mycat+Haproxy+Keepalived](deploy/mycat.md)
   * [Turnserver搭建](deploy/turnserve.md)
   
 * 开发工具API

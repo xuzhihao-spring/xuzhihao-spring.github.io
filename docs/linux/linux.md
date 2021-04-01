@@ -93,7 +93,7 @@ ps aux|grep jetty
 
 ```bash
 memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111; #memcached启动
-cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload
+
 cd /usr/local/redis/  ./bin/redis-server redis.conf
 cd /home/nacos/bin sh startup.sh -m standalone
 cd /home/es/elasticsearch-7.9.0/bin ./elasticsearch -d
@@ -182,7 +182,7 @@ which gcc
 gcc --version
 ```
 
-## 8. Ifstat统计网络接口流量状态
+## 8. Ifstat网络流量实时监控
 
 下载
 
@@ -228,7 +228,7 @@ HH:MM:ss   KB/s in  KB/s out   KB/s in  KB/s out   KB/s in  KB/s out   KB/s in  
 16:53:08      0.73      0.40    924.02   1248.91      0.00      0.00      0.00      0.00    924.76   1249.31
 ```
 
-## 9. FIO
+## 9. IO测试工具FIO
 
 FIO 工具常用参数：
 
@@ -330,3 +330,46 @@ await：  每一个IO请求的处理的平均时间（单位是微秒毫秒）�
 svctm:    表示平均每次设备I/O操作的服务时间（以毫秒为单位）。如果svctm的值与await很接近，表示几乎没有I/O等待，磁盘性能很好，如果await的值远高于svctm的值，则表示I/O队列等待太长，系统上运行的应用程序将变慢。
 %util： 在统计时间内所有处理IO时间，除以总共统计时间。例如，如果统计间隔1秒，该设备有0.8秒在处理IO，而0.2秒闲置，那么该设备的%util = 0.8/1 = 80%，所以该参数暗示了设备的繁忙程度。一般地，如果该参数是100%表示设备已经接近满负荷运行了（当然如果是多磁盘，即使%util是100%，因为磁盘的并发能力，所以磁盘使用未必就到了瓶颈）。
 ```
+
+## 10. yum安装Nginx
+
+官方安装文档
+
+http://nginx.org/en/linux_packages.html#RHEL-CentOS
+
+准备工作
+
+```bash
+yum install yum-utils
+cd /etc/yum.repos.d/
+vim nginx.repo
+```
+
+输入以下信息：
+
+```
+[nginx-stable]
+name=nginx stable repo
+baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+gpgcheck=1
+enabled=1
+gpgkey=https://nginx.org/keys/nginx_signing.key
+
+[nginx-mainline]
+name=nginx mainline repo
+baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/
+gpgcheck=1
+enabled=0
+gpgkey=https://nginx.org/keys/nginx_signing.key
+```
+
+```bash
+yum install nginx           # 安装
+rpm -qa | grep nginx        # 查看
+systemctl start nginx       # 启动
+systemctl enable nginx      # 加入开机启动
+systemctl status nginx      # 查看的状态
+cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload # 重载
+```
+
+nginx服务的默认配置文件在 vim `/etc/nginx/conf.d/default.conf` ，打开可看到，默认端口为80，项目部署目录为`/usr/share/nginx/html/`。
