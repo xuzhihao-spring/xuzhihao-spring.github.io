@@ -102,10 +102,12 @@ addSuppressed异常压制
 
 ## 5. JDK11
 
-### 5.1 HTTP Client 详解
-### 5.2 Java Flight Recorder (JFR)
-### 5.3 JavaFX从JDK分离为独立模块
-### 5.4 Project ZGC
+### 5.1 HTTP Client加强
+### 5.2 增强局部变量类型推断var
+### 5.3 Java Flight Recorder (JFR)
+### 5.4 JavaFX从JDK分离为独立模块
+### 5.5 Project ZGC
+### 5.6 完全支持Linux容器（包括Docker）
 
 ## 6. JDK12
 

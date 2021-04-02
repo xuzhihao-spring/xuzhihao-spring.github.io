@@ -2,6 +2,8 @@
 
 ## 1. 参数设置
 
+### 1.1 大小写配置
+
 ```sql
 show variables like '%lower_case_table_names%' --大小写敏感
 
@@ -24,6 +26,20 @@ find / -name my.cnf rpm安装时配置文件位置
 lower_case_table_names=1
 
 ```
+
+### 1.2 慢查询日志
+
+```bash
+set global slow_query_log = on		#临时开启慢查询日志
+set global slow_query_log = off		#临时关闭
+
+set long_query_time = 1				#临时设置查询临界点
+set globle log_output = file 		#设置慢查询存储的方式
+
+show variables like '%quer%' 		#开启状态和慢查询日志储存的位置
+
+cat -n  /data/mysql/mysql-slow.log	#查看示例
+
 
 ## 2. 用户授权
 
