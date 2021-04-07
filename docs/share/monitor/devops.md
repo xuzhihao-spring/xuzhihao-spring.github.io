@@ -1094,7 +1094,8 @@ sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 vi /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1 
 net.bridge.bridge-nf-call-iptables = 1
-net.ipv4.ip_forward = 1 vm.swappiness = 0
+net.ipv4.ip_forward = 1 
+vm.swappiness = 0
 sysctl -p /etc/sysctl.d/k8s.conf
 ```
 
@@ -1169,7 +1170,7 @@ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-安装Calico
+[安装Calico](/file/k8s/calico)
 ```bash
 mkdir k8s
 cd k8s
