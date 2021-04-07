@@ -12,20 +12,23 @@ kubeadm reset -f                # 重置kubeadm
 iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X   # 清空iptables规则
 
 kubectl api-resources
-kubectl get pods --all-namespaces -o wide  # 查看所有namespace的pods运行情况
-kubectl get pods kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system              # 查看具体pods，记得后边跟namespace名字哦
+kubectl get pods --all-namespaces -o wide   # 查看所有namespace的pods运行情况
 kubectl get pods -o wide kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system      # 查看pods具体信息
-kubectl get cs                              # 查看集群健康状态
+kubectl get pod -n kube-system              # 查看kube-system namespace下面的pod（-o wide 选项可以查看存在哪个对应的节点）
+kubectl get pods --include-uninitialized    # 列出该namespace中的所有pod包括未初始化的
 kubectl get deployment --all-namespaces     # 获取所有deployment
-kubectl get pod /svc/deployment -n kube-system      # 查看kube-system namespace下面的pod/svc/deployment 等等（-o wide 选项可以查看存在哪个对应的节点）
-kubectl get pods --include-uninitialized            # 列出该namespace中的所有pod包括未初始化的
-kubectl get deployment nginx-app                    # 查看deployment
-kubectl get rc,services                             # 查看rc和servers
-kubectl describe pods xxxxpodsname --namespace=xxxnamespace     # 查看pods结构信息（重点，通过这个看日志分析错误）对控制器和服务，node同样有效
-kubectl logs --tail=1000 $POD_NAME                              # 查看pod日志
+kubectl get deployment -o wide              # 查看deployment
+kubectl get namespace                       # 查看所有命名空间
+kubectl get ingress                       # 查看所有命名空间
+kubectl get rc,services                     # 查看rc和servers
+kubectl get svc -n kube-ops                 # 查看分配的端口  
+kubectl logs --tail=1000 $POD_NAME          # 查看pod日志
 kubectl exec my-nginx-5j8ok -- printenv | grep SERVICE          # 查看pod变量
-kubectl describe pods -n kube-ops   # 查看Pod运行在那个Node上
-kubectl get service -n kube-ops     # 查看分配的端口  
+
+kubectl describe pods -n kube-ops           # 查看Pod运行在那个Node上
+kubectl describe pods podsname --namespace=namespace     # 查看pods结构信息（重点，通过这个看日志分析错误）对控制器和服务，node同样有效
+kubectl describe svc whoami-deployment      # 查看service具体映射关系
+kubectl describe ingress whoami-ingress  # 查看ingress具体映射关系
 ```
 
 ## 2. 集群
@@ -55,6 +58,7 @@ kubectl run -i --tty busybox --image=busybox        # 创建带有终端的pod
 kubectl run nginx --image=nginx                     # 启动一个 nginx 实例
 kubectl run mybusybox --image=busybox --replicas=5  # 启动多个pod
 kubectl explain pods,svc                            # 获取 pod 和 svc 的文档
+kubectl create deployment kubernetes-nginx --image=nginx:1.10   # 创建1个Nginx应用
 ```
 
 ## 4. 更新
@@ -71,7 +75,6 @@ kubectl expose rc nginx --port=80 --target-port=8000            # 为nginx RC创
 kubectl create deployment kubernetes-nginx --image=nginx:1.10
 kubectl expose deployment/kubernetes-nginx --type="NodePort" --port 80
 
-
 kubectl get pod nginx-pod -o yaml | sed 's/\(image: myimage\):.*$/\1:v4/' | kubectl replace -f -    # 更新单容器 pod 的镜像版本（tag）到 v4
 kubectl label pods nginx-pod new-label=awesome                      # 添加标签
 kubectl annotate pods nginx-pod icon-url=http://goo.gl/XXBTWq       # 添加注解
@@ -83,6 +86,7 @@ KUBE_EDITOR="nano" kubectl edit svc/docker-registry         # 使用其它编辑
 vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf   # 修改启动参数
 
 # 动态伸缩pod
+kubectl scale deployment whoami-deployment --replicas=5 
 kubectl scale --replicas=3 rs/foo                   # 将foo副本集变成3个
 kubectl scale --replicas=3 -f foo.yaml              # 缩放“foo”中指定的资源。
 kubectl scale --current-replicas=2 --replicas=3 deployment/mysql    # 将deployment/mysql从2个变成3个
@@ -119,12 +123,12 @@ kubectl delete pods,services -l name=myLabel                              # 删�
 kubectl delete pods,services -l name=myLabel --include-uninitialized      # 删除具有 name=myLabel 标签的 pod 和 service，包括尚未初始化的
 kubectl -n my-ns delete po,svc --all                                      # 删除 my-ns namespace下的所有 pod 和 serivce，包括尚未初始化的
 
-kubectl create deployment kubernetes-nginx --image=nginx:1.10             # 创建1个Nginx应用
-
+kubectl delete svc whoami-deployment                                      # 用名字删除service
+kubectl delete deployment  whoami-deployment                              # 用名字删除deployment
+kubectl delete -f kubernetes-dashboard.yaml                               # 用资源文件删除deployment
 kubectl delete pods prometheus-7fcfcb9f89-qkkf7 --grace-period=0 --force  # 强制删除
-kubectl delete deployment kubernetes-dashboard --namespace=kube-system    # 删除指定命名空间下的一个应用
-kubectl delete svc kubernetes-dashboard --namespace=kube-system
-kubectl delete -f kubernetes-dashboard.yaml
+kubectl delete deployment whoami-deployment --namespace=myns              # 删除指定命名空间下的一个应用
+
 kubectl replace --force -f ./pod.json                                     # 强制替换，删除后重新创建资源。会导致服务中断。
 ```
 
