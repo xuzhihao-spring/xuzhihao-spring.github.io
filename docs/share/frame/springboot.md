@@ -113,3 +113,7 @@ private static Map<String, List<String>> loadSpringFactories(@Nullable ClassLoad
 ```
 
 ![](../../images/share/frame/springboot/autoConfig.png)
+
+
+## 2. EurekaServer装配过程
+
