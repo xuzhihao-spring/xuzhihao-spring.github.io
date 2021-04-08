@@ -20,6 +20,10 @@ sudo install minikube-linux-amd64 /usr/local/bin/minikube
 - 然后使用如下命令启动Minikube，如果你使用的是root用户的话会无法启动并提示如下信息，需要创建一个非root账号再启动 
 
 ```bash
+minikube start --logtostderr
+```
+
+```bash
 * Centos 7.7.1908 上的 minikube v1.17.1
 * 自动选择 docker 驱动。其他选项：ssh, none
 * The "docker" driver should not be used with root privileges.
@@ -28,7 +32,7 @@ sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
 X Exiting due to DRV_AS_ROOT: The "docker" driver should not be used with root privileges.
 ```
-- 这里创建了一个属于docker用户组的macro用户，并切换到该用户
+- 这里创建了一个属于docker用户组的xuzhihao用户，并切换到该用户
 
 ```bash
 # 创建用户
@@ -68,7 +72,7 @@ See 'docker run --help'.
 
 ```bash
 docker pull anjone/kicbase
-minikube start --vm-driver=docker --base-image="anjone/kicbase"
+minikube start --vm-driver=docker --base-image="anjone/kicbase" --image-mirror-country='cn' --image-repository='registry.cn-hangzhou.aliyuncs.com/google_containers'
 ```
 
 ## 3. Kubernetes的使用

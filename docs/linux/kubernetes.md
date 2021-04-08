@@ -19,7 +19,7 @@ kubectl get pods --include-uninitialized    # 列出该namespace中的所有pod�
 kubectl get deployment --all-namespaces     # 获取所有deployment
 kubectl get deployment -o wide              # 查看deployment
 kubectl get namespace                       # 查看所有命名空间
-kubectl get ingress                       # 查看所有命名空间
+kubectl get ingress                         # 查看所有命名空间
 kubectl get rc,services                     # 查看rc和servers
 kubectl get svc -n kube-ops                 # 查看分配的端口  
 kubectl logs --tail=1000 $POD_NAME          # 查看pod日志
@@ -28,7 +28,7 @@ kubectl exec my-nginx-5j8ok -- printenv | grep SERVICE          # 查看pod变�
 kubectl describe pods -n kube-ops           # 查看Pod运行在那个Node上
 kubectl describe pods podsname --namespace=namespace     # 查看pods结构信息（重点，通过这个看日志分析错误）对控制器和服务，node同样有效
 kubectl describe svc whoami-deployment      # 查看service具体映射关系
-kubectl describe ingress whoami-ingress  # 查看ingress具体映射关系
+kubectl describe ingress whoami-ingress     # 查看ingress具体映射关系
 ```
 
 ## 2. 集群
