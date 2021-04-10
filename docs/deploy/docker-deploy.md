@@ -353,6 +353,21 @@ firewall-cmd --reload
 
 ![](../images/deploy/docker/mall_linux_deploy_08.png)
 
+
+- 安装elasticsearch-head插件
+
+```bash
+docker run -d -p 9100:9100 docker.io/mobz/elasticsearch-head:5
+```
+
+elasticsearch.yml，在文件末尾加入以下配置
+
+```yml
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+```
+
+
 ## 16. Logstash
 
 - 下载Logstash`7.6.2`的docker镜像：
