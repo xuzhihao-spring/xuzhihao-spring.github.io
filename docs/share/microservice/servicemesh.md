@@ -354,6 +354,8 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: whoami-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
 spec:
   rules: # 定义规则
   - host: whoami.qy.com  # 定义访问域名

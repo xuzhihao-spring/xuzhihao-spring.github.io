@@ -94,7 +94,7 @@ kubectl scale --replicas=5 rc/foo rc/bar rc/baz     # 变更多个控制器的�
 kubectl rollout status deploy deployment/mysql      # 查看变更进度
 
 #label 操作
-kubectl label：添加label值 kubectl label nodes node1 zone=north              # 增加节点lable值 spec.nodeSelector: zone: north #指定pod在哪个节点
+kubectl label nodes node1 zone=north                                        # 增加节点lable值 spec.nodeSelector: zone: north #指定pod在哪个节点
 kubectl label pod redis-master-1033017107-q47hh role=master                 # 增加lable值 [key]=[value]
 kubectl label pod redis-master-1033017107-q47hh role-                       # 删除lable值
 kubectl label pod redis-master-1033017107-q47hh role=backend --overwrite    # 修改lable值

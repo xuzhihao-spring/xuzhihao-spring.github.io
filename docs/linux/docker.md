@@ -34,8 +34,8 @@ docker-compose -v
 ```Shell
 # vi /etc/docker/daemon.json
 {
-    "registry-mirrors":["https://registry.docker-cn.com"],
-    "insecure-registries": ["192.168.3.200:5000"]
+    "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
+    "insecure-registries": ["192.168.3.201:5000"]
 }
 sudo systemctl daemon-reload
 sudo systemctl restart docker 

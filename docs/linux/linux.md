@@ -6,9 +6,10 @@ ntpdate time.nist.gov
 ntpdate pool.ntp.org        #同步时间
 cat /etc/redhat-release     #版本查看
 vi /etc/hosts               #host修改
-vi /etc/resolv.conf  nameserver 192.168.0.1 #配置DNS
+vi /etc/resolv.conf  nameserver 192.168.0.1  #配置DNS
+vi /etc/sysconfig/network-scripts/ifcfg-eth0 # 修改ip
+hostnamectl set-hostname k8s-master          #设置hostname
 service network restart
-hostnamectl set-hostname k8s-master #设置hostname
 
 lsof -i:80
 ps -ef | grep xxx           #查看启动进程参数
