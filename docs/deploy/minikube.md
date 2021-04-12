@@ -15,6 +15,7 @@ systemctl start docker
 ```bash
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
 minikube version
 minikube kubectl version
 ```
@@ -30,7 +31,7 @@ su xuzhihao
 ```
 
 ```bash
-minikube start --vm-driver=docker --image-mirror-country=cn --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers --iso-url=https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/iso/minikube-v1.7.3.iso --registry-mirror=https://reg-mirror.qiniu.com
+minikube start --registry-mirror=https://bmtb46e4.mirror.aliyuncs.com --vm-driver=docker --base-image="anjone/kicbase" --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers
 ```
 
 ## 3. Kubernetes的使用
@@ -135,6 +136,10 @@ http://192.168.3.200:44469/api/v1/namespaces/kubernetes-dashboard/services/http:
 ## 8. 插件管理
 
 ```bash
+
+kubectl get all -n ingress-nginx
+
+
 minikube addons enable ingress
 minikube addons disabled ingress
 ```
