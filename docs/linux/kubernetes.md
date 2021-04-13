@@ -82,6 +82,8 @@ https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
 
 yum install -y kubelet kubeadm kubectl
+yum remove -y kubelet kubeadm kubectl
+yum install -y kubelet-1.15.0 kubeadm-1.15.0 kubectl-1.15.1
 
 #kubelet设置开机启动（注意：先不启动，现在启动的话会报错）
 systemctl enable kubelet
@@ -193,6 +195,7 @@ kubectl get pods --all-namespaces -o wide   # 查看所有pods
 kubectl get pod -n ingress-nginx            # 按namespaces查看pods
 kubectl get pods -o wide nginx-ingress-controller-6594ddb5dc-d5zvh -n ingress-nginx # 查看指定pod具体信息
 kubectl get pod first-istio-65559bc449-c5pxd -o yaml # 查看资源文件
+kubectl get pods --show-labels              # 查看pod标签信息
 ```
 
 ### 2.4 Deployment

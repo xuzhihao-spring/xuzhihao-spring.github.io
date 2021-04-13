@@ -35,7 +35,8 @@ docker-compose -v
 # vi /etc/docker/daemon.json
 {
     "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
-    "insecure-registries": ["192.168.3.201:5000"]
+    "insecure-registries": ["192.168.3.201:5000"],
+    "exec-opts":["native.cgroupdriver=systemd"]
 }
 sudo systemctl daemon-reload
 sudo systemctl restart docker 
@@ -60,6 +61,7 @@ docker restart [containerid]
 docker stop [containerid]
 docker start [containerid]
 docker start $(docker ps -a -q)  #启动所有容器
+docker rmi -f $(docker images -qa)
 docker rm [containerid]          #删除容器
 docker rmi $(docker images | grep "none" | awk '{print $3}')    #删除none的镜像
 docker stats [containerid]       #监控
