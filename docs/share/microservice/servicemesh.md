@@ -395,3 +395,118 @@ kubectl get pods -n kube-system --filed-selector=Running
 
 
 访问whoami.qy.com
+
+## 6. 安装Istio
+
+### 6.1 部署
+
+https://github.com/istio/istio/releases/tag/1.0.6
+
+1. 解压tar -xzf istio-1.0.6-linux.tar.gz
+2. 进入istio目录cd istio-1.0.6/
+
+```bash
+#crds.yaml路径：
+istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
+# 执行
+kubectl apply -f crds.yaml
+# 统计个数
+kubectl get crd -n istio-system | wc -l
+```
+
+执行安装命令,根据istio-1.0.6/install/kubernetes/istio-demo.yaml创建资源
+
+```bash
+kubectl apply -f istio-demo.yaml
+
+kubectl get pods -n istio-system
+kubectl get svc -n istio-system
+```
+
+### 6.2 注入sidecar
+
+资源 first-istio.yaml
+
+```yaml
+apiVersion: apps/v1 ## 定义了一个版本
+kind: Deployment ##资源类型是Deployment
+metadata:
+  name: first-istio 
+spec:
+  selector:
+    matchLabels:
+      app: first-istio
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: first-istio
+    spec:
+      containers:
+      - name: first-istio ##容器名字  下面容器的镜像
+        image: registry.cn-hangzhou.aliyuncs.com/sixupiaofei/spring-docker-demo:1.0
+        ports:
+        - containerPort: 8080 ##容器的端口
+---
+apiVersion: v1
+kind: Service ##资源类型是Service
+metadata:
+  name: first-istio ##资源名字first-istio
+spec:
+  ports:
+  - port: 80 ##对外暴露80
+    protocol: TCP ##tcp协议
+    targetPort: 8080 ##重定向到8080端口
+  selector:
+    app: first-istio ##匹配合适的label，也就是找到合适pod
+  type: ClusterIP ## Service类型ClusterIP
+```
+
+```bash
+#执行，会发现 只会有一个containers在运行
+kubectl apply -f first-istio.yaml
+#查看first-isitio service
+kubectl get svc
+# 查看pod的具体的日志信息命令
+kubectl describe pod first-istio-8655f4dcc6-dpkzh
+#删除
+kubectl delete -f first-istio.yaml
+```
+
+手动注入
+
+```bash
+istioctl kube-inject -f first-istio.yaml | kubectl apply -f -
+
+vim /etc/profile
+
+export ISTIO_HOME=/root/k8s/istio-1.0.6
+export PATH=$PATH:$ISTIO_HOME/bin
+
+source /etc/profile
+
+kubectl get pods
+
+# 查看pod执行明细
+kubectl describe pod first-istio-75d4dfcbff-qhmxj
+kubectl get pod first-istio-75d4dfcbff-qhmxj -o yaml
+
+istioctl kube-inject -f first-istio.yaml | kubectl delete -f - #删除资源
+```
+
+自动注入sidecar
+
+```bash
+kubectl create namespace my-istio-ns
+
+kubectl label namespace my-istio-ns istio-injection=enabled
+
+kubectl get pods -n my-istio-ns
+
+kubectl apply -f first-istio.yaml -n my-istio-ns
+
+kubectl get pods -n my-istio-ns
+
+kubectl delete -f first-istio.yaml -n my-istio-ns
+
+```

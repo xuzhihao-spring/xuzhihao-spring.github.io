@@ -1,181 +1,632 @@
 
 # Kubernetes命令
 
-## 1. Kubectl
+
+## 1. 集群
+
+| 主机名称| IP地址 | 安装的软件 |
+| ----- | ----- | ----- |
+| k8s-master| 192.168.3.200 | kube-apiserver、kube-controller-manager、kubescheduler、docker、etcd、calico，NFS |
+| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.1-ce |
+| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.1-ce |
+
+### 1.1 三台机器都需要完成
+
+修改三台机器的hostname及hosts文件
 ```bash
-# 删除kube-system 下Evicted状态的所有pod：
-kubectl get pods -n kube-system |grep Evicted| awk ‘{print $1}’|xargs kubectl delete pod -n kube-system
-systemctl daemon-reload         # 重启kubelet服务
+
+hostnamectl set-hostname k8s-master
+hostnamectl set-hostname k8s-node1 
+hostnamectl set-hostname k8s-node2
+
+cat >> /etc/hosts  <<EOF
+192.168.3.200 k8s-master 
+192.168.3.201 k8s-node1 
+192.168.3.202 k8s-node2
+EOF
+```
+
+关闭防火墙和关闭SELinux
+```bash
+systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0
+sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
+```
+
+设置系统参数
+```bash
+vi /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1 
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1 
+vm.swappiness = 0
+sysctl -p /etc/sysctl.d/k8s.conf
+```
+
+kube-proxy开启ipvs的前置条件
+```
+cat > /etc/sysconfig/modules/ipvs.modules <<EOF
+#!/bin/bash
+modprobe -- ip_vs
+modprobe -- ip_vs_rr
+modprobe -- ip_vs_wrr
+modprobe -- ip_vs_sh
+modprobe -- nf_conntrack_ipv4
+EOF
+chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
+```
+
+所有节点关闭swap
+
+```bash
+swapoff -a 临时关闭
+vi /etc/fstab 永久关闭
+#注释掉以下字段
+/dev/mapper/cl-swap swap swap defaults 0 0
+```
+
+安装kubelet、kubeadm、kubectl
+```bash
+yum clean all
+
+cat > /etc/yum.repos.d/kubernetes.repo <<EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+yum install -y kubelet kubeadm kubectl
+
+#kubelet设置开机启动（注意：先不启动，现在启动的话会报错）
+systemctl enable kubelet
+
+kubelet --version
+
+```
+
+### 1.2 Master节点需要完成
+
+```bash
+kubeadm init --kubernetes-version=v1.20.5 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
+```
+
+Slave节点安装的命令
+```bash
+kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
+```
+
+启动kubelet
+```bash
 systemctl restart kubelet
+kubectl get nodes
+```
+
+配置kubectl工具
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+[安装Calico](/file/k8s/calico)
+```bash
+mkdir k8s
+cd k8s
+wget https://docs.projectcalico.org/v3.10/gettingstarted/kubernetes/installation/hosted/kubernetes-datastore/caliconetworking/1.7/calico.yaml
+
+sed -i 's/192.168.0.0/10.244.0.0/g' calico.yaml
+kubectl apply -f calico.yaml
+kubectl get pod --all-namespaces -o wide
+```
+
+### 1.3 Slave节点需要完成
+
+在master节点上执行kubeadm token create --print-join-command重新生成加入命令
+
+```bash
+kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
+
+systemctl start kubelet
+```
+
+### 1.4 NFS安装
+
+安装NFS服务（在所有K8S的节点都需要安装）
+```bash
+yum install -y nfs-utils
+
+# 创建共享目录
+mkdir -p /opt/nfs/jenkins
+vi /etc/exports 编写NFS的共享配置
+内容如下:
+/opt/nfs/jenkins *(rw,no_root_squash) # *代表对所有IP都开放此目录，rw是读写
+
+# 启动服务
+systemctl enable nfs
+systemctl start nfs
+
+# 查看NFS共享目录
+
+showmount -e 192.168.3.200
+```
+
+## 2. 命令
+
+### 2.1 kubectl
+```bash
+systemctl daemon-reload         # 重载kubelet守护
+systemctl restart kubelet       # 重启kubelet服务    
 journalctl -u kubelet -f        # 查看日志:
 kubeadm reset -f                # 重置kubeadm
-iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X   # 清空iptables规则
-
-kubectl api-resources
-kubectl get pods --all-namespaces -o wide   # 查看所有namespace的pods运行情况
-kubectl get pods -o wide kubernetes-dashboard-76479d66bb-nj8wr --namespace=kube-system      # 查看pods具体信息
-kubectl get pod -n kube-system              # 查看kube-system namespace下面的pod（-o wide 选项可以查看存在哪个对应的节点）
-kubectl get pods --include-uninitialized    # 列出该namespace中的所有pod包括未初始化的
-kubectl get deployment --all-namespaces     # 获取所有deployment
-kubectl get deployment -o wide              # 查看deployment
-kubectl get namespace                       # 查看所有命名空间
-kubectl get ingress                         # 查看所有命名空间
-kubectl get rc,services                     # 查看rc和servers
-kubectl get svc -n kube-ops                 # 查看分配的端口  
-kubectl logs --tail=1000 $POD_NAME          # 查看pod日志
-kubectl exec my-nginx-5j8ok -- printenv | grep SERVICE          # 查看pod变量
-
-kubectl describe pods -n kube-ops           # 查看Pod运行在那个Node上
-kubectl describe pods podsname --namespace=namespace     # 查看pods结构信息（重点，通过这个看日志分析错误）对控制器和服务，node同样有效
-kubectl describe svc whoami-deployment      # 查看service具体映射关系
-kubectl describe ingress whoami-ingress     # 查看ingress具体映射关系
+kubectl api-resources           # 查看api资源
 ```
 
-## 2. 集群
+### 2.2 Namespace
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myns
+```
+
 ```bash
-kubectl get cs                          # 集群健康情况
-kubectl cluster-info                    # 集群核心组件运行情况
-kubectl get namespaces                  # 表空间名
-kubectl version                         # 版本
-kubectl api-versions                    # API
-kubectl get events                      # 查看事件
-kubectl get nodes                       # 获取全部节点
-kubectl delete node k8s2                # 删除节点
-kubectl rollout status deploy nginx-test
-kubectl get deployment --all-namespaces
-kubectl get svc --all-namespaces
+kubectl create namespace my-istio-ns                          # 创建命名空间
+kubectl label namespace my-istio-ns istio-injection=enabled   # 给命名空间开启istio注入
+
+kubectl get namespace               # 查看命名空间
+kubectl apply -f my-namespace.yaml  # 创建命名空间
+kubectl delete -f my-namespace.yaml # 用资源文件删除命名空间
+kubectl delete namespace myns       # 按名字删除命名空间    
 ```
 
-## 3. 创建
+### 2.3 Pods
 ```bash
-kubectl create -f ./nginx.yaml                      # 创建资源
-kubectl apply -f xxx.yaml                           # 创建+更新，可以重复使用
-kubectl create -f .                                 # 创建当前目录下的所有yaml资源
-kubectl create -f ./nginx1.yaml -f ./mysql2.yaml    # 使用多个文件创建资源
-kubectl create -f ./dir                             # 使用目录下的所有清单文件来创建资源
-kubectl create -f https://git.io/vPieo              # 使用 url 来创建资源
-kubectl run -i --tty busybox --image=busybox        # 创建带有终端的pod
-kubectl run nginx --image=nginx                     # 启动一个 nginx 实例
-kubectl run mybusybox --image=busybox --replicas=5  # 启动多个pod
-kubectl explain pods,svc                            # 获取 pod 和 svc 的文档
-kubectl create deployment kubernetes-nginx --image=nginx:1.10   # 创建1个Nginx应用
+kubectl get pods --all-namespaces -o wide   # 查看所有pods
+kubectl get pod -n ingress-nginx            # 按namespaces查看pods
+kubectl get pods -o wide nginx-ingress-controller-6594ddb5dc-d5zvh -n ingress-nginx # 查看指定pod具体信息
+kubectl get pod first-istio-65559bc449-c5pxd -o yaml # 查看资源文件
 ```
 
-## 4. 更新
+### 2.4 Deployment
 ```bash
-kubectl get pod {podname} -n {namespace} -o yaml | kubectl replace --force -f -
-kubectl replace --force -f xxxx.yaml                            # 强制替换Pod的API对象达到重启的目的
-kubectl rolling-update python-v1 -f python-v2.json              # 滚动更新 pod frontend-v1
-kubectl rolling-update python-v1 python-v2 --image=image:v2     # 更新资源名称并更新镜像
-kubectl rolling-update python --image=image:v2                  # 更新 frontend pod 中的镜像
-kubectl rolling-update python-v1 python-v2 --rollback           # 退出已存在的进行中的滚动更新
-cat pod.json | kubectl replace -f -                             # 基于stdin输入的JSON替换pod
-kubectl expose rc nginx --port=80 --target-port=8000            # 为nginx RC创建服务，启用本地80端口连接到容器上的8000端口
+kubectl create deployment kubernetes-nginx --image=nginx:1.10  --replicas=5  # 创建5个Nginx应用
+kubectl expose deployment/kubernetes-nginx --type="NodePort" --port 80       # 进行暴露
+kubectl delete deployment kubernetes-nginx -n defaul                         # 删除deployments
 
-kubectl create deployment kubernetes-nginx --image=nginx:1.10
-kubectl expose deployment/kubernetes-nginx --type="NodePort" --port 80
+kubectl apply -f mandatory-0.30.0.yaml
+kubectl delete -f mandatory-0.30.0.yaml
 
-kubectl get pod nginx-pod -o yaml | sed 's/\(image: myimage\):.*$/\1:v4/' | kubectl replace -f -    # 更新单容器 pod 的镜像版本（tag）到 v4
-kubectl label pods nginx-pod new-label=awesome                      # 添加标签
-kubectl annotate pods nginx-pod icon-url=http://goo.gl/XXBTWq       # 添加注解
-kubectl autoscale deployment foo --min=2 --max=10                   # 自动扩展 deployment “foo”
+kubectl get deployment --all-namespaces                 # 获取所有deployment
+kubectl get deployment -o wide -n ingress-nginx         # 按命名空间查询
 
-# 编辑资源
-kubectl edit svc/docker-registry                            # 编辑名为 docker-registry 的 service
-KUBE_EDITOR="nano" kubectl edit svc/docker-registry         # 使用其它编辑器
-vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf   # 修改启动参数
-
-# 动态伸缩pod
-kubectl scale deployment whoami-deployment --replicas=5 
-kubectl scale --replicas=3 rs/foo                   # 将foo副本集变成3个
-kubectl scale --replicas=3 -f foo.yaml              # 缩放“foo”中指定的资源。
-kubectl scale --current-replicas=2 --replicas=3 deployment/mysql    # 将deployment/mysql从2个变成3个
-kubectl scale --replicas=5 rc/foo rc/bar rc/baz     # 变更多个控制器的数量
-kubectl rollout status deploy deployment/mysql      # 查看变更进度
-
-#label 操作
-kubectl label nodes node1 zone=north                                        # 增加节点lable值 spec.nodeSelector: zone: north #指定pod在哪个节点
-kubectl label pod redis-master-1033017107-q47hh role=master                 # 增加lable值 [key]=[value]
-kubectl label pod redis-master-1033017107-q47hh role-                       # 删除lable值
-kubectl label pod redis-master-1033017107-q47hh role=backend --overwrite    # 修改lable值
-
-# 滚动升级
-kubectl rolling-update：滚动升级 kubectl rolling-update redis-master -f redis-master-controller-v2.yaml # 配置文件滚动升级
-kubectl rolling-update redis-master --image=redis-master:2.0            # 命令升级
-kubectl rolling-update redis-master --image=redis-master:1.0 --rollback # pod版本回滚
+kubectl describe deployment nginx-ingress-controller -n ingress-nginx # 查看详情
 ```
 
-## 5. etcdctl常用
+### 2.4 Service
+
+```yaml
+apiVersion: apps/v1 ## 定义了一个版本
+kind: Deployment ##资源类型是Deployment
+metadata: ## metadata这个KEY对应的值为一个Maps
+  name: whoami-deployment ##资源名字
+  labels: ##将新建的Pod附加Label
+    app: whoami ##key=app:value=whoami
+spec: ##资源它描述了对象的
+  replicas: 3 ##副本数为1个，只会有一个pod
+  selector: ##匹配具有同一个label属性的pod标签
+    matchLabels: ##匹配合适的label
+      app: whoami
+  template: ##template其实就是对Pod对象的定义  (模板)
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+      - name: whoami ##容器名字  下面容器的镜像
+        image: jwilder/whoami
+        ports:
+        - containerPort: 8000 ##容器的端口
+```
+
 ```bash
-etcdctl cluster-health                                          # 检查网络集群健康状态
-etcdctl --endpoints=https://192.168.71.221:2379 cluster-health  # 带有安全认证检查网络集群健康状态
-etcdctl member list
-etcdctl set /k8s/network/config ‘{ “Network”: “10.1.0.0/16” }’
-etcdctl get /k8s/network/config
+kubectl get svc
+kubectl expose deployment whoami-deployment             # 暴露service
+kubectl describe svc whoami-deployment                  # service详细暴露规则
+kubectl get pods
+kubectl describe pods whoami-deployment-6fc5f56c44-28jfv
+kubectl scale deployment whoami-deployment --replicas=5 # service扩容 
+kubectl delete svc whoami-deployment                    # 删除service
+kubectl expose deployment whoami-deployment  --type="NodePort" # 按外部访问方式暴露
 ```
 
-## 6. 删除
+### 2.5 Ingresses
+
+```yaml
+apiVersion: apps/v1 ## 定义了一个版本
+kind: Deployment ##资源类型是Deployment
+metadata: ## metadata这个KEY对应的值为一个Maps
+  name: whoami-deployment ##资源名字
+  labels: ##将新建的Pod附加Label
+    app: whoami ##key=app:value=whoami
+spec: ##资源它描述了对象的
+  replicas: 3 ##副本数为1个，只会有一个pod
+  selector: ##匹配具有同一个label属性的pod标签
+    matchLabels: ##匹配合适的label
+      app: whoami
+  template: ##template其实就是对Pod对象的定义  (模板)
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+      - name: whoami ##容器名字  下面容器的镜像
+        image: jwilder/whoami
+        ports:
+        - containerPort: 8000 ##容器的端口
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami-service
+spec:
+  ports:
+  - port: 80   
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: whoami
+
+```
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: whoami-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules: # 定义规则
+  - host: whoami.qy.com  # 定义访问域名
+    http:
+      paths:
+      - path: / # 定义路径规则，/表示没有设置任何路径规则
+        backend:
+          serviceName: whoami-service  # 把请求转发给service资源，这个service就是我们前面运行的service
+          servicePort: 80 # service的端口
+```
+
+
 ```bash
-kubectl delete pod -l app=flannel -n kube-system                          # 根据label删除：
-kubectl delete -f ./pod.json                                              # 删除 pod.json 文件中定义的类型和名称的 pod
-kubectl delete pod,service baz foo                                        # 删除名为“baz”的 pod 和名为“foo”的 service
-kubectl delete pods,services -l name=myLabel                              # 删除具有 name=myLabel 标签的 pod 和 serivce
-kubectl delete pods,services -l name=myLabel --include-uninitialized      # 删除具有 name=myLabel 标签的 pod 和 service，包括尚未初始化的
-kubectl -n my-ns delete po,svc --all                                      # 删除 my-ns namespace下的所有 pod 和 serivce，包括尚未初始化的
+kubectl delete deployment  whoami-deployment # 按照名字删除deployment
+kubectl delete -f whoami-deployment.yaml     # 按资源文件删除deployment
 
-kubectl delete svc whoami-deployment                                      # 用名字删除service
-kubectl delete deployment  whoami-deployment                              # 用名字删除deployment
-kubectl delete -f kubernetes-dashboard.yaml                               # 用资源文件删除deployment
-kubectl delete pods prometheus-7fcfcb9f89-qkkf7 --grace-period=0 --force  # 强制删除
-kubectl delete deployment whoami-deployment --namespace=myns              # 删除指定命名空间下的一个应用
-
-kubectl replace --force -f ./pod.json                                     # 强制替换，删除后重新创建资源。会导致服务中断。
+kubectl apply -f whoami-service.yaml
+kubectl apply -f  whoami-ingress.yaml
+kubectl get ingress  # 查看ingress资源
+kubectl describe ingress whoami-ingress # 查看ingres详细资源
 ```
 
+## 3. 插件安装
 
-## 7. 容器日志进入
+### 3.1 部署ingress-nginx
+
+创建mandatory-0.30.0.yaml
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tcp-services
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: udp-services
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-ingress-serviceaccount
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: nginx-ingress-clusterrole
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - nodes
+      - pods
+      - secrets
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - "extensions"
+      - "networking.k8s.io"
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "extensions"
+      - "networking.k8s.io"
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: nginx-ingress-role
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - secrets
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      # Defaults to "<election-id>-<ingress-class>"
+      # Here: "<ingress-controller-leader>-<nginx>"
+      # This has to be adapted if you change either parameter
+      # when launching the nginx-ingress-controller.
+      - "ingress-controller-leader-nginx"
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: nginx-ingress-role-nisa-binding
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nginx-ingress-role
+subjects:
+  - kind: ServiceAccount
+    name: nginx-ingress-serviceaccount
+    namespace: ingress-nginx
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: nginx-ingress-clusterrole-nisa-binding
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nginx-ingress-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: nginx-ingress-serviceaccount
+    namespace: ingress-nginx
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-nginx
+      app.kubernetes.io/part-of: ingress-nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ingress-nginx
+        app.kubernetes.io/part-of: ingress-nginx
+      annotations:
+        prometheus.io/port: "10254"
+        prometheus.io/scrape: "true"
+    spec:
+      # wait up to five minutes for the drain of connections
+      hostNetwork: true
+      terminationGracePeriodSeconds: 300
+      serviceAccountName: nginx-ingress-serviceaccount
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - name: nginx-ingress-controller
+          image: registry.aliyuncs.com/google_containers/nginx-ingress-controller:0.30.0
+          args:
+            - /nginx-ingress-controller
+            - --configmap=$(POD_NAMESPACE)/nginx-configuration
+            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
+            - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
+            - --publish-service=$(POD_NAMESPACE)/ingress-nginx
+            - --annotations-prefix=nginx.ingress.kubernetes.io
+          securityContext:
+            allowPrivilegeEscalation: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_BIND_SERVICE
+            # www-data -> 101
+            runAsUser: 101
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /wait-shutdown
+
+---
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  limits:
+  - min:
+      memory: 90Mi
+      cpu: 100m
+    type: Container
+```
+
 ```bash
-kubectl logs nginx-pod                                 # dump 输出 pod 的日志（stdout）
-kubectl logs nginx-pod -c my-container                 # dump 输出 pod 中容器的日志（stdout，pod 中有多个容器的情况下使用）
-kubectl logs -f nginx-pod                              # 流式输出 pod 的日志（stdout）
-kubectl logs -f nginx-pod -c my-container              # 流式输出 pod 中容器的日志（stdout，pod 中有多个容器的情况下使用）
-kubectl run -i --tty busybox --image=busybox -- sh     # 交互式 shell 的方式运行 pod
-kubectl attach nginx-pod -i                            # 连接到运行中的容器
-kubectl port-forward nginx-pod 5000:6000               # 转发 pod 中的 6000 端口到本地的 5000 端口
-kubectl exec nginx-pod -- ls /                         # 在已存在的容器中执行命令（只有一个容器的情况下）
-kubectl exec nginx-pod -c my-container -- ls /         # 在已存在的容器中执行命令（pod 中有多个容器的情况下）
-kubectl top pod POD_NAME --containers                  # 显示指定 pod和容器的指标度量
-kubectl exec -ti podName /bin/bash                     # 进入pod
+docker pull registry.cn-hangzhou.aliyuncs.com/wuji_cyb/ingress-controller:0.25.0
+docker tag  registry.cn-hangzhou.aliyuncs.com/wuji_cyb/ingress-controller:0.25.0 quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.25.0
+
+# 添加hostNetwork: true
+
+kubectl apply -f mandatory-0.30.0.yaml
+kubectl get pods -n ingress-nginx -o wide
+
 ```
 
-## 7. 调度配置
-```bash
-ps -ef | grep kubelet               # 查看kubelet进程启动参数
-kubectl cordon k8s-node             # 标记 my-node 不可调度
-kubectl drain k8s-node              # 清空 my-node 以待维护
-kubectl uncordon k8s-node           # 标记 my-node 可调度
-kubectl top node k8s-node           # 显示 my-node 的指标度量
-kubectl cluster-info dump           # 将当前集群状态输出到 stdout                                    
-kubectl cluster-info dump --output-directory=/path/to/cluster-state   # 将当前集群状态输出到 /path/to/cluster-state
-kubectl taint nodes foo dedicated=special-user:NoSchedule             # 如果该键和影响的污点（taint）已存在，则使用指定的值替换
-
-
-#导出proxy
-kubectl get ds -n kube-system -l k8s-app=kube-proxy -o yaml>kube-proxy-ds.yaml
-#导出kube-dns
-kubectl get deployment -n kube-system -l k8s-app=kube-dns -o yaml >kube-dns-dp.yaml
-kubectl get services -n kube-system -l k8s-app=kube-dns -o yaml >kube-dns-services.yaml
-#导出所有 configmap
-kubectl get configmap -n kube-system -o wide -o yaml > configmap.yaml　　
-```
-
-## 8. 卸载Flannel network interface
-```bash
-ifconfig cni0 down
-ip link delete cni0
-ifconfig flannel.1 down
-ip link delete flannel.1
-rm -rf /var/lib/cni/
-rm -f /etc/cni/net.d/*
-systemctl restart kubelet
-```
+[部署whoami-service.yaml和whoami-ingress.yaml](/linux/kubernetes?id=_25-ingresses)
