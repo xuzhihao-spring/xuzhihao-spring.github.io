@@ -1,4 +1,4 @@
-# Linux基于Docker部署
+# 基于Docker部署
 
 ## 1. Docker
 
@@ -261,8 +261,7 @@ docker pull rabbitmq:3.7.15
 - 使用如下命令启动RabbitMQ服务：
 
 ```bash
-docker run -p 5672:5672 -p 15672:15672 --name rabbitmq \
--d rabbitmq:3.7.15
+docker run -p 5672:5672 -p 15672:15672 --name rabbitmq -d rabbitmq:3.7.15
 ```
 
 - 进入容器并开启管理功能：
@@ -699,17 +698,51 @@ docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_
 
 ```
 
-## 30. rabbitmq
+## 30. Prometheus
 
 ```bash
-docker run -d -it --name rabbitmq -p 5672:5672 -p 15672:15672 -v "/mydata/rabbitmq/data:/var/lib/rabbitmq" -v "/mydata/rabbitmq/log:/var/log/rabbitmq" -e RABBITMQ_DEFAULT_USER=guest -e RABBITMQ_DEFAULT_PASS=guest rabbitmq:3.7.15-management
-
-docker cp rabbitmq_delayed_message_exchange-3.8.0.ez rabbitmq:/plugins
-
-rabbitmq-plugins enable rabbitmq_delayed_message_exchange
-
-rabbitmq-plugins enable rabbitmq_tracing
-rabbitmq-plugins disable rabbitmq_tracing
-
-vi /etc/rabbitmq/rabbitmq.conf
+mkdir /opt/prometheus    
+cd /opt/prometheus/
+vim prometheus.yml
 ```
+
+```yml
+global:
+  scrape_interval:     60s
+  evaluation_interval: 60s
+ 
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: prometheus
+ 
+```
+
+```bash
+mkdir /opt/prometheus/data 
+chmod 777 -R /opt/prometheus
+```
+
+```bash
+docker run  -d \
+  -p 9090:9090 \
+  -v /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
+  -v /opt/prometheus/data:/prometheus \
+  prom/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.retention.time=100d
+```
+
+localhost:9090/graph
+
+localhost:9090/metrics
+
+## 31. Grafana
+
+```bash
+docker run -d -p 3300:3000 --name grafana grafana/grafana
+```
+
+admin:admin

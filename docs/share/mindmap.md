@@ -83,7 +83,7 @@ JVM底层原理
  * [Kubernetes](/share/monitor/k8s)
  * [devops](/share/monitor/devops)
  * [prometheus](/share/monitor/prometheus)
- * [grafana](/deploy/grafana)
+ * [grafana](/share/monitor/grafana)
 
 架构师思维设计架构
  * [设计模式](/share/designpattern/model)

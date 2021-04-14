@@ -16,14 +16,12 @@
   * [Redis](linux/redis.md)
 
 * 系统部署
-  * [Linux基于Docker部署](deploy/docker-deploy.md)
+  * [基于Docker部署](deploy/docker-deploy.md)
   * [Docker Compose](deploy/docker-compose-env.md)
-  * [Docker安装Grafana+InfluxDb监控平台](deploy/docker-statsd-influxdb-grafana.md)
   * [Minikube安装](deploy/minikube.md)
   * [Nginx配置HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix安装](deploy/zabbix5.0.md)
-  * [Grafana安装](deploy/grafana.md)
   * [Mycat+Haproxy+Keepalived](deploy/mycat.md)
   * [Turnserver搭建](deploy/turnserve.md)
   
@@ -96,7 +94,7 @@
    * [Kubernetes](share/monitor/k8s)
    * [devops](share/monitor/devops)
    * [prometheus](share/monitor/prometheus)
-   * [grafana](/deploy/grafana)
+   * [grafana](share/monitor/grafana)
    * [设计模式](share/designpattern/model)
    * [架构设计](share/designpattern/design)
    * [领域驱动模型](share/designpattern/ddd)
