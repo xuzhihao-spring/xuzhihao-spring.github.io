@@ -261,13 +261,14 @@ docker pull rabbitmq:3.7.15
 - 使用如下命令启动RabbitMQ服务：
 
 ```bash
-docker run -p 5672:5672 -p 15672:15672 --name rabbitmq -d rabbitmq:3.7.15
+docker run -p 5672:5672 -p 15672:15672 -p 1883:1883 --name rabbitmq -d rabbitmq:3.7.15
 ```
 
 - 进入容器并开启管理功能：
 
 ```bash
 docker exec -it rabbitmq /bin/bash
+rabbitmq-plugins enable rabbitmq_mqtt
 rabbitmq-plugins enable rabbitmq_management
 ```
 
@@ -746,3 +747,9 @@ docker run -d -p 3300:3000 --name grafana grafana/grafana
 ```
 
 admin:admin
+
+## 32. EMQ
+
+```bash
+docker run --name emq -p 18083:18083 -p 1883:1883 -p 8084:8084 -p 8883:8883 -p 8083:8083 -d emqx/emqx
+```
