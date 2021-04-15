@@ -57,6 +57,7 @@ docker rmi $(docker images -q)  #删除本地所有镜像
 
 #容器操作
 docker ps -a|-q|-l              #查看容器
+docker inspect nodered | grep Mounts -A 20  # 查看容器映射目录
 docker restart [containerid]
 docker stop [containerid]
 docker start [containerid]

@@ -753,3 +753,9 @@ admin:admin
 ```bash
 docker run --name emq -p 18083:18083 -p 1883:1883 -p 8084:8084 -p 8883:8883 -p 8083:8083 -d emqx/emqx
 ```
+
+## 33. nodered
+
+```bash
+sudo docker run -it -p 1880:1880 --name=nodered --restart=always --user=root --net=host -v /data/nodered:/data -e TZ=Asia/Shanghai nodered/node-red
+```
