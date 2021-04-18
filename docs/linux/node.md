@@ -17,7 +17,7 @@ node -v
 npm -v
 ```
 
-## 2. npm
+## 2. NPM
 
 ```bash
 npm -v #查看npm安装的版本

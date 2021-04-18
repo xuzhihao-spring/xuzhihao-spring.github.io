@@ -7,10 +7,10 @@
 | 主机名称| IP地址 | 安装的软件 |
 | ----- | ----- | ----- |
 | k8s-master| 192.168.3.200 | kube-apiserver、kube-controller-manager、kubescheduler、docker、etcd、calico，NFS |
-| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.1-ce |
-| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.1-ce |
+| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.3-ce |
+| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.3-ce |
 
-### 1.1 三台机器都需要完成
+### 1.1 三台机器完成
 
 修改三台机器的hostname及hosts文件
 ```bash
@@ -83,7 +83,7 @@ EOF
 
 yum install -y kubelet kubeadm kubectl
 yum remove -y kubelet kubeadm kubectl
-yum install -y kubelet-1.15.0 kubeadm-1.15.0 kubectl-1.15.1
+yum install -y kubelet-1.17.4 kubeadm-1.17.4 kubectl-1.17.4
 
 #kubelet设置开机启动（注意：先不启动，现在启动的话会报错）
 systemctl enable kubelet
@@ -92,15 +92,33 @@ kubelet --version
 
 ```
 
-### 1.2 Master节点需要完成
+安装docker
 
 ```bash
-kubeadm init --kubernetes-version=v1.20.5 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+yum install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7 -y
+systemctl start docker
+chkconfig docker on
+
+vi /etc/docker/daemon.json
+
+{
+    "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
+    "insecure-registries": ["192.168.3.200:5000"],
+    "exec-opts":["native.cgroupdriver=systemd"]
+}
+
+```
+
+### 1.2 Master节点完成
+
+```bash
+kubeadm init --kubernetes-version=v1.17.4 --apiserver-advertise-address=192.168.3.200 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
 ```
 
 Slave节点安装的命令
 ```bash
-kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
     --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
 ```
 
@@ -128,12 +146,12 @@ kubectl apply -f calico.yaml
 kubectl get pod --all-namespaces -o wide
 ```
 
-### 1.3 Slave节点需要完成
+### 1.3 Slave节点完成
 
 在master节点上执行kubeadm token create --print-join-command重新生成加入命令
 
 ```bash
-kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
     --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
 
 systemctl start kubelet
@@ -318,9 +336,9 @@ kubectl get ingress  # 查看ingress资源
 kubectl describe ingress whoami-ingress # 查看ingres详细资源
 ```
 
-## 3. 插件安装
+## 3. 插件
 
-### 3.1 部署ingress-nginx
+### 3.1 ingress-nginx
 
 创建mandatory-0.30.0.yaml
 
