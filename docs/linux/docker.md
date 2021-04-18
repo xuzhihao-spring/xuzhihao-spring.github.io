@@ -4,11 +4,10 @@
 
 ```bash
 yum install -y yum-utils device-mapper-persistent-data lvm2
-yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 yum makecache fast
 yum list docker-ce --showduplicates | sort -r
-yum -y install docker-ce
+yum install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7 -y
 systemctl start docker
 chkconfig docker on
 
@@ -35,7 +34,7 @@ docker-compose -v
 # vi /etc/docker/daemon.json
 {
     "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
-    "insecure-registries": ["192.168.3.201:5000"],
+    "insecure-registries": ["192.168.3.200:5000"],
     "exec-opts":["native.cgroupdriver=systemd"]
 }
 sudo systemctl daemon-reload
