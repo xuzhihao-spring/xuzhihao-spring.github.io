@@ -1,6 +1,6 @@
 # 消息队列
 
-## 1 RocketMQ
+## 1. RocketMQ
 
 Zookeeper集群分布式、主从,支持顺序，延时，事务消息，支持查询重试
 
@@ -681,3 +681,52 @@ rabbitmq-plugins disable rabbitmq_tracing
 
 重复消费
 >保持幂等性
+
+## 4. EMQX
+
+### 4.1 基础功能
+
+- Dashboard
+- 系统认证、
+  - UserName认证
+  - Client Id认证
+  - HTTP认证(基于webhock)
+- 客户端DSK
+  - Eclipse Paho Java
+- 日志追踪
+
+### 4.2 高级功能
+
+- ACL权限控制
+  - 内置ACL
+  - HTTP ACL
+    - HTTP请求
+    - superuser请求
+    - 授权查询
+- WebHook
+- 集群设置
+- API监控管理
+- 保留消息
+
+### 4.3 高级功能2
+
+- 共享订阅
+  - 带群组  $share/<group-name>
+  - 不带群组  $queue/
+- 延迟发布
+- 代理订阅
+  - 静态代理
+  - 动态代理
+- 主题重写
+- 黑名单
+- 速率限制
+
+### 4.4 高级功能3
+
+- 飞行窗口
+- 消息重传
+- 规则引擎
+  - 故障监听案例
+  - 数据筛选限速提醒案例
+  - 消息筛选过滤
+- 系统调优
