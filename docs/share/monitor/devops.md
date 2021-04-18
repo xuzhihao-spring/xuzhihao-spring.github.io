@@ -1062,8 +1062,8 @@ Slave到空闲的节点上创建，降低出现因某节点资源利用率高，
 | 主机名称| IP地址 | 安装的软件 |
 | ----- | ----- | ----- |
 | k8s-master| 192.168.3.200 | kube-apiserver、kube-controller-manager、kubescheduler、docker、etcd、calico，NFS |
-| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.1-ce |
-| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.1-ce |
+| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.3-ce |
+| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.3-ce |
 
 #### 5.3.1 三台机器都需要完成
 
@@ -1136,7 +1136,7 @@ gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
 https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
 
-yum install -y kubelet kubeadm kubectl
+yum install -y kubelet-1.17.4 kubeadm-1.17.4 kubectl-1.17.4
 
 #kubelet设置开机启动（注意：先不启动，现在启动的话会报错）
 systemctl enable kubelet
@@ -1148,12 +1148,12 @@ kubelet --version
 #### 5.3.2 Master节点需要完成
 
 ```bash
-kubeadm init --kubernetes-version=v1.20.5 --apiserver-advertise-address=172.17.17.50 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
+kubeadm init --kubernetes-version=v1.17.4 --apiserver-advertise-address=192.168.3.200 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
 ```
 
 Slave节点安装的命令
 ```bash
-kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
     --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
 ```
 
@@ -1186,7 +1186,7 @@ kubectl get pod --all-namespaces -o wide
 在master节点上执行kubeadm token create --print-join-command重新生成加入命令
 
 ```bash
-kubeadm join 172.17.17.50:6443 --token yyhwxt.5qkinumtww4dwsv5 \
+kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
     --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
 
 systemctl start kubelet
