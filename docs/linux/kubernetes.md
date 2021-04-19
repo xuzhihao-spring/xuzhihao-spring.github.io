@@ -187,6 +187,7 @@ systemctl restart kubelet       # 重启kubelet服务
 journalctl -u kubelet -f        # 查看日志:
 kubeadm reset -f                # 重置kubeadm
 kubectl api-resources           # 查看api资源
+kubectl explain deployment.spec 
 ```
 
 ### 2.2 Namespace
