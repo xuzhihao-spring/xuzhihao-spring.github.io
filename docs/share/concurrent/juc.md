@@ -1,13 +1,15 @@
 # 并发常用工具类
 
 ## 1. 线程通讯几种方式
-- 1、`synchronized`加wait/notify 休眠唤醒方式
-- 2、`ReentrantLock`加Condition方式
+- 1、`synchronized` 通过 wait/notify 休眠唤醒方式
+- 2、`ReentrantLock` 通过 await/signal Condition方式 
 - 3、`CountDownLatch` 闭锁方式
 - 4、`CyclicBarrier` 栅栏的方式
 - 5、`Semaphore` 信号量的方式
   - join的使用
   - yield的使用
+
+### 1.1 synchronized基偶数打印
 
 ```java
 public class addEvenDemo {
@@ -63,6 +65,8 @@ public class addEvenDemo {
 }
 ```
 
+### 1.2 ReentrantLock基偶数打印
+
 ```java
 private int i = 0;// 打印的数
 	private Lock lock = new ReentrantLock();
@@ -109,34 +113,47 @@ private int i = 0;// 打印的数
 - countDownLatch这个类使一个线程等待其他线程各自执行完毕后再执行。
 - 是通过一个计数器来实现的，计数器的初始值是线程的数量。每当一个线程执行完毕后，计数器的值就-1，当计数器的值为0时，表示所有线程都执行完毕，然后在闭锁上等待的线程就可以恢复工作了。
 
+CountDownLatch: 一个线程(或者多个)， 等待另外N个线程完成某个事情之后才能执行。
+
 ```java
-//14个分中心都各自算完以后 再计算总分比提升比例等考核项
-private CountDownLatch countDownLatch = new CountDownLatch(2);
+//14个分中心都各自算完以后 再计算排名
+package com.xuzhihao.test;
+
+import java.util.concurrent.CountDownLatch;
+
+public class CountDownLatchDemo {
+
+	private CountDownLatch countDownLatch = new CountDownLatch(2);
 
 	// 分中心计算
 	public void fzx(String fzxId) {
 		System.out.println(fzxId + "正在计算...");
 		try {
-			Thread.sleep(1000L);
+			if (fzxId.equals("100")) {
+				Thread.sleep(2000L);
+			} else {
+				Thread.sleep(5000L);
+			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println(fzxId+"计算完毕");
 		countDownLatch.countDown();
 	}
 
-	// 总比计算
+	// 总分计算
 	public void cal() {
 		// 等待所有分中心计算完毕
 		String name = Thread.currentThread().getName();
-		System.out.println(name + "正在等待...");
+		System.out.println("等待计算排名...");
 		try {
 			countDownLatch.await();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("分中心计算完毕，开始计算");
+		System.out.println("各分中心计算完毕，总排名开始计算");
 	}
 
 	public static void main(String[] args) {
@@ -144,83 +161,122 @@ private CountDownLatch countDownLatch = new CountDownLatch(2);
 		new Thread(() -> {
 			countDownLatchDemo.fzx("100");
 		}).start();
+
 		new Thread(() -> {
 			countDownLatchDemo.fzx("200");
 		}).start();
+
 		new Thread(() -> {
 			countDownLatchDemo.cal();
 		}).start();
 
 	}
+
+}
+
 ```
 
 ## 3. CyclicBarrier源码解析和使用场景
+
+CyclicBrrier: N个线程相互等待，任何一个线程完成之前，所有的线程都必须等待
+
 ```java
+package com.xuzhihao.test;
+
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+
+public class CyclicBarrierDemo {
 
 	private CyclicBarrier cyclicBarrier = new CyclicBarrier(3);
 
 	// 考核项组数据生成 必须同时准备好才能一起同步
 	public void check(String propertyGroup) {
-		System.out.println(propertyGroup + "正在准备...");
 		try {
+			if ("BM100".equals(propertyGroup)) {
+				Thread.sleep(3000);
+			} else if ("BM200".equals(propertyGroup)) {
+				Thread.sleep(2000);
+			} else {
+				Thread.sleep(1000);
+			}
+			System.out.println(propertyGroup + "处理完成");
 			cyclicBarrier.await();
 		} catch (InterruptedException | BrokenBarrierException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println(propertyGroup + "正在同步...");
+		System.out.println(propertyGroup + "开始同步...");
 	}
 
 	public static void main(String[] args) {
 		CyclicBarrierDemo cyclicBarrierDemo = new CyclicBarrierDemo();
 		new Thread(() -> {
-			cyclicBarrierDemo.check("及时处置项");
+			cyclicBarrierDemo.check("BM100");
 		}).start();
+
 		new Thread(() -> {
-			cyclicBarrierDemo.check("超时项");
+			cyclicBarrierDemo.check("BM200");
 		}).start();
+
 		new Thread(() -> {
-			cyclicBarrierDemo.check("延期项");
+			cyclicBarrierDemo.check("BM300");
 		}).start();
+
 	}
+
+}
+
 ```
 
 ## 4. Semphore源码解析和使用场景
-- 控制对某组资源的访问权限、秒杀车位、流量控制,一组线程40个，每10个一组执行
-```java
-static class Work implements Runnable {
-		private int workerNum;// 工号
-		private Semaphore Semaphore;// 机器数量
 
-		public Work(int workerNum, java.util.concurrent.Semaphore semaphore) {
-			this.workerNum = workerNum;
-			Semaphore = semaphore;
+Semaphore 只是对资源并发访问的线程数进行监控，并不会保证线程安全
+
+- 控制对某组资源的访问权限、秒杀车位、流量控制,一组线程40个，每10个一组执行
+- 可用于流量控制，限制最大的并发访问数
+
+
+```java
+package com.xuzhihao.test;
+
+import java.util.concurrent.Semaphore;
+
+public class SemaphoreDemo {
+
+	static class TaskThread extends Thread {
+
+		Semaphore semaphore;
+
+		public TaskThread(Semaphore semaphore) {
+			this.semaphore = semaphore;
 		}
 
 		@Override
 		public void run() {
 			try {
-				// 获取机器资源
-				Semaphore.acquire();
-				System.out.println(Thread.currentThread().getName()+"获取到机器，开始工作");
-				Thread.sleep(1000L);
-				Semaphore.release();
-				System.out.println(Thread.currentThread().getName()+"工作完毕，释放机器");
+				semaphore.acquire();
+				System.out.println(getName() + " 开始工作");
+				Thread.sleep(1000);
+				semaphore.release();
+				System.out.println(getName() + " 结束 ");
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 	}
 
 	public static void main(String[] args) {
-		int workers = 8;
-		Semaphore Semaphore = new Semaphore(3);
-		for (int i = 0; i < workers - 1; i++) {
-			new Thread(new Work(i,Semaphore)).start();
+		int threadNum = 5;
+		Semaphore semaphore = new Semaphore(2);
+		for (int i = 0; i < threadNum; i++) {
+			new TaskThread(semaphore).start();
 		}
 	}
+
+}
+
 ```
 
 ## 5. AtomicBoolean、AtomicInteger、AtomicLong(基本类型)

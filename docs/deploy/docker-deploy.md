@@ -481,8 +481,9 @@ eclipse/che start
 
 ```bash
 chown -R 1000:1000 /mydata/
-docker run -it -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/theia
-docker run -d -it --init -p 4000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
+docker run -it -d -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/theia
+docker run -it -d -p 3000:3000 -v "/mydata/theia-java:/home/project:cached" theiaide/theia-java
+docker run -it -d --init -p 3000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
 ```
 
 ![](../images/deploy/docker/21.Theia.png)
