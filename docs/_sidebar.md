@@ -72,7 +72,7 @@
    * [消息队列](share/distributed/mq)
    * [分布式锁](share/distributed/dislock)
    * [分布式事务Seata](share/distributed/seata)
-   * [Elasticsearch](share/distributed/elk)
+   * [ELK](share/distributed/elk)
    * [分布式全局ID](share/distributed/snowflake)
    * [分布式定时任务](share/distributed/disjob)
    * [分布式文件系统](share/distributed/dfs)
