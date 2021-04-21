@@ -1,7 +1,7 @@
 
 # Tomcat原理和源码
 
-自8.5版本起Tomcat移除了对BIO的支持
+自8.5版本起Tomcat移除了对BIO的支持，核心组件Connector和catalina 基于socket和executor完成并发
 
 IO模型
 - NIO 非阻塞I/O

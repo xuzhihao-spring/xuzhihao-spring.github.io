@@ -22,7 +22,7 @@
   * [Nginx配置HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
   * [Zabbix安装](deploy/zabbix5.0.md)
-  * [Mycat+Haproxy+Keepalived](deploy/mycat.md)
+  * [Mycat+HA+keepalived](deploy/mycat.md)
   * [Turnserver搭建](deploy/turnserve.md)
   
 * 开发工具API
