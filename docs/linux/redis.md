@@ -42,7 +42,11 @@
 
 1. 数据同步工具redis-port
 2. big key搜索
-3. 性能分析redis-faina
+3. [性能分析redis-faina](https://github.com/facebookarchive/redis-faina)
+
+```bash
+redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
+```
 
 #### 1.2.5 删除bigkey
 
@@ -441,6 +445,7 @@ AUTH password # 验证密码是否正确
 ### 2.8 服务器命令
 
 ```bash
+redis-server --version
 redis-server /opt/redis/redis.conf
 redis-cli -h host -p port -a password
 CLIENT PAUSE timeout        # 在指定时间内终止运行来自客户端的命令

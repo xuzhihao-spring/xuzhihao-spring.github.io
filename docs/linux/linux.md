@@ -11,6 +11,11 @@ vi /etc/sysconfig/network-scripts/ifcfg-eth0 # 修改ip
 hostnamectl set-hostname k8s-master          #设置hostname
 service network restart
 
+apt-get update              # 容器内安装
+apt-get install yum
+apt-get install -y vim
+apt-get --reinstall install python-minimal
+
 lsof -i:80
 ps -ef | grep xxx           #查看启动进程参数
 netstat -tunlp | grep 8080  #端口占用查看

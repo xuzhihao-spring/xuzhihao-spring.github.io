@@ -75,7 +75,7 @@ docker run -p 9090:9000 --name minio \
   -d minio/minio server /data
 ```
 
-## 7. nginx-fancyindex
+## 7. Nginx-fancyindex
 
 ```bash
 docker run -d \
@@ -90,13 +90,13 @@ docker run -d \
   80x86/nginx-fancyindex
 ```
 
-## 8. activemq
+## 8. Activemq
 
 ```bash
 docker run -d --name activemq -p 61616:61616 -p 8161:8161 webcenter/activemq
 ```
 
-## 9. zipkin
+## 9. Zipkin
 
 ```bash
 docker run -d --name zipkin -p  9411:9411 openzipkin/zipkin
@@ -203,6 +203,15 @@ docker exec -it redis redis-cli
 ```
 
 ![](../images/deploy/docker/mall_linux_deploy_01.png)
+
+
+监控工具redis-stat
+
+```bash
+docker run --name redis-stat --link redis6380:redis -p 8080:63790 -d insready/redis-stat --server redis          # 容器内部自连接
+docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.168.3.200:6379 192.168.3.201:6379 # 远程集群或单机
+```
+
 
 ## 13. Nginx
 
@@ -464,7 +473,7 @@ docker run --name openfire -d --restart=always \
 ![](../images/deploy/docker/19.openfire.png)
 
 
-## 20. eclipse/che
+## 20. Eclipse/che
 
 http://ip:8080
 
@@ -499,7 +508,7 @@ docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sona
 
 ![](../images/deploy/docker/22.Nexus3.png)
 
-## 23. zentao
+## 23. Zentao
 
 ```bash
 mkdir -p /data/zbox
@@ -590,7 +599,7 @@ docker-compose restart #重新启动
 
 默认账户密码：admin/Harbor12345
 
-## 26. postgres
+## 26. Postgres
 
 ```bash
 docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
@@ -611,7 +620,7 @@ psql -Upostgres # 连接数据库
 -v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
 ```
 
-## 27. sonarqube
+## 27. Sonarqube
 
 ```bash
 docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.6-community #H2默认存储
@@ -653,7 +662,7 @@ docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard
 ```
 
 
-## 30. rocketmq
+## 30. Rocketmq
 
 开通防火墙
 ```bash
@@ -807,7 +816,7 @@ Content-Type: {{contentType}}
 Authorization: Basic {{userName}}:{{password}}
 ```
 
-## 33. nodered
+## 33. Nodered
 
 ```bash
 sudo docker run -it -p 1880:1880 --name=nodered --restart=always --user=root --net=host -v /data/nodered:/data -e TZ=Asia/Shanghai nodered/node-red
