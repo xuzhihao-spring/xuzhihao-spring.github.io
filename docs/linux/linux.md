@@ -3,12 +3,12 @@
 
 ```bash
 ntpdate time.nist.gov
-ntpdate pool.ntp.org        #同步时间
-cat /etc/redhat-release     #版本查看
-vi /etc/hosts               #host修改
-vi /etc/resolv.conf  nameserver 192.168.0.1  #配置DNS
-vi /etc/sysconfig/network-scripts/ifcfg-eth0 # 修改ip
-hostnamectl set-hostname k8s-master          #设置hostname
+ntpdate pool.ntp.org        # 同步时间
+cat /etc/redhat-release     # 版本查看
+vi /etc/hosts               # host修改
+vi /etc/resolv.conf  nameserver 192.168.0.1    # 配置DNS
+vi /etc/sysconfig/network-scripts/ifcfg-enp0s3 # 修改ip
+hostnamectl set-hostname k8s-master            # 设置hostname
 service network restart
 
 apt-get update              # 容器内安装
@@ -17,12 +17,13 @@ apt-get install -y vim
 apt-get --reinstall install python-minimal
 
 lsof -i:80
-ps -ef | grep xxx           #查看启动进程参数
-netstat -tunlp | grep 8080  #端口占用查看
-find / -type f -size +100M  #查找大文件
-find / -name memcached      #查找应用
-sed -i 's/原字符串/新字符串/' /home/1.txt   #替换字符串
-sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config   #替换字符串
+ls /etc/cni/net.d/
+ps -ef | grep xxx           # 查看启动进程参数
+netstat -tunlp | grep 8080  # 端口占用查看
+find / -type f -size +100M  # 查找大文件
+find / -name memcached      # 查找应用
+sed -i 's/原字符串/新字符串/' /home/1.txt   # 替换字符串
+sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config   # 替换字符串
 
 cat > /etc/hosts <<EOF
 # 追加的内容
@@ -379,3 +380,18 @@ cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload # 重载
 ```
 
 nginx服务的默认配置文件在 vim `/etc/nginx/conf.d/default.conf` ，打开可看到，默认端口为80，项目部署目录为`/usr/share/nginx/html/`。
+
+## 10. clash
+
+```bash
+mkdir /home/clash
+cd /home/clash
+chmod -R 777 /home/clash
+./clash -d . 
+
+vim /etc/profile
+export http_proxy=http://127.0.0.1:7890
+export https_proxy=http://127.0.0.1:7890
+source /etc/profile
+
+```

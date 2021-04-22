@@ -34,18 +34,24 @@ setenforce 0
 sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
 ```
 
-设置系统参数
+网桥过滤配置文件
 ```bash
 vi /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1 
 net.bridge.bridge-nf-call-iptables = 1
 net.ipv4.ip_forward = 1 
 vm.swappiness = 0
-sysctl -p /etc/sysctl.d/k8s.conf
+
+modprobe br_netfilter     # 加载br_netfilter模块
+lsmod | grep br_netfilter # 查看是否加载
+
+sysctl -p /etc/sysctl.d/k8s.conf # 加载网桥
 ```
 
-kube-proxy开启ipvs的前置条件
-```
+kube-proxy开启ipvs
+```bash
+yum -y install ipset ipvsadm
+
 cat > /etc/sysconfig/modules/ipvs.modules <<EOF
 #!/bin/bash
 modprobe -- ip_vs
@@ -54,7 +60,12 @@ modprobe -- ip_vs_wrr
 modprobe -- ip_vs_sh
 modprobe -- nf_conntrack_ipv4
 EOF
+# 授权、运行、检查是否加载
 chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
+
+vim /etc/sysconfig/kubelet
+KUBELET_EXTRA_ARGS="--cgroup-driver=systemd" # 为了实现docker使用的cgroupdriver与kubelet使用的cgroup的一致性
+KUBE_PROXY_MODE="ipvs"
 ```
 
 所有节点关闭swap
@@ -108,24 +119,45 @@ vi /etc/docker/daemon.json
     "exec-opts":["native.cgroupdriver=systemd"]
 }
 
+vi /usr/lib/systemd/system/docker.service
+ExecStart=/usr/bin/dockerd  # 如果原文件此行后面有-H选项，请删除-H(含)后面所有内容。
+
+sudo systemctl daemon-reload
+sudo systemctl restart docker
 ```
 
-### 1.2 Master节点完成
+镜像准备
 
 ```bash
-kubeadm init --kubernetes-version=v1.17.4 --apiserver-advertise-address=192.168.3.200 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
+images=(
+	kube-apiserver:v1.17.4
+	kube-controller-manager:v1.17.4
+	kube-scheduler:v1.17.4
+	kube-proxy:v1.17.4
+	pause:3.1
+	etcd:3.4.3-0
+	coredns:1.6.5
+)
+
+for imageName in ${images[@]} ; do
+	docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/$imageName
+	docker tag  registry.cn-hangzhou.aliyuncs.com/google_containers/$imageName k8s.gcr.io/$imageName
+	docker rmi  registry.cn-hangzhou.aliyuncs.com/google_containers/$imageName
+done
+
 ```
 
-Slave节点安装的命令
+
+### 1.2 Master节点集群初始化
+
+```bash
+kubeadm init --kubernetes-version=v1.17.4 --apiserver-advertise-address=192.168.3.200 --pod-network-cidr=10.244.0.0/16 --service-cidr=10.96.0.0/12 
+```
+
+生成Slave节点安装的命令
 ```bash
 kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
     --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
-```
-
-启动kubelet
-```bash
-systemctl restart kubelet
-kubectl get nodes
 ```
 
 配置kubectl工具
@@ -135,29 +167,86 @@ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-[安装Calico](/file/k8s/calico)
-```bash
-mkdir k8s
-cd k8s
-wget https://docs.projectcalico.org/v3.10/gettingstarted/kubernetes/installation/hosted/kubernetes-datastore/caliconetworking/1.7/calico.yaml
 
-sed -i 's/192.168.0.0/10.244.0.0/g' calico.yaml
-kubectl apply -f calico.yaml
+### 1.3 插件
+
+[网络插件flannel](/file/k8s/kube-flannel)
+
+```bash
+docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-amd64
+docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-amd64 quay-mirror.qiniu.com/coreos/flannel:v0.12.0-amd64
+docker rmi  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-amd64
+
+docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm64
+docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm64 quay-mirror.qiniu.com/coreos/flannel:v0.12.0-arm64
+docker rmi  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm64
+
+docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm
+docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm quay-mirror.qiniu.com/coreos/flannel:v0.12.0-arm
+docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm
+
+docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le
+docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le quay-mirror.qiniu.com/coreos/flannel:v0.12.0-ppc64le
+docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le
+
+docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x
+docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x quay-mirror.qiniu.com/coreos/flannel:v0.12.0-s390x
+docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x
+```
+
+```bash
+kubectl apply -f kube-flannel.yml
 kubectl get pod --all-namespaces -o wide
 ```
 
-### 1.3 Slave节点完成
 
-在master节点上执行kubeadm token create --print-join-command重新生成加入命令
+[ingress-nginx](/file/k8s/mandatory)
 
 ```bash
-kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
-    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
-
-systemctl start kubelet
+kubectl apply -f mandatory.yaml
+kubectl get pods -n ingress-nginx -o wide
 ```
 
-### 1.4 NFS安装
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+```
+
+```bash
+kubectl apply -f service-nodeport.yaml
+kubectl get svc -n ingress-nginx -o wide
+```
+
+### 1.4 环境测试
+
+```bash
+kubectl create deploy nginx --image=nginx:1.14-alpine
+kubectl get pods --all-namespaces -o wide
+kubectl expose deploy nginx --port=80 --type=NodePort
+kubectl get svc
+```
+
+### 1.5 NFS安装
 
 安装NFS服务（在所有K8S的节点都需要安装）
 ```bash
@@ -193,6 +282,8 @@ kubectl explain deployment.spec # 查看标签用法
 kubectl taint nodes node1 key=value:effect # 设置污点
 kubectl taint nodes node1 key:effect-      # 去除污点
 kubectl taint nodes node1 key-             # 去除所有污点
+
+kubectl get cs                             # 查看集群状态
 ```
 
 ### 2.2 Namespace
@@ -890,435 +981,133 @@ spec:
   externalName: www.baidu.com  #改成ip地址也可以
 ```
 
-### 2.6 Ingresses
+### 2.6 Ingress
+
+例子tomcat-nginx.yaml
 
 ```yaml
-apiVersion: apps/v1 ## 定义了一个版本
-kind: Deployment ##资源类型是Deployment
-metadata: ## metadata这个KEY对应的值为一个Maps
-  name: whoami-deployment ##资源名字
-  labels: ##将新建的Pod附加Label
-    app: whoami ##key=app:value=whoami
-spec: ##资源它描述了对象的
-  replicas: 3 ##副本数为1个，只会有一个pod
-  selector: ##匹配具有同一个label属性的pod标签
-    matchLabels: ##匹配合适的label
-      app: whoami
-  template: ##template其实就是对Pod对象的定义  (模板)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
     metadata:
       labels:
-        app: whoami
+        app: nginx-pod
     spec:
       containers:
-      - name: whoami ##容器名字  下面容器的镜像
-        image: jwilder/whoami
+      - name: nginx
+        image: nginx:1.17.1
         ports:
-        - containerPort: 8000 ##容器的端口
+        - containerPort: 80
+
 ---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tomcat-deployment
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tomcat-pod
+  template:
+    metadata:
+      labels:
+        app: tomcat-pod
+    spec:
+      containers:
+      - name: tomcat
+        image: tomcat:8.5-jre10-slim
+        ports:
+        - containerPort: 8080
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: whoami-service
+  name: nginx-service
+  namespace: dev
 spec:
-  ports:
-  - port: 80   
-    protocol: TCP
-    targetPort: 8000
   selector:
-    app: whoami
+    app: nginx-pod
+  clusterIP: None
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
 
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: tomcat-service
+  namespace: dev
+spec:
+  selector:
+    app: tomcat-pod
+  clusterIP: None
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
 ```
+
+```bash
+kubectl delete ns dev
+kubectl create ns dev
+kubectl apply -f tomcat-nginx.yaml   # 创建
+kubectl get svc -n dev
+
+kubectl delete deployment  tomcat-nginx # 按照名字删除deployment
+kubectl delete -f tomcat-nginx.yaml     # 按资源文件删除deployment
+
+kubectl get ingress  # 查看ingress资源
+kubectl describe ing whoami-ingress # 查看ingres详细资源
+```
+
+Http代理
+
+创建ingress-http.yaml
 
 ```yaml
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: whoami-ingress
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
+  name: ingress-http
+  namespace: dev
 spec:
-  rules: # 定义规则
-  - host: whoami.qy.com  # 定义访问域名
+  rules:
+  - host: nginx.xuzhihao.com
     http:
       paths:
-      - path: / # 定义路径规则，/表示没有设置任何路径规则
+      - path: /
         backend:
-          serviceName: whoami-service  # 把请求转发给service资源，这个service就是我们前面运行的service
-          servicePort: 80 # service的端口
-```
-
-
-```bash
-kubectl delete deployment  whoami-deployment # 按照名字删除deployment
-kubectl delete -f whoami-deployment.yaml     # 按资源文件删除deployment
-
-kubectl apply -f whoami-service.yaml
-kubectl apply -f  whoami-ingress.yaml
-kubectl get ingress  # 查看ingress资源
-kubectl describe ingress whoami-ingress # 查看ingres详细资源
-```
-
-## 3. 插件
-
-### 3.1 ingress-nginx
-
-创建mandatory-0.30.0.yaml
-
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-
----
-
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: nginx-configuration
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: tcp-services
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: udp-services
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: nginx-ingress-serviceaccount
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: nginx-ingress-clusterrole
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - endpoints
-      - nodes
-      - pods
-      - secrets
-    verbs:
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - nodes
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
-  - apiGroups:
-      - "extensions"
-      - "networking.k8s.io"
-    resources:
-      - ingresses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - "extensions"
-      - "networking.k8s.io"
-    resources:
-      - ingresses/status
-    verbs:
-      - update
-
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: nginx-ingress-role
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - pods
-      - secrets
-      - namespaces
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    resourceNames:
-      # Defaults to "<election-id>-<ingress-class>"
-      # Here: "<ingress-controller-leader>-<nginx>"
-      # This has to be adapted if you change either parameter
-      # when launching the nginx-ingress-controller.
-      - "ingress-controller-leader-nginx"
-    verbs:
-      - get
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - create
-  - apiGroups:
-      - ""
-    resources:
-      - endpoints
-    verbs:
-      - get
-
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: nginx-ingress-role-nisa-binding
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: nginx-ingress-role
-subjects:
-  - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
-    namespace: ingress-nginx
-
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: nginx-ingress-clusterrole-nisa-binding
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: nginx-ingress-clusterrole
-subjects:
-  - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
-    namespace: ingress-nginx
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-ingress-controller
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: ingress-nginx
-      app.kubernetes.io/part-of: ingress-nginx
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: ingress-nginx
-        app.kubernetes.io/part-of: ingress-nginx
-      annotations:
-        prometheus.io/port: "10254"
-        prometheus.io/scrape: "true"
-    spec:
-      # wait up to five minutes for the drain of connections
-      hostNetwork: true
-      terminationGracePeriodSeconds: 300
-      serviceAccountName: nginx-ingress-serviceaccount
-      nodeSelector:
-        kubernetes.io/os: linux
-      containers:
-        - name: nginx-ingress-controller
-          image: registry.aliyuncs.com/google_containers/nginx-ingress-controller:0.30.0
-          args:
-            - /nginx-ingress-controller
-            - --configmap=$(POD_NAMESPACE)/nginx-configuration
-            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
-            - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
-            - --publish-service=$(POD_NAMESPACE)/ingress-nginx
-            - --annotations-prefix=nginx.ingress.kubernetes.io
-          securityContext:
-            allowPrivilegeEscalation: true
-            capabilities:
-              drop:
-                - ALL
-              add:
-                - NET_BIND_SERVICE
-            # www-data -> 101
-            runAsUser: 101
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-            - name: https
-              containerPort: 443
-              protocol: TCP
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /healthz
-              port: 10254
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 10
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /healthz
-              port: 10254
-              scheme: HTTP
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 10
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - /wait-shutdown
-
----
-
-apiVersion: v1
-kind: LimitRange
-metadata:
-  name: ingress-nginx
-  namespace: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-spec:
-  limits:
-  - min:
-      memory: 90Mi
-      cpu: 100m
-    type: Container
+          serviceName: nginx-service
+          servicePort: 80
+  - host: tomcat.xuzhihao.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: tomcat-service
+          servicePort: 8080
 ```
 
 ```bash
-docker pull registry.cn-hangzhou.aliyuncs.com/wuji_cyb/ingress-controller:0.25.0
-docker tag  registry.cn-hangzhou.aliyuncs.com/wuji_cyb/ingress-controller:0.25.0 quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.25.0
+kubectl get svc -n ingress-nginx   # 查看端口号
 
-# 添加hostNetwork: true
-
-kubectl apply -f mandatory-0.30.0.yaml
-kubectl get pods -n ingress-nginx -o wide
-
-```
-
-[部署whoami-service.yaml和whoami-ingress.yaml](/linux/kubernetes?id=_25-ingresses)
-
-### 3.2 metrics-server
-
-```yaml
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: metrics-server
-  namespace: kube-system
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: metrics-server
-  namespace: kube-system
-  labels:
-    k8s-app: metrics-server
-spec:
-  selector:
-    matchLabels:
-      k8s-app: metrics-server
-  template:
-    metadata:
-      name: metrics-server
-      labels:
-        k8s-app: metrics-server
-    spec:
-      hostNetwork: true
-      serviceAccountName: metrics-server
-      volumes:
-      # mount in tmp so we can safely use from-scratch images and/or read-only containers
-      - name: tmp-dir
-        emptyDir: {}
-      containers:
-      - name: metrics-server
-        image: registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server-amd64:v0.3.6
-        imagePullPolicy: Always
-        args:
-        - --kubelet-insecure-tls
-        - --kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP
-        volumeMounts:
-        - name: tmp-dir
-          mountPath: /tmp
-```
-
-```bash
-kubectl apply -f metrics-server-deployment.yaml
+#配置host
+192.168.3.200 nginx.xuzhihao.com
+192.168.3.200 tomcat.xuzhihao.com
 ```
