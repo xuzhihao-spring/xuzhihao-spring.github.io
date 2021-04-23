@@ -195,7 +195,7 @@ docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x
 ```
 
 ```bash
-kubectl apply -f kube-flannel.yml
+kubectl apply -f kube-flannel.yaml
 kubectl get pod --all-namespaces -o wide
 ```
 
@@ -983,6 +983,8 @@ spec:
 
 ### 2.6 Ingress
 
+#### 2.6.1 创建应用
+
 例子tomcat-nginx.yaml
 
 ```yaml
@@ -1076,7 +1078,7 @@ kubectl get ingress  # 查看ingress资源
 kubectl describe ing whoami-ingress # 查看ingres详细资源
 ```
 
-Http代理
+#### 2.6.2 Http代理
 
 创建ingress-http.yaml
 
@@ -1105,9 +1107,58 @@ spec:
 ```
 
 ```bash
-kubectl get svc -n ingress-nginx   # 查看端口号
+kubectl apply -f ingress-http.yaml
+kubectl get ing ingress-http -n dev
+kubectl describe ing ingress-http  -n dev
+kubectl get svc -n ingress-nginx # 查看端口
 
 #配置host
 192.168.3.200 nginx.xuzhihao.com
 192.168.3.200 tomcat.xuzhihao.com
+```
+
+#### 2.6.3 Https代理
+
+```bash
+# 生成证书
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/C=CN/ST=BJ/L=BJ/O=nginx/CN=xuzhihao.com"
+# 创建密钥
+kubectl create secret tls tls-secret --key tls.key --cert tls.crt
+```
+
+创建ingress-https.yaml
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-https
+  namespace: dev
+spec:
+  tls:
+    - hosts:
+      - nginx.xuzhihao.com
+      - tomcat.xuzhihao.com
+      secretName: tls-secret # 指定秘钥
+  rules:
+  - host: nginx.xuzhihao.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx-service
+          servicePort: 80
+  - host: tomcat.xuzhihao.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: tomcat-service
+          servicePort: 8080
+```
+
+```bash
+kubectl apply -f ingress-https.yaml
+kubectl get ing ingress-https -n dev
+kubectl describe ing ingress-https -n dev
 ```

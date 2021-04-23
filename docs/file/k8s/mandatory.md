@@ -212,7 +212,7 @@ spec:
         prometheus.io/scrape: "true"
     spec:
       # wait up to five minutes for the drain of connections
-      hostNetwork: true
+      #hostNetwork: true
       terminationGracePeriodSeconds: 300
       serviceAccountName: nginx-ingress-serviceaccount
       nodeSelector:
