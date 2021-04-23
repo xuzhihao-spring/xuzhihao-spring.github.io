@@ -381,7 +381,7 @@ cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload # 重载
 
 nginx服务的默认配置文件在 vim `/etc/nginx/conf.d/default.conf` ，打开可看到，默认端口为80，项目部署目录为`/usr/share/nginx/html/`。
 
-## 10. clash
+## 10. Clash
 
 ```bash
 mkdir /home/clash

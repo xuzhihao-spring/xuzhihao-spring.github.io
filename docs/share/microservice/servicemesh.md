@@ -215,7 +215,7 @@ ingressgateway 就是入口处的 Gateway，从网格外访问网格内的服务
 
 ## 4. k8s集群安装
 
-见[Minikube安装](deploy/minikube)和[devops中jenkins高可用](/share/monitor/devops?id=_53-kubernates安装)
+[k8s集群安装](/linux/kubernetes)
 
 ## 5. k8s组件回顾
 
