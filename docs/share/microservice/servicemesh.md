@@ -324,13 +324,14 @@ kubectl get pods -n kube-system --filed-selector=Running
 
 ### 5.1 部署
 
-https://github.com/istio/istio/releases/download/1.6.8/istio-1.6.8-linux-amd64.tar.gz
+https://github.com/istio/istio/releases/tag/1.6.8
 
 ```bash
-tar -xzf istio-1.6.8-linux-amd64.tar.gz
-cd /home/istio-1.6.8                        # 进入安装目录
-export PATH=$PWD/bin:$PATH                  # 配置istio 命令工具
+tar -xzf istio-1.6.8-linux.tar.gz
+cd /home/istio/istio-1.6.8                  # 进入安装目录
+mv /home/istio/istio-1.6.8/bin/istioctl /usr/local/bin
 istioctl manifest apply --set profile=demo  # 执行安装
+kubectl get ns
 kubectl get crd -n istio-system | wc -l     # 统计个数
 kubectl get pods -n istio-system            # 查看核心组件资源
 kubectl get svc -n istio-system
@@ -338,95 +339,25 @@ kubectl get svc -n istio-system
 
 demo安装
 ```bash
+kubectl label namespace default istio-injection=enabled
 kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
-kubectl get pods
+kubectl get pod
 kubectl get svc
 kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
 kubectl get svc istio-ingressgateway -n istio-system
 kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}'
 kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}'
 # curl 192.168.3.201:31666/productpage
+
+istioctl kube-inject -f first-istio.yaml | kubectl apply -f - # 手动注入
 ```
 
-
-### 5.2 注入sidecar
-
-资源 first-istio.yaml
-
-```yaml
-apiVersion: apps/v1 ## 定义了一个版本
-kind: Deployment ##资源类型是Deployment
-metadata:
-  name: first-istio 
-spec:
-  selector:
-    matchLabels:
-      app: first-istio
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: first-istio
-    spec:
-      containers:
-      - name: first-istio ##容器名字  下面容器的镜像
-        image: registry.cn-hangzhou.aliyuncs.com/sixupiaofei/spring-docker-demo:1.0
-        ports:
-        - containerPort: 8080 ##容器的端口
----
-apiVersion: v1
-kind: Service ##资源类型是Service
-metadata:
-  name: first-istio ##资源名字first-istio
-spec:
-  ports:
-  - port: 80 ##对外暴露80
-    protocol: TCP ##tcp协议
-    targetPort: 8080 ##重定向到8080端口
-  selector:
-    app: first-istio ##匹配合适的label，也就是找到合适pod
-  type: ClusterIP ## Service类型ClusterIP
-```
+### 5.2 卸载
 
 ```bash
-#执行，会发现 只会有一个containers在运行
-kubectl apply -f first-istio.yaml
-#查看first-isitio service
-kubectl get svc
-# 查看pod的具体的日志信息命令
-kubectl describe pod first-istio-8655f4dcc6-dpkzh
-#删除
-kubectl delete -f first-istio.yaml
-```
-
-手动注入
-
-```bash
-istioctl kube-inject -f first-istio.yaml | kubectl apply -f -
-
-vim /etc/profile
-
-export ISTIO_HOME=/root/k8s/istio-1.0.6
-export PATH=$PATH:$ISTIO_HOME/bin
-
-source /etc/profile
-
-kubectl get pods
-
-# 查看pod执行明细
-kubectl describe pod first-istio-75d4dfcbff-qhmxj
-kubectl get pod first-istio-75d4dfcbff-qhmxj -o yaml
-
-istioctl kube-inject -f first-istio.yaml | kubectl delete -f - #删除资源
-```
-
-自动注入sidecar
-
-```bash
-kubectl create namespace my-istio-ns
-kubectl label namespace my-istio-ns istio-injection=enabled
-kubectl get pods -n my-istio-ns
-kubectl apply -f first-istio.yaml -n my-istio-ns
-kubectl get pods -n my-istio-ns
-kubectl delete -f first-istio.yaml -n my-istio-ns
+cd /home/istio/istio-1.6.8
+kubectl delete -f samples/bookinfo/platform/kube/bookinfo.yaml
+istioctl manifest generate --set profile=demo | kubectl delete --ignore-not-found=true -f -
+kubectl delete namespace istio-system
+kubectl label namespace default istio-injection-
 ```
