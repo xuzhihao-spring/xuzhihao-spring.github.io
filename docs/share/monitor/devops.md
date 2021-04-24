@@ -735,7 +735,7 @@ node {
 
 #### 3.4.3 编写deploy.sh部署脚本
 
-上传[deploy.sh](/file/jenkins-deploy/deploy)文件到/opt/jenkins_shell目录下，且文件至少有执行权限！
+上传[deploy.sh](/file/jenkins/deploy/deploy)文件到/opt/jenkins_shell目录下，且文件至少有执行权限！
 
 > chmod +x deploy.sh
 
@@ -954,7 +954,7 @@ node {
 }
 ```
 
-上传[deployCluster.sh](/file/jenkins-deploy/deployCluster)部署脚本
+上传[deployCluster.sh](/file/jenkins/deploy/deployCluster)部署脚本
 
 ```
 #! /bin/sh
@@ -1059,168 +1059,16 @@ Slave到空闲的节点上创建，降低出现因某节点资源利用率高，
 
 ### 5.3 Kubernates安装
 
-| 主机名称| IP地址 | 安装的软件 |
-| ----- | ----- | ----- |
-| k8s-master| 192.168.3.200 | kube-apiserver、kube-controller-manager、kubescheduler、docker、etcd、calico，NFS |
-| k8s-node1 | 192.168.3.201 | kubelet、kubeproxy、Docker18.06.3-ce |
-| k8s-node2 | 192.168.3.202 | kubelet、kubeproxy、Docker18.06.3-ce |
-
-#### 5.3.1 三台机器都需要完成
-
-修改三台机器的hostname及hosts文件
-```bash
-
-hostnamectl set-hostname k8s-master
-hostnamectl set-hostname k8s-node1 
-hostnamectl set-hostname k8s-node2
-
-cat >> /etc/hosts  <<EOF
-192.168.3.200 k8s-master 
-192.168.3.201 k8s-node1 
-192.168.3.202 k8s-node2
-EOF
-```
-
-关闭防火墙和关闭SELinux
-```bash
-systemctl stop firewalld
-systemctl disable firewalld
-setenforce 0
-sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
-```
-
-设置系统参数
-```bash
-vi /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1 
-net.bridge.bridge-nf-call-iptables = 1
-net.ipv4.ip_forward = 1 
-vm.swappiness = 0
-sysctl -p /etc/sysctl.d/k8s.conf
-```
-
-kube-proxy开启ipvs的前置条件
-```
-cat > /etc/sysconfig/modules/ipvs.modules <<EOF
-#!/bin/bash
-modprobe -- ip_vs
-modprobe -- ip_vs_rr
-modprobe -- ip_vs_wrr
-modprobe -- ip_vs_sh
-modprobe -- nf_conntrack_ipv4
-EOF
-chmod 755 /etc/sysconfig/modules/ipvs.modules && bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
-```
-
-所有节点关闭swap
-
-```bash
-swapoff -a 临时关闭
-vi /etc/fstab 永久关闭
-#注释掉以下字段
-/dev/mapper/cl-swap swap swap defaults 0 0
-```
-
-安装kubelet、kubeadm、kubectl
-```bash
-yum clean all
-
-cat > /etc/yum.repos.d/kubernetes.repo <<EOF
-[kubernetes]
-name=Kubernetes
-baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
-enabled=1
-gpgcheck=0
-repo_gpgcheck=0
-gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
-https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-EOF
-
-yum install -y kubelet-1.17.4 kubeadm-1.17.4 kubectl-1.17.4
-
-#kubelet设置开机启动（注意：先不启动，现在启动的话会报错）
-systemctl enable kubelet
-
-kubelet --version
-
-```
-
-#### 5.3.2 Master节点需要完成
-
-```bash
-kubeadm init --kubernetes-version=v1.17.4 --apiserver-advertise-address=192.168.3.200 --image-repository registry.aliyuncs.com/google_containers --service-cidr=10.1.0.0/16 --pod-network-cidr=10.244.0.0/16 
-```
-
-Slave节点安装的命令
-```bash
-kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
-    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
-```
-
-启动kubelet
-```bash
-systemctl restart kubelet
-kubectl get nodes
-```
-
-配置kubectl工具
-```bash
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-[安装Calico](/file/k8s/calico)
-```bash
-mkdir k8s
-cd k8s
-wget https://docs.projectcalico.org/v3.10/gettingstarted/kubernetes/installation/hosted/kubernetes-datastore/caliconetworking/1.7/calico.yaml
-
-sed -i 's/192.168.0.0/10.244.0.0/g' calico.yaml
-kubectl apply -f calico.yaml
-kubectl get pod --all-namespaces -o wide
-```
-
-#### 5.3.3 Slave节点需要完成
-
-在master节点上执行kubeadm token create --print-join-command重新生成加入命令
-
-```bash
-kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
-    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
-
-systemctl start kubelet
-```
-
-### 5.3 NFS安装
-
-安装NFS服务（在所有K8S的节点都需要安装）
-```bash
-yum install -y nfs-utils
-
-# 创建共享目录
-mkdir -p /opt/nfs/jenkins
-vi /etc/exports 编写NFS的共享配置
-内容如下:
-/opt/nfs/jenkins *(rw,no_root_squash) # *代表对所有IP都开放此目录，rw是读写
-
-# 启动服务
-systemctl enable nfs
-systemctl start nfs
-
-# 查看NFS共享目录
-
-showmount -e 192.168.3.200
-```
+[k8s集群安装](/linux/kubernetes)
 
 ### 5.4 在Kubernetes安装Jenkins-Master
 
 #### 5.4.1 创建NFS client provisioner
 
 上传nfs-client部署文件
-1. [class.yaml](/file/nfs-client/class)
-2. [deployment.yaml](/file/nfs-client/deployment)
-3. [rbac.yaml](/file/nfs-client/rbac)
+1. [class.yaml](/file/jenkins/nfs-client/class)
+2. [deployment.yaml](/file/jenkins/nfs-client/deployment)
+3. [rbac.yaml](/file/jenkins/nfs-client/rbac)
 
 ```bash
 cd nfs-client
@@ -1231,10 +1079,10 @@ kubectl get pods     # 查看pod是否创建成功
 #### 5.4.2 安装Jenkins-Master
 
 上传Jenkins-Master构建文件
-1. [rbac.yaml](/file/jenkins-master/rbac)
-2. [Service.yaml](/file/jenkins-master/Service)
-3. [ServiceaAcount.yaml](/file/jenkins-master/ServiceaAcount)
-4. [StatefulSet.yaml](/file/jenkins-master/StatefulSet)
+1. [rbac.yaml](/file/jenkins/master/rbac)
+2. [Service.yaml](/file/jenkins/master/Service)
+3. [ServiceaAcount.yaml](/file/jenkins/master/ServiceaAcount)
+4. [StatefulSet.yaml](/file/jenkins/master/StatefulSet)
 
 创建kube-ops的namespace
 
@@ -1284,7 +1132,7 @@ Jenkins-Master在构建Job的时候，Kubernetes会创建Jenkins-Slave的Pod来�
 
 ![](../../images/share/monitor/devops/jenkins_jenkins_slave.png)
 
-[Dockerfile](/file/jenkins-slave/Dockerfile)，[settings.xml](/file/jenkins-slave/settings)文件内容如下：
+[Dockerfile](/file/jenkins/slave/Dockerfile)，[settings.xml](/file/jenkins/slave/settings)文件内容如下：
 
 ```bash
 FROM jenkins/jnlp-slave:latest
@@ -1507,7 +1355,7 @@ kubectl get secret    # 查看密钥
 
 ```
 
-在每个项目下建立[deploy.yml](/file/jenkins-deploy/deploy-k8s)，加入密钥参数
+在每个项目下建立[deploy.yml](/file/jenkins/deploy/deploy-k8s)，加入密钥参数
 
 ```yml
 spec:

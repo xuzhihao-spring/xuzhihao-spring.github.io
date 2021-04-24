@@ -17,14 +17,14 @@ apt-get install -y vim
 apt-get --reinstall install python-minimal
 
 lsof -i:80
-ls /etc/cni/net.d/
+echo -n 'admin' | base64
 ps -ef | grep xxx           # 查看启动进程参数
 netstat -tunlp | grep 8080  # 端口占用查看
 find / -type f -size +100M  # 查找大文件
 find / -name memcached      # 查找应用
 sed -i 's/原字符串/新字符串/' /home/1.txt   # 替换字符串
 sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config   # 替换字符串
-
+scp -r vjsp.workflow root@20.255.122.15:/opt/code                   #远程复制
 cat > /etc/hosts <<EOF
 # 追加的内容
 EOF
@@ -33,10 +33,8 @@ yum install -y wget       #远程下载
 yum -y install curl
 tar –zcvf jpg.tar *.jpg   #压缩
 tar –xvf file.tar         #解压
-
-scp -r vjsp.workflow root@20.255.122.15:/opt/code                   #远程复制
-rpm -qa |grep jdk                 #查找程序
-rpm -e --nodeps java-1.6.0-openjdk-1.6.0.0-1.66.1.13.0.el6.x86_64   #删除程序
+rpm -qa | grep jdk                #查找程序
+rpm -e --nodeps java-1.6.0        #删除程序
 nohup sh /data/kh_shell/jb.sh &   #重新执行数据库
 
 systemctl start firewalld.service   #启动firewall

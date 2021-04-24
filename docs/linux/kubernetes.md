@@ -12,9 +12,15 @@
 
 ### 1.1 三台机器完成
 
-修改三台机器的hostname及hosts文件
 ```bash
+vi /etc/resolv.conf  nameserver 114.114.114.114 # 配置DNS
+vi /etc/sysconfig/network-scripts/ifcfg-enp0s3  # 修改ip
+service network restart
+```
 
+修改三台机器的hostname及hosts文件
+
+```bash
 hostnamectl set-hostname k8s-master
 hostnamectl set-hostname k8s-node1 
 hostnamectl set-hostname k8s-node2
@@ -240,36 +246,31 @@ kubectl get svc -n ingress-nginx -o wide
 ### 1.4 环境测试
 
 ```bash
-kubectl create deploy nginx --image=nginx:1.14-alpine
-kubectl get pods --all-namespaces -o wide
-kubectl expose deploy nginx --port=80 --type=NodePort
-kubectl get svc
+kubectl delete ns test
+kubectl create ns test
+kubectl create deploy nginx --image=nginx:1.14-alpine -n test
+kubectl get pods -n test -o wide
+kubectl expose deploy nginx --port=80 --type=NodePort -n test
+kubectl get svc -n test
 ```
 
 ### 1.5 NFS安装
 
-安装NFS服务（在所有K8S的节点都需要安装）
+k8s-msater安装并设置，node节点仅安装
 ```bash
-yum install -y nfs-utils
-
-# 创建共享目录
-mkdir -p /opt/nfs/jenkins
-vi /etc/exports 编写NFS的共享配置
-内容如下:
+yum install -y nfs-utils   # 安装NFS服务
+mkdir -p /opt/nfs/jenkins  # 创建共享目录
+vi /etc/exports            # 编写NFS的共享配置，内容如下
 /opt/nfs/jenkins *(rw,no_root_squash) # *代表对所有IP都开放此目录，rw是读写
 
-# 启动服务
-systemctl enable nfs
+systemctl enable nfs       # 启动服务
 systemctl start nfs
-
-# 查看NFS共享目录
-
-showmount -e 192.168.3.200
+showmount -e 192.168.3.200 # 查看NFS共享目录
 ```
 
-## 2. 命令
+## 2. 组件
 
-### 2.1 kubectl
+### 2.1 Kubectl
 ```bash
 systemctl daemon-reload         # 重载kubelet守护
 systemctl restart kubelet       # 重启kubelet服务    
@@ -408,7 +409,7 @@ metadata:
   name: pod-base
   namespace: dev
   labels:
-    user: heima
+    user: xuzhihao
 spec:
   containers:
   - name: nginx
@@ -423,6 +424,7 @@ kubectl get pod -n ingress-nginx            # 按namespaces查看pods
 kubectl get pods -o wide nginx-ingress-controller-6594ddb5dc-d5zvh -n ingress-nginx # 查看指定pod具体信息
 kubectl get pod first-istio-65559bc449-c5pxd -o yaml # 查看资源文件
 kubectl get pods --show-labels              # 查看pod标签信息
+kubectl exec -it [podname] -n dev /bin/sh   # 进入容器
 ```
 
 ### 2.4 Pod控制器
@@ -1070,12 +1072,6 @@ kubectl delete ns dev
 kubectl create ns dev
 kubectl apply -f tomcat-nginx.yaml   # 创建
 kubectl get svc -n dev
-
-kubectl delete deployment  tomcat-nginx # 按照名字删除deployment
-kubectl delete -f tomcat-nginx.yaml     # 按资源文件删除deployment
-
-kubectl get ingress  # 查看ingress资源
-kubectl describe ing whoami-ingress # 查看ingres详细资源
 ```
 
 #### 2.6.2 Http代理
@@ -1161,4 +1157,759 @@ spec:
 kubectl apply -f ingress-https.yaml
 kubectl get ing ingress-https -n dev
 kubectl describe ing ingress-https -n dev
+```
+
+## 3. 数据存储
+
+### 3.1 基本存储
+
+#### 3.1.1 EmptyDir
+
+EmptyDir是最基础的Volume类型，一个EmptyDir就是Host上的一个空目录，EmptyDir是在Pod被分配到Node时创建的，它的初始内容为空，并且无须指定宿主机上对应的目录文件，因为kubernetes会自动分配一个目录，当Pod销毁时， EmptyDir中的数据也会被永久删除
+
+创建一个volume-emptydir.yaml
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-emptydir
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14-alpine
+    ports:
+    - containerPort: 80
+    volumeMounts:  # 将logs-volume挂在到nginx容器中，对应的目录为 /var/log/nginx
+    - name: logs-volume
+      mountPath: /var/log/nginx
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","tail -f /logs/access.log"] # 初始命令，动态读取指定文件中内容
+    volumeMounts:  # 将logs-volume 挂在到busybox容器中，对应的目录为 /logs
+    - name: logs-volume
+      mountPath: /logs
+  volumes: # 声明volume， name为logs-volume，类型为emptyDir
+  - name: logs-volume
+    emptyDir: {}
+```
+
+```bash
+kubectl create -f volume-emptydir.yaml
+kubectl get pods volume-emptydir -n dev -o wide
+# curl 192.168.3.200
+kubectl logs -f volume-emptydir -n dev -c busybox # # 通过kubectl logs命令查看指定容器的标准输出
+```
+
+#### 3.1.2 HostPath
+
+HostPath就是将Node主机中一个实际目录挂在到Pod中，以供容器使用，这样的设计就可以保证Pod销毁了，但是数据依据可以存在于Node主机上
+
+创建一个volume-hostpath.yaml
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-hostpath
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /var/log/nginx
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","tail -f /logs/access.log"]
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /logs
+  volumes:
+  - name: logs-volume
+    hostPath: 
+      path: /root/logs
+      type: DirectoryOrCreate  # 目录存在就使用，不存在就先创建后使用
+```
+
+```
+关于type的值的一点说明：
+	DirectoryOrCreate 目录存在就使用，不存在就先创建后使用
+	Directory	目录必须存在
+	FileOrCreate  文件存在就使用，不存在就先创建后使用
+	File 文件必须存在	
+  Socket	unix套接字必须存在
+	CharDevice	字符设备必须存在
+	BlockDevice 块设备必须存在
+```
+
+```bash
+kubectl create -f volume-hostpath.yaml
+kubectl get pods volume-hostpath -n dev -o wide
+# curl 192.168.3.200
+ls /root/logs/  # 到Pod所在的节点运行
+```
+
+
+#### 3.1.3 NFS
+
+HostPath可以解决数据持久化的问题，但是一旦Node节点故障了，Pod如果转移到了别的节点，又会出现问题了，此时需要准备单独的网络存储系统，比较常用的用NFS、CIFS
+
+```bash
+yum install nfs-utils -y   # master上安装nfs服务
+mkdir /root/data/nfs -pv   # 创建共享目录
+vi /etc/exports
+# 将共享目录以读写权限暴露给192.168.3.0/24网段中的所有主机
+/root/data/nfs     192.168.3.0/24(rw,no_root_squash)
+systemctl start nfs
+showmount -e 192.168.3.200 # 查看NFS共享目录 
+# 在node上安装nfs服务，注意不需要启动
+```
+
+创建volume-nfs.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-nfs
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /var/log/nginx
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","tail -f /logs/access.log"] 
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /logs
+  volumes:
+  - name: logs-volume
+    nfs:
+      server: 192.168.3.200  #nfs服务器地址
+      path: /root/data/nfs #共享文件路径
+```
+
+```bash
+kubectl create -f volume-nfs.yaml
+kubectl get pods volume-nfs -n dev -o wide
+ls /root/data/nfs
+```
+
+### 3.2 高级存储
+
+- 存储：存储工程师维护
+- PV：  kubernetes管理员维护
+- PVC：kubernetes用户维护
+
+#### 3.2.1 PV
+
+资源清单
+```yaml
+apiVersion: v1  
+kind: PersistentVolume
+metadata:
+  name: pv2
+spec:
+  nfs: # 存储类型，与底层真正存储对应
+  capacity:  # 存储能力，目前只支持存储空间的设置
+    storage: 2Gi
+  accessModes:  # 访问模式
+  storageClassName: # 存储类别
+  persistentVolumeReclaimPolicy: # 回收策略
+```
+
+使用NFS作为存储，创建3个PV，对应NFS中的3个暴露的路径。
+
+```bash
+mkdir /root/data/{pv1,pv2,pv3} -pv
+vi /etc/exports
+# 将共享目录以读写权限暴露给192.168.3.0/24网段中的所有主机
+/root/data/pv1     192.168.3.0/24(rw,no_root_squash)
+/root/data/pv2     192.168.3.0/24(rw,no_root_squash)
+/root/data/pv3     192.168.3.0/24(rw,no_root_squash)
+systemctl restart nfs
+```
+
+创建pv.yaml
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name:  pv1
+spec:
+  capacity: 
+    storage: 1Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /root/data/pv1
+    server: 192.168.3.200
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name:  pv2
+spec:
+  capacity: 
+    storage: 2Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /root/data/pv2
+    server: 192.168.3.200
+    
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name:  pv3
+spec:
+  capacity: 
+    storage: 3Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /root/data/pv3
+    server: 192.168.3.200
+```
+
+```bash
+kubectl create -f pv.yaml
+kubectl get pv -o wide
+```
+
+#### 3.2.2 PVC
+
+资源清单
+```yaml
+apiVersion: v1  
+kind: PersistentVolume
+metadata:
+  name: pv2
+spec:
+  nfs: # 存储类型，与底层真正存储对应
+  capacity:  # 存储能力，目前只支持存储空间的设置
+    storage: 2Gi
+  accessModes:  # 访问模式
+  storageClassName: # 存储类别
+  persistentVolumeReclaimPolicy: # 回收策略
+```
+
+创建pvc.yaml，申请pv
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc1
+  namespace: dev
+spec:
+  accessModes: 
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+      
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc2
+  namespace: dev
+spec:
+  accessModes: 
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+     
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc3
+  namespace: dev
+spec:
+  accessModes: 
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+```bash
+kubectl create -f pvc.yaml
+kubectl get pvc  -n dev -o wide  # pvc和pv有一个自动寻找合适空间绑定的过程
+```
+
+创建pods.yaml, 使用pv
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","while true;do echo pod1 >> /root/out.txt; sleep 10; done;"]
+    volumeMounts:
+    - name: volume
+      mountPath: /root/
+  volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc1
+        readOnly: false
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod2
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","while true;do echo pod2 >> /root/out.txt; sleep 10; done;"]
+    volumeMounts:
+    - name: volume
+      mountPath: /root/
+  volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc2
+        readOnly: false  
+```
+
+```bash
+kubectl create -f pods.yaml     # 创建pod
+kubectl get pods -n dev -o wide # 查看pod
+kubectl get pvc -n dev -o wide  # 查看pvc
+kubectl get pv -n dev -o wide   # 查看pv
+more /root/data/pv1             # 查看nfs中的文件存储
+```
+
+### 3.3 配置存储
+
+#### 3.3.1 ConfigMap
+
+ConfigMap是一种比较特殊的存储卷，它的主要作用是用来存储配置信息的
+
+创建configmap.yaml
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+  namespace: dev
+data:
+  info: |
+    username:admin
+    password:123456
+```
+
+```bash
+kubectl create -f configmap.yaml
+kubectl describe cm configmap -n dev
+```
+
+创建一个pod-configmap.yaml，将上面创建的configmap挂载进去
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-configmap
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    volumeMounts: # 将configmap挂载到目录
+    - name: config
+      mountPath: /configmap/config
+  volumes: # 引用configmap
+  - name: config
+    configMap:
+      name: configmap
+```
+
+```bash
+kubectl create -f pod-configmap.yaml
+kubectl get pod pod-configmap -n dev
+kubectl exec -it pod-configmap -n dev /bin/sh
+cd /configmap/config/
+ls
+```
+
+#### 3.3.2 Secret
+
+一种和ConfigMap非常类似的对象，称为Secret对象。它主要用于存储敏感信息，例如密码、秘钥、证书等等。
+
+```bash
+echo -n 'admin' | base64 #准备username
+echo -n '123456' | base64 #准备password
+```
+
+创建secret.yaml
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret
+  namespace: dev
+type: Opaque
+data:
+  username: YWRtaW4=
+  password: MTIzNDU2
+```
+
+```bash
+kubectl create -f secret.yaml
+kubectl describe secret secret -n dev
+```
+
+创建pod-secret.yaml，将上面创建的secret挂载进去
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-secret
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    volumeMounts: # 将secret挂载到目录
+    - name: config
+      mountPath: /secret/config
+  volumes:
+  - name: config
+    secret:
+      secretName: secret
+```
+
+```bash
+kubectl create -f pod-secret.yaml
+kubectl get pod pod-secret -n dev
+kubectl exec -it pod-secret /bin/sh -n dev
+ls /secret/config/
+more /secret/config/username
+```
+
+
+## 4. 安全认证
+
+在Kubernetes集群中，客户端通常有两类：
+1. User Account：一般是独立于kubernetes之外的其他服务管理的用户账号。
+2. Service Account：kubernetes管理的账号，用于为Pod中的服务进程在访问Kubernetes时提供身份标识。
+  
+### 4.1 认证管理
+
+Kubernetes集群安全的最关键点在于如何识别并认证客户端身份，它提供了3种客户端身份认证方式：
+1. HTTP Base认证：通过用户名+密码的方式认证
+2. HTTP Token认证：通过一个Token来识别合法用户
+3. HTTPS证书认证：基于CA根证书签名的双向数字证书认证方式
+  
+### 4.1 鉴权管理
+
+授权发生在认证成功之后，通过认证就可以知道请求用户是谁， 然后Kubernetes会根据事先定义的授权策略来决定用户是否有权限访问，这个过程就称为授权
+
+每个发送到ApiServer的请求都带上了用户和资源的信息：比如发送请求的用户、请求的路径、请求的动作等，授权就是根据这些信息和授权策略进行比较，如果符合策略，则认为授权通过，否则会返回错误
+
+API Server目前支持以下几种授权策略：
+- AlwaysDeny：表示拒绝所有请求，一般用于测试
+- AlwaysAllow：允许接收所有请求，相当于集群不需要授权流程（Kubernetes默认的策略）
+- ABAC：基于属性的访问控制，表示使用用户配置的授权规则对用户请求进行匹配和控制
+- Webhook：通过调用外部REST服务对用户进行授权
+- Node：是一种专用模式，用于对kubelet发出的请求进行访问控制
+- RBAC：基于角色的访问控制（kubeadm安装方式下的默认选项）
+
+RBAC(Role-Based Access Control) 基于角色的访问控制，主要是在描述一件事情：给哪些对象授予了哪些权限
+
+其中涉及到了下面几个概念：
+- 对象：User、Groups、ServiceAccount
+- 角色：代表着一组定义在资源上的可操作动作(权限)的集合
+- 绑定：将定义好的角色跟用户绑定在一起
+
+RBAC引入了4个顶级资源对象：
+- Role、ClusterRole：角色，用于指定一组权限
+- RoleBinding、ClusterRoleBinding：角色绑定，用于将角色（权限）赋予给对象
+
+Role、ClusterRole
+
+一个角色就是一组权限的集合，这里的权限都是许可形式的（白名单）。
+
+```yaml
+# Role只能对命名空间内的资源进行授权，需要指定nameapce
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: dev
+  name: authorization-role
+rules:
+- apiGroups: [""]  # 支持的API组列表,"" 空字符串，表示核心API群
+  resources: ["pods"] # 支持的资源对象列表
+  verbs: ["get", "watch", "list"] # 允许的对资源对象的操作方法列表
+```
+
+```yaml
+# ClusterRole可以对集群范围内资源、跨namespaces的范围资源、非资源类型进行授权
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+ name: authorization-clusterrole
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+```
+
+需要详细说明的是，rules中的参数：
+- apiGroups: 支持的API组列表
+  ```bash
+  "","apps", "autoscaling", "batch"
+  ```
+- resources：支持的资源对象列表
+  ```bash
+  "services", "endpoints", "pods","secrets","configmaps","crontabs","deployments","jobs",
+  "nodes","rolebindings","clusterroles","daemonsets","replicasets","statefulsets",
+  "horizontalpodautoscalers","replicationcontrollers","cronjobs"
+  ```
+- verbs：对资源对象的操作方法列表
+  ```bash
+  "get", "list", "watch", "create", "update", "patch", "delete", "exec"
+  ```
+
+
+RoleBinding、ClusterRoleBinding
+
+角色绑定用来把一个角色绑定到一个目标对象上，绑定目标可以是User、Group或者ServiceAccount。
+
+```yaml
+# RoleBinding可以将同一namespace中的subject绑定到某个Role下，则此subject即具有该Role定义的权限
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: authorization-role-binding
+  namespace: dev
+subjects:
+- kind: User
+  name: xuzhihao
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: authorization-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+```yaml
+# ClusterRoleBinding在整个集群级别和所有namespaces将特定的subject与ClusterRole绑定，授予权限
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+ name: authorization-clusterrole-binding
+subjects:
+- kind: User
+  name: xuzhihao
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: authorization-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+```
+
+除此之外还可以RoleBinding引用ClusterRole进行授权
+
+RoleBinding可以引用ClusterRole，对属于同一命名空间内ClusterRole定义的资源主体进行授权
+
+```
+一种很常用的做法就是，集群管理员为集群范围预定义好一组角色（ClusterRole），然后在多个命名空间中重复使用这些ClusterRole。这样可以大幅提高授权管理工作效率，也使得各个命名空间下的基础性授权规则与使用体验保持一致。
+```
+
+```yaml
+# 虽然authorization-clusterrole是一个集群角色，但是因为使用了RoleBinding
+# 所以xuzhihao只能读取dev命名空间中的资源
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: authorization-role-binding-ns
+  namespace: dev
+subjects:
+- kind: User
+  name: xuzhihao
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: authorization-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+```
+
+实战：创建一个只能管理dev空间下Pods资源的账号
+
+1) 创建账号
+```bash
+# 1) 创建证书
+[root@master pki]# cd /etc/kubernetes/pki/
+[root@master pki]# (umask 077;openssl genrsa -out devman.key 2048)
+
+# 2) 用apiserver的证书去签署
+# 2-1) 签名申请，申请的用户是devman,组是devgroup
+[root@master pki]# openssl req -new -key devman.key -out devman.csr -subj "/CN=devman/O=devgroup"     
+# 2-2) 签署证书
+[root@master pki]# openssl x509 -req -in devman.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out devman.crt -days 3650
+
+# 3) 设置集群、用户、上下文信息
+[root@master pki]# kubectl config set-cluster kubernetes --embed-certs=true --certificate-authority=/etc/kubernetes/pki/ca.crt --server=https://192.168.3.200:6443
+
+[root@master pki]# kubectl config set-credentials devman --embed-certs=true --client-certificate=/etc/kubernetes/pki/devman.crt --client-key=/etc/kubernetes/pki/devman.key
+
+[root@master pki]# kubectl config set-context devman@kubernetes --cluster=kubernetes --user=devman
+
+# 切换账户到devman
+[root@master pki]# kubectl config use-context devman@kubernetes
+Switched to context "devman@kubernetes".
+
+# 查看dev下pod，发现没有权限
+[root@master pki]# kubectl get pods -n dev
+Error from server (Forbidden): pods is forbidden: User "devman" cannot list resource "pods" in API group "" in the namespace "dev"
+
+# 切换到admin账户
+[root@master pki]# kubectl config use-context kubernetes-admin@kubernetes
+Switched to context "kubernetes-admin@kubernetes".
+```
+
+2) 创建Role和RoleBinding，为devman用户授权
+
+```yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: dev
+  name: dev-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+  
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: authorization-role-binding
+  namespace: dev
+subjects:
+- kind: User
+  name: devman
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: dev-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+```bash
+kubectl create -f dev-role.yaml
+```
+
+3) 切换账户，再次验证
+
+```bash
+# 切换账户到devman
+[root@master pki]# kubectl config use-context devman@kubernetes
+Switched to context "devman@kubernetes".
+
+# 再次查看
+[root@master pki]# kubectl get pods -n dev
+NAME                                 READY   STATUS             RESTARTS   AGE
+nginx-deployment-66cb59b984-8wp2k    1/1     Running            0          4d1h
+nginx-deployment-66cb59b984-dc46j    1/1     Running            0          4d1h
+nginx-deployment-66cb59b984-thfck    1/1     Running            0          4d1h
+
+# 为了不影响后面的学习,切回admin账户
+[root@master pki]# kubectl config use-context kubernetes-admin@kubernetes
+Switched to context "kubernetes-admin@kubernetes".
+```
+
+### 4.1 准入控制
+
+通过了前面的认证和授权之后，还需要经过准入控制处理通过之后，apiserver才会处理这个请求。
+
+准入控制是一个可配置的控制器列表，可以通过在Api-Server上通过命令行设置选择执行哪些准入控制器：
+```bash
+--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,
+DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
+```
+
+只有当所有的准入控制器都检查通过之后，apiserver才执行该请求，否则返回拒绝。
+
+当前可配置的Admission Control准入控制如下：
+
+- AlwaysAdmit：允许所有请求
+- AlwaysDeny：禁止所有请求，一般用于测试
+- AlwaysPullImages：在启动容器之前总去下载镜像
+- DenyExecOnPrivileged：它会拦截所有想在Privileged Container上执行命令的请求
+- ImagePolicyWebhook：这个插件将允许后端的一个Webhook程序来完成admission controller的功能。
+- Service Account：实现ServiceAccount实现了自动化
+- SecurityContextDeny：这个插件将使用SecurityContext的Pod中的定义全部失效
+- ResourceQuota：用于资源配额管理目的，观察所有请求，确保在namespace上的配额不会超标
+- LimitRanger：用于资源限制管理，作用于namespace上，确保对Pod进行资源限制
+- InitialResources：为未设置资源请求与限制的Pod，根据其镜像的历史资源的使用情况进行设置
+- NamespaceLifecycle：如果尝试在一个不存在的namespace中创建资源对象，则该创建请求将被拒绝。当删除一个namespace时，系统将会删除该namespace中所有对象。
+- DefaultStorageClass：为了实现共享存储的动态供应，为未指定StorageClass或PV的PVC尝试匹配默认的StorageClass，尽可能减少用户在申请PVC时所需了解的后端存储细节
+- DefaultTolerationSeconds：这个插件为那些没有设置forgiveness tolerations并具有notready:NoExecute和unreachable:NoExecute两种taints的Pod设置默认的“容忍”时间，为5min
+- PodSecurityPolicy：这个插件用于在创建或修改Pod时决定是否根据Pod的security context和可用的PodSecurityPolicy对Pod的安全策略进行控制
+
+## 5. DashBoard
+
+下载[recommended](/file/k8s/recommended)，并运行Dashboard
+
+```bash
+wget  https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+# 修改kubernetes-dashboard的Service类型
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  type: NodePort  # 新增
+  ports:
+    - port: 443
+      targetPort: 8443
+      nodePort: 30009  # 新增
+  selector:
+    k8s-app: kubernetes-dashboard
+```
+
+```bash
+kubectl create -f recommended.yaml
+kubectl get pod,svc -n kubernetes-dashboard  # 查看namespace下的kubernetes-dashboard下的资源
+kubectl create serviceaccount dashboard-admin -n kubernetes-dashboard  # 创建账号
+kubectl create clusterrolebinding dashboard-admin-rb --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin # 授权
+kubectl get secrets -n kubernetes-dashboard | grep dashboard-admin # 获取账号token
+kubectl describe secrets [secretsname] -n kubernetes-dashboard # 查看token
 ```
