@@ -18,85 +18,9 @@ Citadel：起到安全作用，比如：服务跟服务通信的加密
 Sidecar/Envoy: 代理，处理服务的流量
 
 
-## 2. Istio功能
+## 2. 组件介绍
 
-### 2.1 自动注入
-
-在创建应用程序时自动注入Sidecar代理，创建Pod时，Kube-apiserver调用管理平面组件的Sidecar-Injector服务，然后会自动修改应用程序的描述信息并注入Sidecar。在创建业务容器的同时在Pod中创建Sidecar容器。
-
-```yaml
-# 原始的yaml文件
-apiVersion: apps/v1
-kind: Deployment
-spec: 
-	containers: 
-	- name: nginx  
-		image: nginx  
-		...省略
-```
-
-```yaml
-# 原始的yaml文件
-apiVersion: apps/v1
-kind: Deployment
-spec: 
-	containers: 
-	- name: nginx  
-		image: nginx  
-		...省略
-# 增加一个容器image地址		
-	containers: 
-	- name: sidecar  
-		image: sidecar  
-		...省略	
-```
-
-### 2.2 流量拦截
-
-在Pod初始化时设置iptables规则，当有流量到来时，基于配置的iptables规则拦截业务容器的入口流量和出口流量到Sidecar上。但是我们的应用程序感知不到Sidecar的存在，还以原本的方式进行互相访问。在架构图中，流出前端服务的流量会被 前端服务侧的 Envoy拦截，而当流量到达后台服务时，入口流量被后台服务V1/V2版本的Envoy拦截
-
-每个pod中都会有一个代理来来拦截所有的服务流量（不管是入口流量还是出口流量）
-
-### 2.3 服务发现
-
-Pilot提供了服务发现功能，调用方需要到Pilot组件获取提供者服务信息
-
-
-### 2.4 负载均衡
-
-数据面的各个Envoy从Pilot中获取后台服务的负载均衡衡配置，并执行负载均衡动作，服务发起方的Envoy（前端服务envoy）根据配置的负载均衡策略选择服务实例，并连接对应的实例地址
-
-Pilot也提供了负载均衡功能，调用方根据配置的负载均衡策略选择服务实例
-
-### 2.5 流量治理
-
-Envoy 从 Pilot 中获取流量治理规则，并根据该流量治理规则将不同特征的流量分发到后台服务的v1或v2版本
-
-Pilot也提供了路由转发规则
-
-### 2.6 访问安全
-
-Citadel维护了服务代理通信需要的证书和密钥
-
-### 2.7 服务遥测
-
-Mixer组件可以收集各个服务上的日志，从而可以进行监控
-
-### 2.8 策略执行
-
-Mixer组件可以对服务速率进行控制（也就是限流）
-
-### 2.9 外部访问
-
-外部服务通过Gateway访问入口将流量转发到服务前端服务内的Envoy组件，对前端服务的负载均衡和一些流量治理策略都在这个Gateway上执行
-
-
-**总结**：以上过程中涉及的动作和动作主体，可以将其中的每个过程都抽象成：服务调用双方的Envoy代理拦截流量，并根据控制平面的相关配置执行相应的服务治理动作，这也是Istio的数据平面和控制平面的配合方式。
-
-
-## 3. 组件介绍
-
-### 3.1 Pilot
+1) Pilot
 
 Pilot在Istio架构中必须要有
 
@@ -112,7 +36,7 @@ Pilot本身不做服务注册，它会提供一个API接口，对接已有的服
 2. Polit定了一个抽象模型(Abstract model)，处理Platform Adapter对接外部不同的平台， 从特定平台细节中解耦
 3. Envoy API负责和Envoy的通讯，主要是发送服务发现信息和流量控制规则给Envoy 
 
-**数据平面下发规则**
+数据平面下发规则
 
 Pilot 更重要的一个功能是向数据平面下发规则，Pilot 负责将各种规则转换换成 Envoy 可识别的格式，通过标准的 协议发送给 Envoy，指导Envoy完成动作。在通信上，Envoy通过gRPC流式订阅Pilot的配置资源。
 
@@ -136,7 +60,7 @@ http:
      name: v1 
 ```
 
-### 3.2 Mixer
+2) Mixer
 
 Mixer在Istio架构中不是必须的
 
@@ -146,7 +70,7 @@ Mixer的Telemetry在整个服务网格中执行访问控制和策略使用，并
 
 policy是另外一个Mixer服务，和istio-telemetry基本上是完全相同的机制和流程。数据面在转发服务的请求前调用istio-policy的Check接口是否允许访问，Mixer 根据配置将请求转发到对应的Adapter做对应检查，给代理返回允许访问还是拒绝。可以对接如配额、授权、黑白名单等不同的控制后端，对服务间的访问进行可扩展的控制
 
-### 3.3 Citadel
+3) Citadel
 
 Citadel在Istio架构中不是必须的
 
@@ -166,7 +90,7 @@ Istio的认证授权机制主要是由Citadel完成，同时需要和其它组�
 
 总结：用于负责密钥和证书的管理，在创建服务时会将密钥及证书下发至对应的Envoy代理中
 
-### 3.4 Galley
+4) Galley
 
 Galley在istio架构中不是必须的
 
@@ -179,7 +103,7 @@ galley优点
 - 配置跟配置是相互隔离而且，而且配置也是权限控制，比如组件只能访问自己的私有配置
 
 
-### 3.5 Sidecar-injector
+5) Sidecar-injector
 
 Sidecar-injector 是负责自动注入的组件，只要开启了自动注入，那么在创建pod的时候就会自动调用Sidecar-injector 服务
 
@@ -194,7 +118,7 @@ sidecar模式具有以下优势
 - 把业务逻辑无关的功能抽取出来（比如通信），可以降低业务代码的复杂度
 - sidecar可以独立升级、部署，与业务代码解耦
 
-### 3.6 Proxy(Envoy)
+6) Proxy(Envoy)
 
 Proxy是Istio数据平面的轻量代理。
 
@@ -202,24 +126,24 @@ Envoy是用C++开发的非常有影响力的轻量级高性能开源服务代理
 
 Envoy 代理是唯一与数据平面流量交互的 Istio 组件
 
-### 3.7 Ingressgateway 
+7) Ingressgateway 
 
 ingressgateway 就是入口处的 Gateway，从网格外访问网格内的服务就是通过这个Gateway进行的。ingressgateway比较特别，是一个Loadbalancer类型的Service，不同于其他服务组件只有一两个端口，ngressgateway 开放了一组端口，这些就是网格内服务的外部访问端口。
 
 网格入口网关ingressgateway和网格内的 Sidecar是同样的执行体，也和网格内的其他 Sidecar一样从 Pilot处接收流量规则并执行。因为入口处的流量都走这个服务。
 
-### 3.8 其他组件
+8) 其他组件
 
 在Istio集群中一般还安装grafana、Prometheus、Tracing组件，这些组件提供了Istio的调用链、监控等功能，可以选择安装来完成完整的服务监控管理功能。
 
 
-## 4. k8s集群安装
+## 3. k8s集群安装
 
 [k8s集群安装](/linux/kubernetes)
 
-## 5. k8s组件回顾
+## 4. k8s组件回顾
 
-### 5.1 deployment
+### 4.1 deployment
 
 pod版本管理工具
 
@@ -253,7 +177,7 @@ kubectl get pods                        # 查看pods
 kubectl get deployment -o wide          # 查看pods详细
 ```
 
-### 5.2 namespace
+### 4.2 namespace
 
 资源隔离
 
@@ -271,7 +195,7 @@ kubectl delete -f my-namespace.yaml # 用资源文件删除命名空间
 kubectl delete namespace myns       # 按名字删除命名空间    
 ```
 
-### 5.3 service
+### 4.3 service
 
 pod实现了容器内部互通，但是不稳定，通过service让pod拥有固定ip,包括cluterIp（集群内部访问）和NodePort（暴露外部访问）
 
@@ -308,7 +232,7 @@ kubectl delete svc whoami-deployment                    # 删除service
 kubectl expose deployment whoami-deployment  --type="NodePort" # 按外部访问方式暴露
 ```
 
-### 5.4 ingress
+### 4.4 ingress
 
 ngress相当于一个7层的负载均衡器，是k8s对反向代理的一个抽象。大概的工作原理也确实类似于Nginx，可以理解成在 Ingress 里建立一个个映射规则 , ingress Controller 通过监听 Ingress这个api对象里的配置规则并转化成 Nginx 的配置（kubernetes声明式API和控制循环） , 然后对外部提供服务。ingress包括：ingress controller和ingress resources
 
@@ -396,34 +320,36 @@ kubectl get pods -n kube-system --filed-selector=Running
 
 访问whoami.qy.com
 
-## 6. 安装Istio
+## 5. Istio安装
 
-### 6.1 部署
+### 5.1 部署
 
-https://github.com/istio/istio/releases/tag/1.0.6
-
-1. 解压tar -xzf istio-1.0.6-linux.tar.gz
-2. 进入istio目录cd istio-1.0.6/
+https://github.com/istio/istio/releases/download/1.6.8/istio-1.6.8-linux-amd64.tar.gz
 
 ```bash
-#crds.yaml路径：
-istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
-# 执行
-kubectl apply -f crds.yaml
-# 统计个数
-kubectl get crd -n istio-system | wc -l
-```
-
-执行安装命令,根据istio-1.0.6/install/kubernetes/istio-demo.yaml创建资源
-
-```bash
-kubectl apply -f istio-demo.yaml
-
-kubectl get pods -n istio-system
+tar -xzf istio-1.6.8-linux-amd64.tar.gz
+cd /home/istio-1.6.8                        # 进入安装目录
+export PATH=$PWD/bin:$PATH                  # 配置istio 命令工具
+istioctl manifest apply --set profile=demo  # 执行安装
+kubectl get crd -n istio-system | wc -l     # 统计个数
+kubectl get pods -n istio-system            # 查看核心组件资源
 kubectl get svc -n istio-system
 ```
 
-### 6.2 注入sidecar
+demo安装
+```bash
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+kubectl get pods
+kubectl get svc
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+kubectl get svc istio-ingressgateway -n istio-system
+kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}'
+kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}'
+# curl 192.168.3.201:31666/productpage
+```
+
+
+### 5.2 注入sidecar
 
 资源 first-istio.yaml
 
@@ -498,15 +424,9 @@ istioctl kube-inject -f first-istio.yaml | kubectl delete -f - #删除资源
 
 ```bash
 kubectl create namespace my-istio-ns
-
 kubectl label namespace my-istio-ns istio-injection=enabled
-
 kubectl get pods -n my-istio-ns
-
 kubectl apply -f first-istio.yaml -n my-istio-ns
-
 kubectl get pods -n my-istio-ns
-
 kubectl delete -f first-istio.yaml -n my-istio-ns
-
 ```

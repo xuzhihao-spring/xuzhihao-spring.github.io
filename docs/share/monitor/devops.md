@@ -551,7 +551,7 @@ sonar.password=
 
 ### 3.2 使用Dockerfile制作微服务镜像
 
-[构建镜像](linux/docker.md?id=_9-dockerfile常见命令)
+[构建镜像](linux/docker.md?id=_4-dockerfile)
 
 ### 3.3 Harbor镜像仓库安装及使用
 
@@ -793,7 +793,7 @@ echo "容器启动成功"
 
 #### 3.5.1 安装Nginx服务器
 
-[Nginx安装](deploy/nginx.md)
+[Nginx安装](/linux/linux?id=_10-nginx安装)
 
 #### 3.5.2 安装NodeJS插件
 
