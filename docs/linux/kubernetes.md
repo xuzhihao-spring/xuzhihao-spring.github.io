@@ -174,9 +174,11 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
 
-### 1.3 插件
+### 1.3 插件安装
 
-[网络插件flannel](/file/k8s/kube-flannel)
+#### 1.3.1 flannel
+
+[flannel](/file/k8s/kube-flannel)
 
 ```bash
 docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-amd64
@@ -205,6 +207,7 @@ kubectl apply -f kube-flannel.yaml
 kubectl get pod --all-namespaces -o wide
 ```
 
+#### 1.3.2 ingress-nginx
 
 [ingress-nginx](/file/k8s/mandatory)
 
@@ -243,18 +246,70 @@ kubectl apply -f service-nodeport.yaml
 kubectl get svc -n ingress-nginx -o wide
 ```
 
-### 1.4 环境测试
+#### 1.3.3 metrics-server
 
-```bash
-kubectl delete ns test
-kubectl create ns test
-kubectl create deploy nginx --image=nginx:1.14-alpine -n test
-kubectl get pods -n test -o wide
-kubectl expose deploy nginx --port=80 --type=NodePort -n test
-kubectl get svc -n test
+下载 https://github.com/kubernetes-sigs/metrics-server/releases/tag/v0.3.6
+
+修改metrics-server-deployment.yaml
+
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: kube-system
+  labels:
+    k8s-app: metrics-server
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+  template:
+    metadata:
+      name: metrics-server
+      labels:
+        k8s-app: metrics-server
+    spec:
+      hostNetwork: true
+      serviceAccountName: metrics-server
+      volumes:
+      # mount in tmp so we can safely use from-scratch images and/or read-only containers
+      - name: tmp-dir
+        emptyDir: {}
+      containers:
+      - name: metrics-server
+        image: registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server-amd64:v0.3.6
+        imagePullPolicy: Always
+        args:
+        - --kubelet-insecure-tls
+        - --kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP
+        volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
 ```
 
-### 1.5 NFS安装
+```bash
+mkdir /home/k8s/metrics-server-0.3.6
+kubectl apply -f ./             # 安装metrics-server
+kubectl api-versions
+kubectl describe svc metrics-server -n kube-system
+kubectl get pod -n kube-system  # 查看pod运行情况
+kubectl top pod -n kube-system  # 查看资源使用情况
+kubectl top nodes
+
+kubectl get pod -n kube-system | grep metrics-server
+kubectl -n kube-system logs metrics-server-758b8649fc-hb7qc  metrics-server --tail 100 -f
+systemctl restart kubelet
+```
+
+#### 1.3.4 安装NFS
 
 k8s-msater安装并设置，node节点仅安装
 ```bash
@@ -267,6 +322,18 @@ systemctl enable nfs       # 启动服务
 systemctl start nfs
 showmount -e 192.168.3.200 # 查看NFS共享目录
 ```
+
+### 1.4 环境测试
+
+```bash
+kubectl delete ns test
+kubectl create ns test
+kubectl create deploy nginx --image=nginx:1.14-alpine -n test
+kubectl get pods -n test -o wide
+kubectl expose deploy nginx --port=80 --type=NodePort -n test
+kubectl get svc -n test
+```
+
 
 ## 2. 组件
 

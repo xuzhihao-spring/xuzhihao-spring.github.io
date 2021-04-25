@@ -327,14 +327,13 @@ kubectl get pods -n kube-system --filed-selector=Running
 https://github.com/istio/istio/releases/tag/1.6.8
 
 ```bash
-tar -xzf istio-1.6.8-linux.tar.gz
-cd /home/istio/istio-1.6.8                  # 进入安装目录
-mv /home/istio/istio-1.6.8/bin/istioctl /usr/local/bin
+tar -xzf istio-1.6.8-linux-amd64.tar.gz
+cd /home/k8s/istio-1.6.8                    # 进入安装目录
+mv /home/k8s/istio-1.6.8/bin/istioctl /usr/local/bin
 istioctl manifest apply --set profile=demo  # 执行安装
 kubectl get ns
 kubectl get crd -n istio-system | wc -l     # 统计个数
-kubectl get pods -n istio-system            # 查看核心组件资源
-kubectl get svc -n istio-system
+kubectl get pod,svc -n istio-system         # 查看核心组件资源
 ```
 
 demo安装
@@ -345,17 +344,40 @@ kubectl get pod
 kubectl get svc
 kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
 kubectl get svc istio-ingressgateway -n istio-system
-kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}'
+kubectl get gateway
+
+
+kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}'  # 输出ratings运行时pod
+kubectl exec -it $(kubectl get pod -l app=ratings  -o jsonpath='{.items[0].metadata.name}') -c ratings  -- curl productpage:9080/productpage | grep -o "<title>.*</title>"
+
+
+
 kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}'
+export INGRESS_HOST=$(kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}')
+
+kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}'
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+
 # curl 192.168.3.201:31666/productpage
 
 istioctl kube-inject -f first-istio.yaml | kubectl apply -f - # 手动注入
 ```
 
+无法注入问题排查
+```bash
+cd /etc/kubernetes/manifests
+vi kube-apiserver.yaml
+- --enable-aggregator-routing=true # 添加本行
+kubectl get namespace -L istio-injection
+kubectl describe deployment productpage
+kubectl describe replicaset productpage-v1-6987489c74
+```
+
 ### 5.2 卸载
 
 ```bash
-cd /home/istio/istio-1.6.8
+/home/k8s/istio-1.6.8/samples/bookinfo/platform/kube/cleanup.sh
+cd /home/k8s/istio-1.6.8
 kubectl delete -f samples/bookinfo/platform/kube/bookinfo.yaml
 istioctl manifest generate --set profile=demo | kubectl delete --ignore-not-found=true -f -
 kubectl delete namespace istio-system
