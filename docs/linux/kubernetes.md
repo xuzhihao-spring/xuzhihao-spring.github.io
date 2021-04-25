@@ -276,15 +276,15 @@ systemctl daemon-reload         # 重载kubelet守护
 systemctl restart kubelet       # 重启kubelet服务    
 journalctl -u kubelet -f        # 查看日志:
 kubeadm reset -f                # 重置kubeadm
-kubectl api-resources           # 查看api资源
+kubectl api-resources           # api资源
+kubectl api-versions            # api版本
+kubectl get cs                  # 集群状态
 
 kubectl explain deployment.spec # 查看标签用法
 
 kubectl taint nodes node1 key=value:effect # 设置污点
 kubectl taint nodes node1 key:effect-      # 去除污点
 kubectl taint nodes node1 key-             # 去除所有污点
-
-kubectl get cs                             # 查看集群状态
 ```
 
 ### 2.2 Namespace
