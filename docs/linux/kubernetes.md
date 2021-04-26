@@ -158,12 +158,7 @@ done
 
 ```bash
 kubeadm init --kubernetes-version=v1.17.4 --apiserver-advertise-address=192.168.3.200 --pod-network-cidr=10.244.0.0/16 --service-cidr=10.96.0.0/12 
-```
-
-生成Slave节点安装的命令
-```bash
-kubeadm join 192.168.3.200:6443 --token yyhwxt.5qkinumtww4dwsv5 \
-    --discovery-token-ca-cert-hash sha256:2a9c49ccc37bf4f584e7bae440bbcf0a64eadaf6f662df01025a218122cd2e26
+kubeadm token create --print-join-command   # 查看集群加入命令
 ```
 
 配置kubectl工具
@@ -191,15 +186,15 @@ docker rmi  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm64
 
 docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm
 docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm quay-mirror.qiniu.com/coreos/flannel:v0.12.0-arm
-docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm
+docker rmi  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-arm
 
 docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le
 docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le quay-mirror.qiniu.com/coreos/flannel:v0.12.0-ppc64le
-docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le
+docker rmi  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-ppc64le
 
 docker pull registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x
 docker tag  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x quay-mirror.qiniu.com/coreos/flannel:v0.12.0-s390x
-docker rmi registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x
+docker rmi  registry.cn-shanghai.aliyuncs.com/leozhanggg/flannel:v0.12.0-s390x
 ```
 
 ```bash

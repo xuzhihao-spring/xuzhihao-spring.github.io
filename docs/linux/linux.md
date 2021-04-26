@@ -1,109 +1,118 @@
 # Linux
-## 1. 基础命令
 
+## 1. 基础命令
 ```bash
 ntpdate time.nist.gov
-ntpdate pool.ntp.org        # 同步时间
-cat /etc/redhat-release     # 版本查看
-vi /etc/hosts               # host修改
+ntpdate pool.ntp.org                           # 同步时间
+cat /etc/redhat-release                        # 版本查看
+vi /etc/hosts                                  # host修改
 vi /etc/resolv.conf  nameserver 192.168.0.1    # 配置DNS
 vi /etc/sysconfig/network-scripts/ifcfg-enp0s3 # 修改ip
 hostnamectl set-hostname k8s-master            # 设置hostname
 service network restart
 
-apt-get update              # 容器内安装
+apt-get update                # 容器内安装
 apt-get install yum
 apt-get install -y vim
 apt-get --reinstall install python-minimal
 
 lsof -i:80
 echo -n 'admin' | base64
-ps -ef | grep xxx           # 查看启动进程参数
-netstat -tunlp | grep 8080  # 端口占用查看
-find / -type f -size +100M  # 查找大文件
-find / -name memcached      # 查找应用
-sed -i 's/原字符串/新字符串/' /home/1.txt   # 替换字符串
-sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config   # 替换字符串
-scp -r vjsp.workflow root@20.255.122.15:/opt/code                   #远程复制
+ps -ef | grep xxx             # 查看启动进程参数
+netstat -tunlp | grep 8080    # 端口占用查看
+find / -type f -size +100M    # 查找大文件
+find / -name memcached        # 查找应用
+sed -i 's/原字符串/新字符串/'   /home/1.txt                       # 替换字符串
+sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config     # 替换字符串
+scp -r vjsp.workflow root@20.255.122.15:/opt/code               # 远程复制
 cat > /etc/hosts <<EOF
 # 追加的内容
 EOF
 
-yum install -y wget       #远程下载
+yum install -y wget         # 远程下载
 yum -y install curl
-tar –zcvf jpg.tar *.jpg   #压缩
-tar –xvf file.tar         #解压
-rpm -qa | grep jdk                #查找程序
-rpm -e --nodeps java-1.6.0        #删除程序
-nohup sh /data/kh_shell/jb.sh &   #重新执行数据库
+tar –zcvf jpg.tar *.jpg     # 压缩
+tar –xvf file.tar           # 解压
+rpm -qa | grep jdk                  # 查找程序
+rpm -e --nodeps java-1.6.0          # 删除程序
+nohup sh /data/kh_shell/jb.sh &     # 重新执行数据库
 
-systemctl start firewalld.service   #启动firewall
-systemctl restart firewalld.service #重启firewall
-systemctl stop firewalld.service    #关闭firewall
-systemctl status firewalld.service  #查看防火墙状态
-systemctl disable firewalld.service #禁止firewall随系统启动
-systemctl enable firewalld.service  #firewall随系统启动
-firewall-cmd --zone=public --add-port=80/tcp --permanent #开放端口
+systemctl start firewalld.service     # 启动firewall
+systemctl restart firewalld.service   # 重启firewall
+systemctl stop firewalld.service      # 关闭firewall
+systemctl status firewalld.service    # 查看防火墙状态
+systemctl disable firewalld.service   # 禁止firewall随系统启动
+systemctl enable firewalld.service    # firewall随系统启动
+firewall-cmd --zone=public --add-port=80/tcp --permanent # 开放端口
 firewall-cmd --reload
 systemctl enable iptables
 ```
 
-## 2. 安装jdk、Maven
+## 2. 脚本
+
+tomcat重启脚本restart_3001.sh
 
 ```bash
-yum install java-1.8.0-openjdk* -y
+sh /data/tomcat_webapp_3001/bin/shutdown.sh
+sleep 2s
+ps -ef | grep tomcat_webapp_3001 | grep -v grep | awk '{print $2}'| xargs kill -9
+sleep 1s
+sh /data/tomcat_webapp_3001/bin/startup.sh;tail -f /data/tomcat_webapp_3001/logs/catalina.out
+```
 
+## 3. 安装jdk、Maven
+
+```bash
+# jdk
+yum install java-1.8.0-openjdk* -y
 vim /etc/profile
 source /etc/profile
-JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk #jdk配置
+JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk  # jdk配置
 PATH=$JAVA_HOME/bin:$PATH
 CLASSPATH=$JAVA_HOME/jre/lib/ext:$JAVA_HOME/lib/tools.jar
 export PATH JAVA_HOME CLASSPATH
-source /etc/profile #配置生效
+source /etc/profile   # 配置生效
 
-##########################################
-tar -xzf apache-maven-3.6.2-bin.tar.gz  #解压
-mkdir -p /opt/maven                     #创建目录
-mv apache-maven-3.6.2/* /opt/maven      #移动文件
+# maven
+tar -xzf apache-maven-3.6.2-bin.tar.gz    # 解压
+mkdir -p /opt/maven                       # 创建目录
+mv apache-maven-3.6.2/* /opt/maven        # 移动文件
 
 vi /etc/profile
 export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 export MAVEN_HOME=/opt/maven
 export PATH=$PATH:$JAVA_HOME/bin:$MAVEN_HOME/bin
-source /etc/profile #配置生效
-mvn -v #查找Maven版本
+source /etc/profile   # 配置生效
+mvn -v                # 查找Maven版本
 ```
 
-## 3. 安装Ftp
+## 4. 安装Ftp
 ```bash
-yum install vsftpd #ftp
-cat /etc/passwd    #新增用户
+yum install vsftpd    # ftp
+cat /etc/passwd       # 新增用户
 useradd vcms -g root -d /opt/VCMS/vjsp.webapp -s /sbin/nologin
 passwd sipqcl
 chmod -R 777 dir
 userdel
-/usr/sbin/sestatus -v #ftp参数设置
+/usr/sbin/sestatus -v # ftp参数设置
 vi /etc/selinux/config
 SELINUX=disabled 
-```
-
-## 4. 启动solr
-```bash
-cd /opt/solr-4.7.2/example  #solr启动
-nohup java -Djetty.port=8080 -jar start.jar
-ps aux|grep jetty
 ```
 
 ## 5. 应用启动
 
 ```bash
-memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111; #memcached启动
+memcached-d -m 1024 -u root -t 64 -r -c 16382 -p 11111; # memcached启动
 
-cd /usr/local/redis/  ./bin/redis-server redis.conf
-cd /home/nacos/bin sh startup.sh -m standalone
-cd /home/es/elasticsearch-7.9.0/bin ./elasticsearch -d
-cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &
-java -jar sentinel-dashboard-1.7.2.jar &
+cd /opt/solr-4.7.2/example  # solr启动
+nohup java -Djetty.port=8080 -jar start.jar
+ps aux|grep jetty
+
+cd /usr/local/redis/  ./bin/redis-server redis.conf     # redis
+cd /home/nacos/bin sh startup.sh -m standalone          # nacos
+cd /home/es/elasticsearch-7.9.0/bin ./elasticsearch -d  # es
+cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &    # 
+java -jar sentinel-dashboard-1.7.2.jar &                # sentinel
 ```
 
 ## 6. yum仓库配置
@@ -379,7 +388,9 @@ cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload # 重载
 
 nginx服务的默认配置文件在 vim `/etc/nginx/conf.d/default.conf` ，打开可看到，默认端口为80，项目部署目录为`/usr/share/nginx/html/`。
 
-## 10. Clash
+## 11. Clash
+
+http://www.cylink.link
 
 ```bash
 mkdir /home/clash

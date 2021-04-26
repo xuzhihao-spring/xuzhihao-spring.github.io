@@ -2,7 +2,7 @@
 
 ## 1. Istio架构
 
-Istio的架构，分为控制平面和数据面平两部分。
+Istio的架构，分为控制平面和数据平面两部分。
 - 数据平面：由一组智能代理（[Envoy]）组成，被部署为 sidecar。这些代理通过一个通用的策略和遥测中心传递和控制微服务之间的所有网络通信。
 - 控制平面：管理并配置代理来进行流量路由。此外，控制平面配置 Mixer 来执行策略和收集遥测数据。
 
@@ -316,8 +316,6 @@ minikube addons disabled ingress
 ```bash
 kubectl get pods -n kube-system --filed-selector=Running
 ```
-
-
 访问whoami.qy.com
 
 ## 5. Istio安装
@@ -336,31 +334,52 @@ kubectl get crd -n istio-system | wc -l     # 统计个数
 kubectl get pod,svc -n istio-system         # 查看核心组件资源
 ```
 
-demo安装
+bookinfo安装
 ```bash
-kubectl label namespace default istio-injection=enabled
+kubectl label namespace default istio-injection=enabled      # 自动注入
+istioctl kube-inject -f istio-demo.yaml | kubectl apply -f - # 手动注入
 kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
 kubectl get pod
 kubectl get svc
-kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+```
+
+通过ingressgateway访问
+```bash
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml # 
 kubectl get svc istio-ingressgateway -n istio-system
 kubectl get gateway
 
-
 kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}'  # 输出ratings运行时pod
 kubectl exec -it $(kubectl get pod -l app=ratings  -o jsonpath='{.items[0].metadata.name}') -c ratings  -- curl productpage:9080/productpage | grep -o "<title>.*</title>"
-
-
-
 kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}'
-export INGRESS_HOST=$(kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}')
-
 kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}'
-export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-
 # curl 192.168.3.201:31666/productpage
+```
 
-istioctl kube-inject -f first-istio.yaml | kubectl apply -f - # 手动注入
+通过ingress方式访问
+
+新建productpageIngress.yaml
+```yaml
+#ingress
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+ name: productpage-ingress
+spec:
+ rules:
+ - host: productpage.istio.qy.com
+   http:
+     paths:
+     - path: /
+       backend:
+         serviceName: productpage
+         servicePort: 9080
+```
+
+```bash
+kubectl apply -f productpageIngress.yaml # 
+kubectl get Ingress --all-namespaces     # 查看创建绑定
+kubectl get svc -n ingress-nginx         # 查看端口
 ```
 
 无法注入问题排查
@@ -383,3 +402,211 @@ istioctl manifest generate --set profile=demo | kubectl delete --ignore-not-foun
 kubectl delete namespace istio-system
 kubectl label namespace default istio-injection-
 ```
+
+### 5.3 监控
+
+prometheus和grafana
+
+配置prometheus-ingress.yaml和grafana-ingress.yaml配置文件
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: prometheus-ingress
+  namespace: istio-system
+spec:
+  rules:
+  - host: prometheus.istio.qy.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: prometheus
+          servicePort: 9090
+```
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: istio-system
+spec:
+  rules:
+  - host: grafana.istio.qy.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: grafana
+          servicePort: 3000
+```
+
+```bash
+kubectl apply -f prometheus-ingress.yaml grafana-ingress.yaml
+kubectl get ingress -n istio-system
+```
+
+域名配置
+```
+192.168.187.201    prometheus.istio.qy.com
+192.168.187.201    grafana.istio.qy.com
+```
+
+
+## 6. 流量管理
+
+### 6.1 放开自定义路由权限
+
+先执行这个文件之后gateway路由规则才可以自定义
+```bash
+kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml  -n bookinfo-ns
+kubectl get DestinationRule -n bookinfo-ns  # 查看路由规则
+```
+
+### 6.2 基于版本控制
+
+所有的路由的流量全部都切换到v3版本也就是全部都是红星的版本
+```bash
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-v3  -n bookinfo-ns
+```
+
+### 6.3 基于权重的流量版本控制
+
+此时会把所有的路由的流量会在v1和v3之间进行切换，各占50%
+```bash
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-50-v3.yaml  -n bookinfo-ns
+```
+
+### 6.4 基于用户控制流量
+
+在登录的时候会在header头部增加一个jason，如果是jason登录那么会访问v2版本，其它的人访问的是v3
+```bash
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-jason-v2-v3.yaml  -n bookinfo-ns
+```
+
+### 6.5 故障注入
+
+在访问的的时候会在header头部增加一个jason，如果是jason访问那么会访问v2版本，其它的人访问的是v3。 访问v3版本的人会注入一个50%几率的延迟2S请求访问
+
+创建故障注入规则-执行:test.yaml
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: reviews
+        subset: v2
+  - fault:
+      delay:
+        percent: 50
+        fixedDelay: 2s
+    route:
+    - destination:
+        host: reviews
+        subset: v3
+```
+```bash
+kubectl apply -f test.yaml -n bookinfo-ns
+```
+
+### 6.6 流量迁移
+
+一个常见的用例是将流量从一个版本的微服务逐渐迁移到另一个版本。在 Istio 中，您可以通过配置一系列规则来实现此目标， 这些规则将一定百分比的流量路由到一个或另一个服务。在本任务中，您将会把 50％ 的流量发送到 `reviews:v1`，另外 50％ 的流量发送到 `reviews:v3`。然后，再把 100％ 的流量发送到 `reviews:v3` 来完成迁移。
+
+(1)让所有的流量都到v1
+```bash
+kubectl apply -f virtual-service-all-v1.yaml
+```
+
+(2)将v1的50%流量转移到v3
+```bash
+kubectl apply -f virtual-service-reviews-50-v3.yaml
+```
+
+(3)确保v3版本没问题之后，可以将流量都转移到v3
+```bash
+kubectl apply -f virtual-service-reviews-v3.yaml
+```
+
+### 6.7 mixer组件上报
+
+采集指标：自动为Istio生成和收集的应用信息，可以配置的YAML文件
+
+metrics-crd.yaml 
+
+```yaml
+# Configuration for metric instances
+apiVersion: "config.istio.io/v1alpha2"
+kind: instance
+metadata:
+  name: doublerequestcount
+  namespace: istio-system
+spec:
+  compiledTemplate: metric
+  params:
+    value: "2" # count each request twice
+    dimensions:
+      reporter: conditional((context.reporter.kind | "inbound") == "outbound", "client", "server")
+      source: source.workload.name | "unknown"
+      destination: destination.workload.name | "unknown"
+      message: '"twice the fun!"'
+    monitored_resource_type: '"UNSPECIFIED"'
+---
+# Configuration for a Prometheus handler
+apiVersion: "config.istio.io/v1alpha2"
+kind: prometheus
+metadata:
+  name: doublehandler
+  namespace: istio-system
+spec:
+  metrics:
+  - name: double_request_count # Prometheus metric name
+    instance_name: doublerequestcount.instance.istio-system # Mixer instance name (fully-qualified)
+    kind: COUNTER
+    label_names:
+    - reporter
+    - source
+    - destination
+    - message
+---
+# Rule to send metric instances to a Prometheus handler
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: doubleprom
+  namespace: istio-system
+spec:
+  actions:
+  - handler: doublehandler.prometheus
+    instances:
+    - doublerequestcount
+```
+
+```bash
+kubectl apply -f metrics-crd.yaml      # 收集前提安装crd
+kubectl get instance -n istio-system   # 检查安装
+kubectl get ingress -n istio-system    # 检查普罗米修斯和grafana的ingress存不存在
+kubectl apply -f prometheus-ingress.yaml # 创建prometheus的ingress
+kubectl apply -f grafana-ingress.yaml    # 创建grafana的ingress
+kubectl get svc -o wide -n istio-system  # 查找普罗米修斯ip
+```
+
+![](../../images/share/microservice/servicemesh/observe1.png)
+
+![](../../images/share/microservice/servicemesh/observe2.png)
+
+![](../../images/share/microservice/servicemesh/observe3.png)
+
+![](../../images/share/microservice/servicemesh/observe4.png)
