@@ -658,8 +658,10 @@ vi hudson.model.UpdateCenter.xml
 ## 29. Sentinel
 
 ```bash
-docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard
+docker run --name sentinel -d -p 8858:8858 -p 8719:8719 -d bladex/sentinel-dashboard
+docker run --name nacos -d -p 8848:8848 -e MODE=standalone nacos/nacos-server
 ```
+
 
 
 ## 30. Rocketmq

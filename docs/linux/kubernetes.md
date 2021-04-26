@@ -323,7 +323,7 @@ showmount -e 192.168.3.200 # 查看NFS共享目录
 ```bash
 kubectl delete ns test
 kubectl create ns test
-kubectl create deploy nginx --image=nginx:1.14-alpine -n test
+kubectl create deploy nginx --image=nginx:1.17.1 -n test
 kubectl get pods -n test -o wide
 kubectl expose deploy nginx --port=80 --type=NodePort -n test
 kubectl get svc -n test
@@ -630,8 +630,8 @@ kubectl rollout status deploy pc-deployment -n dev  # 查看当前升级版本�
 kubectl rollout history deploy pc-deployment -n dev # 查看升级历史记录
 kubectl rollout undo deployment pc-deployment --to-revision=1 -n dev # 使用--to-revision=1回滚到了1版本
 
-# 创建一个新的nginx:1.17.4镜像 创建完毕后就立即停止
-kubectl set image deploy pc-deployment nginx=nginx:1.17.4 -n dev && kubectl rollout pause deployment pc-deployment -n dev
+# 创建一个新的nginx:1.17.1镜像 创建完毕后就立即停止
+kubectl set image deploy pc-deployment nginx=nginx:1.17.1 -n dev && kubectl rollout pause deployment pc-deployment -n dev
 # 确保更新的pod没问题了，继续更新
 kubectl rollout resume deploy pc-deployment -n dev
 ```
@@ -1239,7 +1239,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx:1.14-alpine
+    image: nginx:1.17.1
     ports:
     - containerPort: 80
     volumeMounts:  # 将logs-volume挂在到nginx容器中，对应的目录为 /var/log/nginx
