@@ -2,6 +2,7 @@
 
 ## 1.重启
 
+sqlplus执行
 ```sql
 su – oracle
 sqlplus /nolog
@@ -10,8 +11,19 @@ shutdown immediate
 startup
 ```
 
-## 2.查询死锁
+shell脚本
+```bash
+su - oracle -c "sqlplus /nolog<< EOF
+conn /as sysdba
+shutdown immediate
+startup
+quit
+EOF"
+```
 
+## 2.排查优化
+
+查询表锁
 ```sql
 SELECT S.USERNAME,
        OBJECT_NAME,
@@ -25,16 +37,191 @@ SELECT S.USERNAME,
 
 SELECT 'ALTER SYSTEM KILL SESSION ''' || SID || ',' || SERIAL# || '''' || ';'
   FROM V$SESSION
- WHERE USERNAME = 'XW0125' 
- 
- SELECT A.PROGRAM, B.SPID, C.SQL_TEXT, C.SQL_ID,A.USERNAME
-  FROM V$SESSION A, V$PROCESS B, V$SQLAREA C
- WHERE A.PADDR = B.ADDR
-   AND A.SQL_HASH_VALUE = C.HASH_VALUE
-   ORDER BY SPID 
+ WHERE USERNAME = 'XW0125'
 ```
+
+参数排查
+```sql
+-- 查看不同用户的连接数
+select username,count(username) from v$session where username is not null group by username;
+-- 查询oracle的并发连接数
+select count(*) from v$session where status='ACTIVE';
+-- 查询share pool的空闲内存
+select a.*,round(a.bytes/1024/1024,2) M from v$sgastat a where a.NAME = 'free memory';
+--查看数据库当前链接数
+select count(*) from v$session;
+
+-- 最大连接
+select value from v$parameter where name = 'processes'
+-- 重启数据库 #修改连接
+alter system set processes = value scope = spfile; 
+```
+
+PGA使用率
+```sql
+select name,total,round(total-free,2) used, round(free,2) free,round((total-free)/total*100,2) pctused from 
+(select 'SGA' name,(select sum(value/1024/1024) from v$sga) total,
+(select sum(bytes/1024/1024) from v$sgastat where name='free memory')free from dual)
+union
+select name,total,round(used,2)used,round(total-used,2)free,round(used/total*100,2)pctused from (
+select 'PGA' name,(select value/1024/1024 total from v$pgastat where name='aggregate PGA target parameter')total,
+(select value/1024/1024 used from v$pgastat where name='total PGA allocated')used from dual);
+```
+
+表空间使用率
+```sql
+select * from ( 
+Select a.tablespace_name, 
+to_char(a.bytes/1024/1024,'99,999.999') total_bytes, 
+to_char(b.bytes/1024/1024,'99,999.999') free_bytes, 
+to_char(a.bytes/1024/1024 - b.bytes/1024/1024,'99,999.999') use_bytes, 
+to_char((1 - b.bytes/a.bytes)*100,'99.99') || '%' use 
+from (select tablespace_name, 
+sum(bytes) bytes 
+from dba_data_files 
+group by tablespace_name) a, 
+(select tablespace_name, 
+sum(bytes) bytes 
+from dba_free_space 
+group by tablespace_name) b 
+where a.tablespace_name = b.tablespace_name 
+union all 
+select c.tablespace_name, 
+to_char(c.bytes/1024/1024,'99,999.999') total_bytes, 
+to_char( (c.bytes-d.bytes_used)/1024/1024,'99,999.999') free_bytes, 
+to_char(d.bytes_used/1024/1024,'99,999.999') use_bytes, 
+to_char(d.bytes_used*100/c.bytes,'99.99') || '%' use 
+from 
+(select tablespace_name,sum(bytes) bytes 
+from dba_temp_files group by tablespace_name) c, 
+(select tablespace_name,sum(bytes_cached) bytes_used 
+from v$temp_extent_pool group by tablespace_name) d 
+where c.tablespace_name = d.tablespace_name 
+) 
+```
+
+等待事件
+```sql
+-- 查看当前等待事件及数量，如果是库问题 优化参数或调整业务逻辑等，如果是sql问题 继续
+select inst_id,event,count(*) from gv$session_wait
+where wait_class not like 'Idle'
+group by inst_id, event order by 3 desc;
+
+--查询当前执行sql
+SELECT b.inst_id,
+       b.sid oracleID,
+       b.username,
+       b.serial#,
+       spid,
+       paddr,
+       sql_text,
+       sql_fulltext,
+       b.machine,
+       b.EVENT,
+       'alter system kill session ''' || b.sid || ',' || b.serial# || ''';'
+  FROM gv$process a, gv$session b, gv$sql c
+ WHERE a.addr = b.paddr
+   AND b.sql_hash_value = c.hash_value
+   and a.inst_id = 1
+   and b.inst_id = 1
+   and c.inst_id = 1
+   and b.status = 'ACTIVE';
+
+--查询当前执行sql按event分类数量
+SELECT event, count(1)
+  FROM gv$process a, gv$session b, gv$sql c
+ WHERE a.addr = b.paddr
+   AND b.sql_hash_value = c.hash_value
+      --and event like '%log file switch%'
+   and a.inst_id = 1
+   and b.inst_id = 1
+   and c.inst_id = 1
+ group by event
+
+--带入等待事件，查到当前等待事件最多的sql
+SELECT b.inst_id,
+       b.sid oracleID,
+       b.username,
+       b.serial#,
+       spid,
+       paddr,
+       sql_text,
+       sql_fulltext,
+       b.machine,
+       b.EVENT,
+       c.SQL_ID,
+       c.CHILD_NUMBER
+  FROM gv$process a, gv$session b, gv$sql c
+ WHERE a.addr = b.paddr
+   AND b.sql_hash_value = c.hash_value
+   and event like '%SQL*Net message from client%'
+   and a.inst_id = 1
+   and b.inst_id = 1
+   and c.inst_id = 1
+```
+
+```sql
+-- 通过下面的sql查询占用share pool内存大于10M的sql
+  SELECT substr(sql_text, 1, 100) "Stmt",
+         count(*),
+         sum(sharable_mem) "Mem",
+         sum(users_opening) "Open",
+         sum(executions) "Exec"
+    FROM v$sql
+   GROUP BY substr(sql_text, 1, 100)
+  HAVING sum(sharable_mem) > 10000000;
+
+-- 查询一下version count过高的语句
+SELECT address,
+       sql_id,
+       hash_value,
+       version_count,
+       users_opening,
+       users_executing,
+       sql_text
+  FROM v$sqlarea
+ WHERE version_count > 10;
+ ```
+
+导出AWR报告
+```shell
+su - oracle
+sqlplus / as sysdb
+@?/rdbms/admin/awrrpt.sql
+
+# 要求填写要生成的报告格式，支持html和text，html是默认值可直接回车
+# 输入要导出最近几天的报告
+# 输入启和止的Snap ID
+# 输入报告名称
+```
+
+
 ## 3.备份还原
 
+创建用户
+```sql
+-- Create the user 
+create user ORAC_XUZHIHAO identified by 123456
+  default tablespace USERS
+  temporary tablespace TEMP
+  profile DEFAULT
+  password  expire;
+  
+-- Grant/Revoke role privileges 
+grant aq_administrator_role to  ORAC_XUZHIHAO  with admin option;
+grant connect to ORAC_XUZHIHAO  with admin option;
+grant dba to ORAC_XUZHIHAO  with admin option;
+grant mgmt_user to ORAC_XUZHIHAO  with admin option;
+grant resource to ORAC_XUZHIHAO  with admin option;
+-- Grant/Revoke system privileges 
+grant create materialized view to ORAC_XUZHIHAO  with admin option;
+grant create table to ORAC_XUZHIHAO  with admin option;
+grant debug any procedure to ORAC_XUZHIHAO  with admin option;
+grant debug connect session to ORAC_XUZHIHAO  with admin option;
+grant global query rewrite to ORAC_XUZHIHAO  with admin option;
+grant select any table to ORAC_XUZHIHAO  with admin option;
+grant unlimited tablespace to ORAC_XUZHIHAO  with admin option;
+```
 
 ```bash
 #按表名导出
@@ -54,7 +241,7 @@ schemas=VJSP_JSWZ_191111 REMAP_SCHEMA=VJSP_JSWZ_191111:VJSP_JSWZ_191111_TMP REMA
 execute dbms_stats.delete_schema_stats('xxx');
 ```
 
-## 4.函数
+## 4.函数、过程
 
 ```sql
 --blob查询
@@ -141,7 +328,7 @@ BEGIN
   END LOOP;
 END;
 ```
-## 5.存储过程
+
 
 ```sql
 CREATE OR REPLACE PROCEDURE PROC_updateSortCommon(V_GNID   NUMBER, --审批状态
@@ -193,18 +380,7 @@ BEGIN
 END;
 ```
 
-## 6.重启脚本oracle_restart.sh
-
-```bash
-su - oracle -c "sqlplus /nolog<< EOF
-conn /as sysdba
-shutdown immediate
-startup
-quit
-EOF"
-```
-
-## 7.调试 proc-debug.sh
+## 5. proc出参shell调试
 
 ```shell
 #!/bin/bash
@@ -238,44 +414,4 @@ BEGIN
     SELECT * FROM EMP;
 END;
 
-```
-
-## 8.创建用户
-
-```sql
--- Create the user 
-create user ORAC_XUZHIHAO identified by 123456
-  default tablespace USERS
-  temporary tablespace TEMP
-  profile DEFAULT
-  password  expire;
-  
--- Grant/Revoke role privileges 
-grant aq_administrator_role to  ORAC_XUZHIHAO  with admin option;
-grant connect to ORAC_XUZHIHAO  with admin option;
-grant dba to ORAC_XUZHIHAO  with admin option;
-grant mgmt_user to ORAC_XUZHIHAO  with admin option;
-grant resource to ORAC_XUZHIHAO  with admin option;
--- Grant/Revoke system privileges 
-grant create materialized view to ORAC_XUZHIHAO  with admin option;
-grant create table to ORAC_XUZHIHAO  with admin option;
-grant debug any procedure to ORAC_XUZHIHAO  with admin option;
-grant debug connect session to ORAC_XUZHIHAO  with admin option;
-grant global query rewrite to ORAC_XUZHIHAO  with admin option;
-grant select any table to ORAC_XUZHIHAO  with admin option;
-grant unlimited tablespace to ORAC_XUZHIHAO  with admin option;
-
-```
-
-## 9. AWR报告
-
-```shell
-su - oracle
-sqlplus / as sysdb
-@?/rdbms/admin/awrrpt.sql
-
-# 要求填写要生成的报告格式，支持html和text，html是默认值可直接回车
-# 输入要导出最近几天的报告
-# 输入启和止的Snap ID
-# 输入报告名称
 ```

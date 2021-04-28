@@ -66,7 +66,7 @@ mysqldump -uroot -proot --no-data --databases db1 >/tmp/db1.sql
 ```
 
 
-## 4. 函数
+## 4. 函数、过程
 ```sql
 CREATE FUNCTION `F_ACTUSER`(v_FLOWCID varchar(40)) RETURNS longtext CHARSET utf8
 BEGIN
@@ -99,8 +99,6 @@ BEGIN
 	RETURN v_STR;
 END
 ```
-
-## 5. 存储过程
 
 ```sql
 CREATE PROCEDURE `PROC_INIT_FLOW_SINGLE`(IN V_PARTNERID VARCHAR(40),
