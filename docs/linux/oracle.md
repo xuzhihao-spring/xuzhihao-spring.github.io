@@ -223,21 +223,27 @@ grant select any table to ORAC_XUZHIHAO  with admin option;
 grant unlimited tablespace to ORAC_XUZHIHAO  with admin option;
 ```
 
+
+
+
 ```bash
-#按表名导出
-expdp kh_jdhz0227/123456@ORCL directory=oradmp dumpfile=tables_menu_0331.dmp 
+# 查看Oracle Directory
+SELECT * FROM DBA_DIRECTORIES;
+
+# 按表名导出
+expdp kh_jdhz0227/123456 directory=oradmp dumpfile=tables_menu_0331.dmp 
 tables=tb_system_menu_info,tb_system_menu_base,TB_SYSTEM_MENU,TB_SYSTEM_MENUQX_INFO
 
-#按表名导入
+# 按表名导入
 impdp system/123456 directory=oradmp dumpfile=tables_menu_0331.dmp 
 tables=kh_jdhz0227.tb_system_menu_info,kh_jdhz0227.tb_system_menu_base,kh_jdhz0227.TB_SYSTEM_MENU,kh_jdhz0227.TB_SYSTEM_MENUQX_INFO 
 REMAP_SCHEMA=kh_jdhz0227:kh_jdhz0331 table_exists_action=replace
 
-#整库导入
+# 整库导入
 impdp VJSP_JSWZ_191111_TMP/123456 directory=ORADMP dumpfile=VJSP_JSWZ_191111_BAK.dmp  
 schemas=VJSP_JSWZ_191111 REMAP_SCHEMA=VJSP_JSWZ_191111:VJSP_JSWZ_191111_TMP REMAP_TABLESPACE=USERS:USERS
 
-#导入无法使用
+# 导入无法使用
 execute dbms_stats.delete_schema_stats('xxx');
 ```
 
