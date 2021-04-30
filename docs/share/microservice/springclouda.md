@@ -3,32 +3,38 @@
 ## 1. Sentinel分布式系统流量防卫兵
 
 ```bash
-java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard.jar
+java -Dserver.port=8858 -Dcsp.sentinel.dashboard.server=localhost:8858 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.7.0.jar
 ```
 
 ```yml
 spring:
-  application:
-    name: sentinel-service
-  cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848 #配置Nacos地址
-    sentinel:
-      transport:
-        dashboard: localhost:8080 #配置sentinel dashboard地址
-        port: 8719
-      datasource:
-        ds1:
-          nacos:
-            server-addr: localhost:8848 #规则持久化到nacos中
-            dataId: ${spring.application.name}-sentinel
-            groupId: DEFAULT_GROUP
-            data-type: json
-            rule-type: flow
+   cloud:
+      nacos:
+         discovery:
+            server-addr: http://xuzhihao:8848
+         config:
+            server-addr: http://xuzhihao:8848
+            file-extension: yaml
+      sentinel:
+         transport:
+            dashboard: xuzhihao:8858
 ```
 
 @SentinelResource的使用
+
+通过@SentinelResource来指定出现异常时的处理策略。用于定义资源，并提供可选的异常处理和 fallback 配置项
+
+| 文件夹| 说明 | 
+| ----- | ----- | 
+| value | 资源名称 |
+| entryType | entry类型，标记流量的方向，取值IN/OUT，默认是OUT |
+| blockHandler | 处理BlockException的函数名称,函数要求：<br>1. 必须是 public<br>2. 返回类型 参数与原方法一致<br>3. 默认需和原方法在同一个类中。若希望使用其他类的函数，可配置blockHandlerClass ，并指定lockHandlerClass里面的方法。 |
+| blockHandlerClass | 存放blockHandler的类,对应的处理函数必须static修饰。 | 
+| fallback | 用于在抛出异常的时候提供fallback处理逻辑。fallback函数可以针对所有类型的异常（除了 exceptionsToIgnore 里面排除掉的异常类型）进行处理。函数要求：<br>1. 返回类型与原方法一致<br>2. 参数类型需要和原方法相匹配<br>3. 默认需和原方法在同一个类中。若希望使用其他类的函数，可配置fallbackClass ，并指定fallbackClass里面的方法。 | 
+| fallbackClass | 存放fallback的类。对应的处理函数必须static修饰。 | 
+| defaultFallback | 用于通用的 fallback 逻辑。默认fallback函数可以针对所有类型的异常进行处理。若同时配置了 fallback 和 defaultFallback，以fallback为准。函数要求：<br>1. 返回类型与原方法一致<br>2. 方法参数列表为空，或者有一个 Throwable 类型的参数。<br>3. 默认需要和原方法在同一个类中。若希望使用其他类的函数，可配置fallbackClass ，并指定 fallbackClass 里面的方法。 | 
+| exceptionsToIgnore | 指定排除掉哪些异常。排除的异常不会计入异常统计，也不会进入fallback逻辑，而是原样抛出。 | 
+| exceptionsToTrace | 需要trace的异常 | 
 
 
 ## 2. Nacos动态服务发现、配置管理
