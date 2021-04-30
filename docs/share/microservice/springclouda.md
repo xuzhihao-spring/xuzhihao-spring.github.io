@@ -20,7 +20,7 @@ spring:
             dashboard: xuzhihao:8858
 ```
 
-@SentinelResource的使用
+### 1.1 @SentinelResource注解参数
 
 通过@SentinelResource来指定出现异常时的处理策略。用于定义资源，并提供可选的异常处理和 fallback 配置项
 
@@ -35,6 +35,12 @@ spring:
 | defaultFallback | 用于通用的 fallback 逻辑。默认fallback函数可以针对所有类型的异常进行处理。若同时配置了 fallback 和 defaultFallback，以fallback为准。函数要求：<br>1. 返回类型与原方法一致<br>2. 方法参数列表为空，或者有一个 Throwable 类型的参数。<br>3. 默认需要和原方法在同一个类中。若希望使用其他类的函数，可配置fallbackClass ，并指定 fallbackClass 里面的方法。 | 
 | exceptionsToIgnore | 指定排除掉哪些异常。排除的异常不会计入异常统计，也不会进入fallback逻辑，而是原样抛出。 | 
 | exceptionsToTrace | 需要trace的异常 | 
+
+本地资源加载配置文件见`RuleConstant.java`
+
+### 1.2 
+
+### 1.3 
 
 
 ## 2. Nacos动态服务发现、配置管理
