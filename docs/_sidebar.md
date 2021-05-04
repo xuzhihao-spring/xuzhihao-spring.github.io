@@ -17,7 +17,6 @@
 
 * 系统部署
   * [基于Docker部署](deploy/docker-deploy.md)
-  * [Docker Compose](deploy/docker-compose-env.md)
   * [Minikube安装](deploy/minikube.md)
   * [Nginx配置HTTPS](deploy/nginx_https.md)
   * [Gitlab搭建](deploy/gitlab.md)
