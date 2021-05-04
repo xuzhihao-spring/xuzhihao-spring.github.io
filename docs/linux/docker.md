@@ -96,7 +96,7 @@ docker update --restart=always [container_id]       # 修改容器自动启动
 
 ## 4. Dockerfile
 
-参数
+### 4.1 参数
 
 ```bash
 FROM        #设置基础镜像
@@ -114,7 +114,7 @@ VOLUME      #设置可被挂载的数据卷（目录映射）
 ONBUILD     #设置在构建时需要自动执行的命令
 ```
 
-本地文件构建镜像
+### 4.2 本地文件构建镜像
 
 在jar包所在的目录下创建一个名为 Dockerfile 的文件，文件内容如下：
 
@@ -138,7 +138,7 @@ docker run -i --name=eureka -p 10086:9001 eureka:v0.0.1     #创建容器
 http://192.168.3.200:10086
 ```
 
-远程下载构建镜像
+### 4.3 远程下载构建镜像
 
 注意：Dockerfile 的指令每执行一次都会在 docker 上新建一层。所以过多无意义的层，会造成镜像膨胀过大
 
@@ -153,7 +153,7 @@ RUN yum install wget \
 docker build -t xxx:v0.1 .
 ```
 
-仓库下载构建镜像
+### 4.4 仓库下载构建镜像
 
 ```bash
 FROM openjdk:9-jdk
