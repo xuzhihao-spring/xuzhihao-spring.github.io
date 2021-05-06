@@ -1,6 +1,133 @@
-# SpringBoot源码
+# SpringBoot
 
-## 1. 自动装配
+## 1. 配置文件加载顺序
+
+```xml
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.3.0.RELEASE</version>
+    <relativePath />
+</parent>
+```
+
+```xml
+<resources>
+    <resource>
+        <directory>${basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+            <include>**/application*.yml</include>
+            <include>**/application*.yaml</include>
+            <include>**/application*.properties</include>
+        </includes>
+    </resource>
+</resources>
+```
+
+按照优先级从高到低的顺序，所有位置的文件都会被加载，高优先级的配置内容会覆盖低优先级配置的内容，其中配置文件中的内容是互补配置
+- file:/config/ （工程根目录下的config）
+- file:/    （工程根目录）
+- classpath:/config/
+- classpath:/
+
+java -jar xxxx.jar --spring.config.location=D:/kawa/application.yml
+
+
+## 2. 属性注入
+
+```yml
+#自定义的属性和值
+yml:
+  simpleProp: simplePropValue
+  arrayProps: 1,2,3,4,5
+  listProp1:
+    - name: abc
+      value: abcValue
+    - name: efg
+      value: efgValue
+  noAuthUrls:
+    - /
+    - /login
+    - /logout
+    - /register
+    - /forgot
+  excludeUrls:
+    - config2Value1
+    - config2Vavlue2
+  mapProps:
+    key1: value1
+    key2: value2
+  menus :
+```
+
+```java
+package com.xuzhihao.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Component
+@ConfigurationProperties(prefix = "yml")
+public class YmlConfig {
+
+	String simpleProp;
+	private String[] arrayProps;
+	private List<Map<String, String>> listProp1 = new ArrayList<>(); // 接收prop1里面的属性值
+	private List<String> noAuthUrls = new ArrayList<>(); // noAuthUrls
+	private Map<String, String> mapProps = new HashMap<>(); // 接收prop1里面的属性值
+
+	public String getSimpleProp() {
+		return simpleProp;
+	}
+
+	// String类型的一定需要setter来接收属性值；maps, collections, 和 arrays 不需要
+	public void setSimpleProp(String simpleProp) {
+		this.simpleProp = simpleProp;
+	}
+
+	public String[] getArrayProps() {
+		return arrayProps;
+	}
+
+	public void setArrayProps(String[] arrayProps) {
+		this.arrayProps = arrayProps;
+	}
+
+	public List<Map<String, String>> getListProp1() {
+		return listProp1;
+	}
+
+	public void setListProp1(List<Map<String, String>> listProp1) {
+		this.listProp1 = listProp1;
+	}
+
+	public Map<String, String> getMapProps() {
+		return mapProps;
+	}
+
+	public void setMapProps(Map<String, String> mapProps) {
+		this.mapProps = mapProps;
+	}
+
+	public List<String> getNoAuthUrls() {
+		return noAuthUrls;
+	}
+
+	public void setNoAuthUrls(List<String> noAuthUrls) {
+		this.noAuthUrls = noAuthUrls;
+	}
+	
+}
+```
+
+
+## 3. 自动配置原理
 
 @SpringBootApplication
 
@@ -229,7 +356,8 @@ public class HttpEncodingAutoConfiguration {
 }
 ```
 
-## 2. EurekaServer装配过程
-
+EurekaServer装配过程
 ![](../../images/share/frame/springboot/autoConfig.png)
+
+## 4. 热部署DevTools原理
 
