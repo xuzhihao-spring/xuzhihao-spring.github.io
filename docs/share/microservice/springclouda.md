@@ -9,15 +9,27 @@ java -Dserver.port=8858 -Dcsp.sentinel.dashboard.server=localhost:8858 -Dproject
 ```yml
 spring:
    cloud:
+      inetutils:
+         preferred-networks: 192.168.3
       nacos:
          discovery:
-            server-addr: http://xuzhihao:8848
+            server-addr: xuzhihao:8848
          config:
-            server-addr: http://xuzhihao:8848
+            server-addr: xuzhihao:8848
             file-extension: yaml
       sentinel:
+         eager: true
          transport:
             dashboard: xuzhihao:8858
+            clientIp: 192.168.3.100
+         datasource:
+            ds1:
+               nacos:
+                  server-addr: xuzhihao:8848
+                  dataId: ${spring.application.name}-sentinel
+                  groupId: DEFAULT_GROUP
+                  data-type: json
+                  rule-type: flow
 ```
 
 ### 1.1 @SentinelResource注解参数
@@ -38,9 +50,280 @@ spring:
 
 本地资源加载配置文件见`RuleConstant.java`
 
-### 1.2 
+### 1.2 自定义降级限流
 
-### 1.3 
+```java
+package com.xuzhihao.sentinel.fallback;
+
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+
+//对应的BlockException处理的类
+/**
+ * 测试超出流量限制的部分是否会进入到blockHandler的方法。
+ */
+public class CustomBlockHandler {
+	public static String blockHandler(String id, BlockException e) {
+		return id+"自定义限流信息";
+	}
+}
+```
+
+```java
+package com.xuzhihao.sentinel.fallback;
+
+//对应的Throwable处理的类
+/**
+ * sentinel定义的失败调用或限制调用，若本次访问被限流或服务降级，则调用blockHandler指定的接口。
+ */
+public class CustomFallback {
+
+	// fallback
+	// 要求:
+	// 1 当前方法的返回值和参数要跟原方法一致
+	// 2 但是允许在参数列表的最后加入一个参数BlockException, 用来接收原方法中发生的异常
+	public static String fallback( String id, Throwable e) {
+		return id+"出现异常呗服务降级";
+	}
+}
+```
+
+```java
+package com.xuzhihao.sentinel.service.impl;
+
+import org.springframework.stereotype.Component;
+
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.xuzhihao.sentinel.fallback.CustomBlockHandler;
+import com.xuzhihao.sentinel.fallback.CustomFallback;
+import com.xuzhihao.sentinel.service.UserService;
+
+@Component
+public class UserServiceImpl implements UserService {
+
+	int i = 0;
+
+	@SentinelResource(value = "create", 
+			blockHandlerClass = CustomBlockHandler.class, 
+			blockHandler = "blockHandler", 
+			fallbackClass = CustomFallback.class, 
+			fallback = "fallback")
+	@Override
+	public String create(String id) {
+		i++;
+        if (i % 3 == 0) {
+            throw new RuntimeException();
+        }
+		return id;
+	}
+
+}
+```
+
+
+### 1.3 @Feign整合
+
+fallback方式
+
+```java
+@FeignClient(
+value = "service-product",fallback = ProductServiceFallBack.class)
+public interface ProductService {
+	@RequestMapping("/product/{pid}")
+	Product findByPid(@PathVariable Integer pid);
+}
+```
+
+```java
+//当feign调用出现问题的时候,就会进入到当前类中同名方法中
+@Service
+public class ProductServiceFallback implements ProductService {
+    @Override
+    public Product findByPid(Integer pid) {
+        Product product = new Product();
+        product.setPid(-100);
+        product.setPname("商品微服务调用出现异常了,已经进入到了容错方法中");
+        return product;
+    }
+}
+```
+
+fallbackFactory方式
+```java
+@FeignClient(
+value = "service-product",fallbackFactory = ProductServiceFallbackFactory.class)
+public interface ProductService {
+	@RequestMapping("/product/{pid}")
+	Product findByPid(@PathVariable Integer pid);
+}
+```
+```java
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import feign.hystrix.FallbackFactory;
+
+@Component
+public class ProductServiceFallbackFactory implements FallbackFactory<ProductService> {
+	
+  	private static final Logger LOGGER = LoggerFactory.getLogger(HystrixClientFactory.class);
+	
+    //Throwable  这就是fegin在调用过程中产生异常
+    @Override
+    public ProductService create(Throwable throwable) {
+		LOGGER.info("fallback; reason was: {}", cause.getMessage());
+        return new ProductService() {
+            @Override
+            public Product findByPid(Integer pid) {
+                log.error("{}",throwable);
+                Product product = new Product();
+                product.setPid(-100);
+                product.setPname("商品微服务调用出现异常了,已经进入到了容错方法中");
+                return product;
+            }
+        };
+    }
+}
+```
+
+`fallbackFactory 是fallback的一个升级版，可以打印回退异常的原因`
+
+### 1.4 原理分析
+
+首先看SentinelFeignAutoConfiguration中自动配置
+
+```java
+/**
+ * @author <a href="mailto:fangjian0423@gmail.com">Jim</a>
+ */
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnClass({ SphU.class, Feign.class })
+public class SentinelFeignAutoConfiguration {
+	@Bean
+	@Scope("prototype")
+	@ConditionalOnMissingBean
+	@ConditionalOnProperty(name = "feign.sentinel.enabled")
+	public Feign.Builder feignSentinelBuilder() {
+		return SentinelFeign.builder();
+	}
+}
+```
+
+@ConditionalOnProperty 中 feign.sentinel.enabled 起了决定性作用，这也就是为什么我们需要在配置文件中指定 `feign.sentinel.enabled=true`
+
+接下来看 SentinelFeign.builder 里面的实现：
+
+build方法中重新实现了super.invocationHandlerFactory方法，也就是动态代理工厂，构建的是InvocationHandler对象。
+
+build中会获取Feign Client中的信息，比如fallback,fallbackFactory等，然后创建一个SentinelInvocationHandler，SentinelInvocationHandler继承了InvocationHandler
+
+```java
+@Override
+	public Feign build() {
+		super.invocationHandlerFactory(new InvocationHandlerFactory() {
+			@Override
+			public InvocationHandler create(Target target,
+					Map<Method, MethodHandler> dispatch) {
+				// 得到Feign Client Bean
+				Object feignClientFactoryBean = Builder.this.applicationContext
+						.getBean("&" + target.type().getName());
+				// 得到fallback类
+				Class fallback = (Class) getFieldValue(feignClientFactoryBean,
+						"fallback");
+				// 得到fallbackFactory类
+				Class fallbackFactory = (Class) getFieldValue(feignClientFactoryBean,
+						"fallbackFactory");
+				// 得到调用的服务名称
+				String beanName = (String) getFieldValue(feignClientFactoryBean,
+						"contextId");
+				if (!StringUtils.hasText(beanName)) {
+					beanName = (String) getFieldValue(feignClientFactoryBean, "name");
+				}
+
+				Object fallbackInstance;
+				FallbackFactory fallbackFactoryInstance;
+				// 检查 fallback 和 fallbackFactory 属性
+				if (void.class != fallback) {
+					fallbackInstance = getFromContext(beanName, "fallback", fallback,
+							target.type());
+					return new SentinelInvocationHandler(target, dispatch,
+							new FallbackFactory.Default(fallbackInstance));
+				}
+				if (void.class != fallbackFactory) {
+					fallbackFactoryInstance = (FallbackFactory) getFromContext(
+							beanName, "fallbackFactory", fallbackFactory,
+							FallbackFactory.class);
+					return new SentinelInvocationHandler(target, dispatch,
+							fallbackFactoryInstance);
+				}
+				return new SentinelInvocationHandler(target, dispatch);
+			}
+
+			...
+		});
+
+		super.contract(new SentinelContractHolder(contract));
+		return super.build();
+	}
+```
+
+SentinelInvocationHandler中的invoke方法里面进行熔断限流的处理。
+
+```java
+// 得到资源名称（GET:http://user-service/user/get）
+String resourceName = methodMetadata.template().method().toUpperCase()
+				+ ":" + hardCodedTarget.url() + methodMetadata.template().path();
+		Entry entry = null;
+		try {
+			ContextUtil.enter(resourceName);
+			entry = SphU.entry(resourceName, EntryType.OUT, 1, args);
+			result = methodHandler.invoke(args);
+		}
+		catch (Throwable ex) {
+			// fallback handle
+			if (!BlockException.isBlockException(ex)) {
+				Tracer.trace(ex);
+			}
+			if (fallbackFactory != null) {
+				try {
+					// 回退处理
+					Object fallbackResult = fallbackMethodMap.get(method)
+							.invoke(fallbackFactory.create(ex), args);
+					return fallbackResult;
+				}
+				catch (IllegalAccessException e) {
+					throw new AssertionError(e);
+				}
+				catch (InvocationTargetException e) {
+					throw new AssertionError(e.getCause());
+				}
+			}
+			else {
+				// throw exception if fallbackFactory is null
+				throw ex;
+			}
+		}
+```
+
+总结
+
+RestTemplate的整合其实和Ribbon中的@LoadBalanced原理差不多，这次的Feign的整合其实我们从其他框架的整合也是可以参考出来的，最典型的就是Hystrix了
+
+InvocationHandlerFactory是用于创建动态代理的工厂，有默认的实现，也有Hystrix的实现feign.hystrix.HystrixFeign。
+
+```java
+Feign build(final FallbackFactory<?> nullableFallbackFactory) {
+      super.invocationHandlerFactory(new InvocationHandlerFactory() {
+        @Override public InvocationHandler create(Target target,
+            Map<Method, MethodHandler> dispatch) {
+          return new HystrixInvocationHandler(target, dispatch, setterFactory, nullableFallbackFactory);
+        }
+      });
+      super.contract(new HystrixDelegatingContract(contract));
+      return super.build();
+}
+```
+上面这段代码跟Sentinel包装的类似，不同的是Sentinel构造的是SentinelInvocationHandler ，Hystrix构造的是HystrixInvocationHandle。在HystrixInvocationHandler的invoke方法中进行HystrixCommand的包装。
+
 
 
 ## 2. Nacos动态服务发现、配置管理
@@ -92,7 +375,7 @@ spring:
 [Dubbo源码解析](/share/distributed/dubbo)
 
 
-## 5. Seata高性能微服务分布式事务解决方案
+## 5. Seata微服务分布式事务解决方案
 
 ## 6. Alibaba Cloud ACM
 

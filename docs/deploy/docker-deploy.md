@@ -769,55 +769,6 @@ docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084 -p
 docker run -d --name emqx-ee -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083 emqx/emqx-ee:4.2.5
 ```
 
-开启auth_username插件（v4.0.5）
-
-```
-@hostname = 172.17.17.80
-@port=8081
-@contentType=application/json
-@userName=admin
-@password=public
-
-#############查看已有用户认证数据##############
-GET http://{{hostname}}:{{port}}/api/v4/auth_username HTTP/1.1
-Content-Type: {{contentType}}
-Authorization: Basic {{userName}}:{{password}}
-
-
-########添加用户认证数据##############
-POST http://{{hostname}}:{{port}}/api/v4/auth_username HTTP/1.1
-Content-Type: {{contentType}}
-Authorization: Basic {{userName}}:{{password}}
-
-{
-    "username": "user",
-    "password": "123456"
-}
-
-
-
-###########更改指定用户名的密码#############
-PUT http://{{hostname}}:{{port}}/api/v4/auth_username/user HTTP/1.1
-Content-Type: {{contentType}}
-Authorization: Basic {{userName}}:{{password}}
-
-{
-    "password": "user"
-}
-
-
-###########查看指定用户名信息#############
-GET http://{{hostname}}:{{port}}/api/v4/auth_username/user HTTP/1.1
-Content-Type: {{contentType}}
-Authorization: Basic {{userName}}:{{password}}
-
-
-###########删除指定的用户信息#############
-DELETE http://{{hostname}}:{{port}}/api/v4/auth_username/user HTTP/1.1
-Content-Type: {{contentType}}
-Authorization: Basic {{userName}}:{{password}}
-```
-
 ## 33. Nodered
 
 ```bash
