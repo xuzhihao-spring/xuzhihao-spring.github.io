@@ -642,6 +642,7 @@ public class WebConfig implements WebMvcConfigurer {
 
 ## 7. 异常处理
 
+全局异常处理
 ```java
 package com.xuzhihao.shop.common.exception;
 
@@ -652,7 +653,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.xuzhihao.shop.common.api.CommonResult;
 
 /**
- * 全局异常处理
+ * 全局异常处理-可捕获指定异常
  * 
  * @author Administrator
  *
@@ -670,11 +671,236 @@ public class GlobalExceptionHandler {
 		return CommonResult.failed(e.getMessage());
 	}
 }
+
+@RequestMapping(value = "/test", method = RequestMethod.GET)
+	public HashMap<String, Object> list(String realName, String mobilePhone, String abc) {
+		Asserts.fail("用户名或密码不能为空！");
+		HashMap<String, Object> parameter = new HashMap<String, Object>();
+		parameter.put("realName", "今晚打老虎");
+		parameter.put("idCard", "111111111111115762");
+		
+		return parameter;
+	}
+```
+
+自定义错误页面
+```java
+@Component
+public class ErrorPageConfig implements ErrorPageRegistrar {
+	@Override
+	public void registerErrorPages(ErrorPageRegistry errorPageRegistry) {
+		// 1、按错误的类型显示错误的网页
+		// 错误类型为404，找不到网页的，默认显示404.html网页
+		ErrorPage e404 = new ErrorPage(HttpStatus.NOT_FOUND, "/error/404.html");
+		// 错误类型为500，表示服务器响应错误，默认显示500.html网页
+		ErrorPage e500 = new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/error/500.html");
+		errorPageRegistry.addErrorPages(e404, e500);
+	}
+}
 ```
 
 ## 8. WebMvcConfigurer
 
+```java
+public interface WebMvcConfigurer {
+
+	// 路径匹配规则
+	default void configurePathMatch(PathMatchConfigurer configurer) {}
+
+	// 配置内容裁决的一些选项
+	default void configureContentNegotiation(ContentNegotiationConfigurer configurer) {}
+
+	// 异步调用线程池设置
+	default void configureAsyncSupport(AsyncSupportConfigurer configurer) {}
+
+	// 默认静态资源处理器
+	default void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {}
+
+	// 全局参数转换
+	default void addFormatters(FormatterRegistry registry) {}
+
+	// 注册拦截器
+	default void addInterceptors(InterceptorRegistry registry) {}
+
+	// 配置静态资源的映射
+	default void addResourceHandlers(ResourceHandlerRegistry registry) {}
+
+	// 解决跨域
+	default void addCorsMappings(CorsRegistry registry) {}
+
+	// 视图跳转控制器
+	default void addViewControllers(ViewControllerRegistry registry) {}
+
+	// 配置视图解析器
+	default void configureViewResolvers(ViewResolverRegistry registry) {}
+
+	// 自定义参数解析
+	default void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {}
+
+	// 自定义Handlers
+	default void addReturnValueHandlers(List<HandlerMethodReturnValueHandler> handlers) {}
+
+	// 消息转换
+	default void configureMessageConverters(List<HttpMessageConverter<?>> converters) {}
+
+	default void extendMessageConverters(List<HttpMessageConverter<?>> converters) {}
+
+	default void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {}
+
+	default void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {}
+
+	@Nullable
+	default Validator getValidator() {
+		return null;
+	}
+
+	@Nullable
+	default MessageCodesResolver getMessageCodesResolver() {
+		return null;
+	}
+
+}
+```
+
 ## 9. 国际化
+
+```java
+package com.xuzhihao.i18n;
+
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+
+/**
+ * @author qinming
+ * @date 2020-12-28 17:01:38
+ * <p> 无 </p>
+ */
+@PropertySource(value = {"classpath:i18n/messages*.properties"})
+public class MessageConfig {
+
+
+    /**
+     * 国际化信息map
+     */
+    private static final Map<String, ResourceBundle> MESSAGES = new HashMap<>();
+
+    /**
+     * 获取国际化信息
+     * 只配置了 zh en 语言
+     */
+    public static String getMessage(String key) {
+        //获取当前语言环境
+        Locale locale = LocaleContextHolder.getLocale();
+        if (!Locale.CHINA.getLanguage().equals(locale.getLanguage())
+                && !Locale.ENGLISH.getLanguage().equals(locale.getLanguage())) {
+            //其他语言一律为中文
+            locale = Locale.CHINA;
+        }
+        ResourceBundle message = MESSAGES.get(locale.getLanguage());
+        if (message == null) {
+            //根据语言读取配置
+            message = MESSAGES.get(locale.getLanguage());
+            if (message == null) {
+                message = ResourceBundle.getBundle("i18n/messages", locale);
+                MESSAGES.put(locale.getLanguage(), message);
+            }
+        }
+        return message.getString(key);
+    }
+
+    /**
+     * 清除国际化信息
+     */
+    public static void flushMessage() {
+        MESSAGES.clear();
+    }
+}
+```
+
+```java
+package com.xuzhihao.i18n;
+
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.web.servlet.LocaleResolver;
+
+import cn.hutool.core.util.StrUtil;
+
+/**
+ * 国际化解析
+ */
+public class MyLocaleResolver implements LocaleResolver {
+
+	private static final String LANG = "lang";
+
+	private static final String LANG_SESSION = "lang_session";
+
+	public static final String DELIMITER = "_";
+
+	@Override
+	public Locale resolveLocale(HttpServletRequest request) {
+		String lang = request.getHeader(LANG);
+		// 默认语言 简体中文
+		Locale locale = Locale.CHINA;
+		if (StrUtil.isNotBlank(lang) && lang.contains(DELIMITER)) {
+			String[] langueagea = lang.split(DELIMITER);
+			locale = new Locale(langueagea[0], langueagea[1]);
+			HttpSession session = request.getSession();
+			session.setAttribute(LANG_SESSION, locale);
+		} else {
+			HttpSession session = request.getSession();
+			Locale localeInSession = (Locale) session.getAttribute(LANG_SESSION);
+			if (localeInSession != null) {
+				locale = localeInSession;
+			}
+		}
+		return locale;
+	}
+
+	@Override
+	public void setLocale(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+			Locale locale) {
+
+	}
+}
+```
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+	...
+	@Bean
+    public LocaleResolver localeResolver() {
+        return new MyLocaleResolver();
+    }
+```
+
+```java
+/**
+	* 获取枚举中的提示信息
+	*/
+@GetMapping("/test1")
+public String login1() {
+	return "test2  " + ResultCode.getMessage(ResultCode.SUCCESS.getCode());
+}
+
+/**
+	* 根据key获取配置文件中的信息
+	*/
+@GetMapping("/test2")
+public String login2() {
+	return "test2  " + MessageConfig.getMessage("login.username");
+}
+```
 
 ## 10. 整合mybatis
 
