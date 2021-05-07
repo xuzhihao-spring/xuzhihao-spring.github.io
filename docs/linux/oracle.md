@@ -158,8 +158,12 @@ SELECT b.inst_id,
    and a.inst_id = 1
    and b.inst_id = 1
    and c.inst_id = 1
+
+-- iotop
+SELECT s.sql_text FROM v$sql s, v$session t,v$process v WHERE s.sql_id = t.SQL_ID AND t.PADDR = v.ADDR AND v.SPID = '44196';
 ```
 
+大内存占用查询
 ```sql
 -- 通过下面的sql查询占用share pool内存大于10M的sql
   SELECT substr(sql_text, 1, 100) "Stmt",
@@ -183,10 +187,20 @@ SELECT address,
  WHERE version_count > 10;
  ```
 
+占用空间查询
+ ```sql
+select sum(bytes)/(1024*1024)  from user_segments
+where segment_name=upper('TS_FLOW_PATH_COM_LOG_INFO');
+
+SELECT * FROM (SELECT SEGMENT_NAME, SUM(BYTES) / 1024 / 1024 MB 
+FROM DBA_SEGMENTS WHERE TABLESPACE_NAME = upper('JSWZ_DATA') GROUP BY SEGMENT_NAME ORDER BY 2 DESC) WHERE ROWNUM < 10;
+```
+
 导出AWR报告
 ```shell
 su - oracle
-sqlplus / as sysdb
+sqlplus /nolog
+conn /as sysdba
 @?/rdbms/admin/awrrpt.sql
 
 # 要求填写要生成的报告格式，支持html和text，html是默认值可直接回车

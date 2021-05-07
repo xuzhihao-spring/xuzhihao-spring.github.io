@@ -361,3 +361,324 @@ EurekaServer装配过程
 
 ## 4. 热部署DevTools原理
 
+Spring Boot提供的重启技术是通过使用两个类加载器实现的。没有发生变化的类（比如那些第三方jars）会被加载进一个基础（basic）classloader里面，正在开发的类会加载进一个重启（restart）classloader里面。当应用重启时，restart类加载器会被丢弃，并创建一个新的。这种方式意味着应用重启通常比冷启动（cold starts）快很多，因为基础类加载器已经可用，并且populated（意思是基础类加载器加载的类比较多）
+
+application.properties
+```pro
+spring.devtools.restart.enabled=true
+spring.devtools.restart.trigger-file=trigger.txt
+```
+
+pom.xml
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <optional>true</optional>
+    <scope>true</scope>
+</dependency>
+<!-- 构建节点 -->
+<build>
+    <plugins>
+        <!-- 这是spring boot devtool plugin -->
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <!--fork : 如果没有该项配置，肯呢个devtools不会起作用，即应用不会restart -->
+                <fork>true</fork>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+## 5. 整合slf4j日志
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<!-- 文件输出格式 -->
+	<property name="PATTERN"
+		value="%-12(%d{yyyy-MM-dd HH:mm:ss.SSS}) |-%-5level [%thread] %c [%L] -| %msg%n" />
+
+	<!-- %m输出的信息,%p日志级别,%t线程名,%d日期,%c类的全名,%i索引【从数字0开始递增】,,, -->
+	<!-- appender是configuration的子节点，是负责写日志的组件。 -->
+	<!-- ConsoleAppender：把日志输出到控制台 -->
+	<appender name="STDOUT"
+		class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${PATTERN}</pattern>
+			<!-- 控制台也要使用UTF-8，不要使用GBK，否则会中文乱码 -->
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+	<!-- RollingFileAppender：滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件 -->
+	<!-- 1.先按日期存日志，日期变了，将前一天的日志文件名重命名为XXX%日期%索引，新的日志仍然是sys.log -->
+	<!-- 2.如果日期没有发生变化，但是当前日志的文件大小超过1KB时，对当前日志进行分割 重命名 -->
+	<appender name="syslog"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<File>log/info.log</File>
+		<!-- rollingPolicy:当发生滚动时，决定 RollingFileAppender 的行为，涉及文件移动和重命名。 -->
+		<!-- TimeBasedRollingPolicy： 最常用的滚动策略，它根据时间来制定滚动策略，既负责滚动也负责出发滚动 -->
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- 活动文件的名字会根据fileNamePattern的值，每隔一段时间改变一次 -->
+			<!-- 文件名：log/sys.2017-12-05.0.log -->
+			<fileNamePattern>log/info.%d.%i.log</fileNamePattern>
+			<!-- 每产生一个日志文件，该日志文件的保存期限为30天 -->
+			<maxHistory>30</maxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<!-- maxFileSize:这是活动文件的大小，默认值是10MB,本篇设置为1KB，只是为了演示 -->
+				<maxFileSize>2KB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<!-- pattern节点，用来设置日志的输入格式 -->
+			<pattern>
+				<pattern>${PATTERN}</pattern>
+			</pattern>
+			<!-- 记录日志的编码 -->
+			<charset>UTF-8</charset> <!-- 此处设置字符集 -->
+		</encoder>
+	</appender>
+	<!-- 控制台输出日志级别 -->
+	<root level="info">
+		<appender-ref ref="STDOUT" />
+	</root>
+	<!-- 指定项目中某个包，当有日志操作行为时的日志记录级别 -->
+	<!-- com.appley为根包，也就是只要是发生在这个根包下面的所有日志操作行为的权限都是DEBUG -->
+	<!-- 级别依次为【从高到低】：FATAL > ERROR > WARN > INFO > DEBUG > TRACE -->
+	<logger name="com.xuzhihao" level="DEBUG">
+		<appender-ref ref="syslog" />
+	</logger>
+</configuration>
+```
+
+spring-boot-starter-web的依赖树
+
+![](../../images/share/frame/springboot/slf4j.png)
+
+更换日志
+```xml
+<dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <exclusions>
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-logging</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-log4j2</artifactId>
+    </dependency>
+```
+
+## 6. 拦截、过滤、监听
+
+拦截器
+```java
+package com.xuzhihao.config.handle;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import com.xuzhihao.config.YmlConfig;
+import com.xuzhihao.domain.SessionInfo;
+
+@Component
+public class LoginHandlerInterceptor implements HandlerInterceptor {
+
+	private static Logger logger = LoggerFactory.getLogger(LoginHandlerInterceptor.class);
+
+	@Autowired
+	private YmlConfig config;
+
+	/**
+	 * 在调用controller具体方法前拦截
+	 */
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		logger.debug("=======进入Login拦截器=======");
+		String requestUri = request.getRequestURI();
+		String contextPath = request.getContextPath();
+		String url = requestUri.substring(contextPath.length());
+		SessionInfo sessionInfo = (SessionInfo) request.getSession().getAttribute("sessionInfo");
+		if (!config.getNoAuthUrls().contains(url)) {// 需要拦截认证的页面
+			if ((sessionInfo == null) || (sessionInfo.getId() == null)) {
+				response.sendRedirect(request.getContextPath() + "/"); // 未登录自动跳转界面
+				return false;
+			}
+		}
+		return true;
+	}
+}
+```
+
+监听器
+```java
+package com.xuzhihao.config.handle;
+
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class LoginSessionListener implements HttpSessionListener {
+
+	public static int online = 0;
+
+	@Override
+	public void sessionCreated(HttpSessionEvent se) {
+		System.out.println("创建session");
+		online++;
+	}
+
+	@Override
+	public void sessionDestroyed(HttpSessionEvent se) {
+		System.out.println("销毁session");
+
+	}
+
+}
+```
+
+过滤器
+```java
+package com.xuzhihao.config.handle;
+
+import java.io.IOException;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LoginFilter implements Filter {
+
+	private static Logger logger = LoggerFactory.getLogger(LoginFilter.class);
+
+	@Override
+	public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+			throws IOException, ServletException {
+		logger.info("=======进入Filter过滤器=======");
+		filterChain.doFilter(servletRequest, servletResponse);
+	}
+}
+```
+
+注册事件
+```java
+/**
+ * 快速初始化监听器 拦截器 过滤器
+ */
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+	@Autowired
+	private LoginHandlerInterceptor loginHandlerInterceptor;
+	@Autowired
+	private LoginFilter loginFilter;
+	@Autowired
+	private LoginSessionListener loginSessionListener;
+
+    /**
+	 * 注册拦截器
+	 * 
+	 * @return
+	 */
+	@Override
+	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addInterceptor(loginHandlerInterceptor).addPathPatterns("/**").// 对来自/*这个链接来的请求进行拦截
+				excludePathPatterns("/error", "/css/**", "/js/**", "/images/**", "/plugins/**"); // 添加不拦截路径
+	}
+
+	/**
+	 * 注册过滤器
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Bean // 将方法中返回的对象注入到IOC容器中
+	public FilterRegistrationBean filterRegistrationBean() {
+		FilterRegistrationBean filterRegistration = new FilterRegistrationBean();
+		filterRegistration.setFilter(loginFilter); // 创建并注册LoginFilter
+		filterRegistration.addUrlPatterns("/*"); // 拦截的路径（对所有请求拦截）
+		filterRegistration.setName("LoginFilter"); // 拦截器的名称
+		filterRegistration.setOrder(1); // 拦截器的执行顺序。数字越小越先执行
+		return filterRegistration;
+	}
+
+	/**
+	 * 注册监听器
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Bean
+	public ServletListenerRegistrationBean registrationBean() {
+		ServletListenerRegistrationBean registrationBean = new ServletListenerRegistrationBean();
+		registrationBean.setListener(loginSessionListener);
+		return registrationBean;
+	}
+```
+
+## 7. 异常处理
+
+```java
+package com.xuzhihao.shop.common.exception;
+
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xuzhihao.shop.common.api.CommonResult;
+
+/**
+ * 全局异常处理
+ * 
+ * @author Administrator
+ *
+ */
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+	@SuppressWarnings("rawtypes")
+	@ResponseBody
+	@ExceptionHandler(value = ApiException.class)
+	public CommonResult handle(ApiException e) {
+		if (e.getErrorCode() != null) {
+			return CommonResult.failed(e.getErrorCode());
+		}
+		return CommonResult.failed(e.getMessage());
+	}
+}
+```
+
+## 8. WebMvcConfigurer
+
+## 9. 国际化
+
+## 10. 整合mybatis
+
+## 11. 自定义starter
+
+## 12. 启动原理
+
