@@ -902,9 +902,1507 @@ public String login2() {
 }
 ```
 
-## 10. 整合mybatis
+## 10. 整合Mybatis
 
-## 11. 自定义starter
+```java
+@SpringBootApplication
+@MapperScan(basePackages = "com.xuzhihao.mapper")
+public class SpringbootApplication {
+	public static void main(String[] args) {
+		SpringApplication.run(SpringbootApplication.class, args);
+	}
+}
+```
 
-## 12. 启动原理
+```pro
+mybatis.mapper-locations=classpath:mapper/*.xml
+```
+
+```xml
+<dependency>
+    <groupId>org.mybatis.spring.boot</groupId>
+    <artifactId>mybatis-spring-boot-starter</artifactId>
+    <version>2.0.0</version>
+</dependency>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuzhihao.mapper.UmsAdminMapper">
+  <resultMap id="BaseResultMap" type="com.xuzhihao.mapper.model.UmsAdmin">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="username" jdbcType="VARCHAR" property="username" />
+    <result column="password" jdbcType="VARCHAR" property="password" />
+    <result column="icon" jdbcType="VARCHAR" property="icon" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
+    <result column="nick_name" jdbcType="VARCHAR" property="nickName" />
+    <result column="note" jdbcType="VARCHAR" property="note" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="login_time" jdbcType="TIMESTAMP" property="loginTime" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+  </resultMap>
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    id, username, password, icon, email, nick_name, note, create_time, login_time, status
+  </sql>
+  <select id="selectByExample" parameterType="com.xuzhihao.mapper.model.UmsAdminExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from ums_admin
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from ums_admin
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from ums_admin
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.xuzhihao.mapper.model.UmsAdminExample">
+    delete from ums_admin
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.xuzhihao.mapper.model.UmsAdmin">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Long">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into ums_admin (username, password, icon, 
+      email, nick_name, note, 
+      create_time, login_time, status
+      )
+    values (#{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, #{icon,jdbcType=VARCHAR}, 
+      #{email,jdbcType=VARCHAR}, #{nickName,jdbcType=VARCHAR}, #{note,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{loginTime,jdbcType=TIMESTAMP}, #{status,jdbcType=INTEGER}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.xuzhihao.mapper.model.UmsAdmin">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Long">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into ums_admin
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="username != null">
+        username,
+      </if>
+      <if test="password != null">
+        password,
+      </if>
+      <if test="icon != null">
+        icon,
+      </if>
+      <if test="email != null">
+        email,
+      </if>
+      <if test="nickName != null">
+        nick_name,
+      </if>
+      <if test="note != null">
+        note,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="loginTime != null">
+        login_time,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="username != null">
+        #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">
+        #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="icon != null">
+        #{icon,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="nickName != null">
+        #{nickName,jdbcType=VARCHAR},
+      </if>
+      <if test="note != null">
+        #{note,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="loginTime != null">
+        #{loginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.xuzhihao.mapper.model.UmsAdminExample" resultType="java.lang.Long">
+    select count(*) from ums_admin
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update ums_admin
+    <set>
+      <if test="record.id != null">
+        id = #{record.id,jdbcType=BIGINT},
+      </if>
+      <if test="record.username != null">
+        username = #{record.username,jdbcType=VARCHAR},
+      </if>
+      <if test="record.password != null">
+        password = #{record.password,jdbcType=VARCHAR},
+      </if>
+      <if test="record.icon != null">
+        icon = #{record.icon,jdbcType=VARCHAR},
+      </if>
+      <if test="record.email != null">
+        email = #{record.email,jdbcType=VARCHAR},
+      </if>
+      <if test="record.nickName != null">
+        nick_name = #{record.nickName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.note != null">
+        note = #{record.note,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTime != null">
+        create_time = #{record.createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.loginTime != null">
+        login_time = #{record.loginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.status != null">
+        status = #{record.status,jdbcType=INTEGER},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update ums_admin
+    set id = #{record.id,jdbcType=BIGINT},
+      username = #{record.username,jdbcType=VARCHAR},
+      password = #{record.password,jdbcType=VARCHAR},
+      icon = #{record.icon,jdbcType=VARCHAR},
+      email = #{record.email,jdbcType=VARCHAR},
+      nick_name = #{record.nickName,jdbcType=VARCHAR},
+      note = #{record.note,jdbcType=VARCHAR},
+      create_time = #{record.createTime,jdbcType=TIMESTAMP},
+      login_time = #{record.loginTime,jdbcType=TIMESTAMP},
+      status = #{record.status,jdbcType=INTEGER}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.xuzhihao.mapper.model.UmsAdmin">
+    update ums_admin
+    <set>
+      <if test="username != null">
+        username = #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">
+        password = #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="icon != null">
+        icon = #{icon,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        email = #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="nickName != null">
+        nick_name = #{nickName,jdbcType=VARCHAR},
+      </if>
+      <if test="note != null">
+        note = #{note,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="loginTime != null">
+        login_time = #{loginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.xuzhihao.mapper.model.UmsAdmin">
+    update ums_admin
+    set username = #{username,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      icon = #{icon,jdbcType=VARCHAR},
+      email = #{email,jdbcType=VARCHAR},
+      nick_name = #{nickName,jdbcType=VARCHAR},
+      note = #{note,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      login_time = #{loginTime,jdbcType=TIMESTAMP},
+      status = #{status,jdbcType=INTEGER}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>
+```
+
+```java
+package com.xuzhihao.mapper;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import com.xuzhihao.mapper.model.UmsAdmin;
+import com.xuzhihao.mapper.model.UmsAdminExample;
+
+public interface UmsAdminMapper {
+    long countByExample(UmsAdminExample example);
+
+    int deleteByExample(UmsAdminExample example);
+
+    int deleteByPrimaryKey(Long id);
+
+    int insert(UmsAdmin record);
+
+    int insertSelective(UmsAdmin record);
+
+    List<UmsAdmin> selectByExample(UmsAdminExample example);
+
+    UmsAdmin selectByPrimaryKey(Long id);
+
+    int updateByExampleSelective(@Param("record") UmsAdmin record, @Param("example") UmsAdminExample example);
+
+    int updateByExample(@Param("record") UmsAdmin record, @Param("example") UmsAdminExample example);
+
+    int updateByPrimaryKeySelective(UmsAdmin record);
+
+    int updateByPrimaryKey(UmsAdmin record);
+}
+```
+
+```java
+package com.xuzhihao.mapper.model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+public class UmsAdmin implements Serializable {
+	private Long id;
+
+	private String username;
+
+	private String password;
+
+	private String icon;
+
+	private String email;
+
+	private String nickName;
+
+	private String note;
+
+	private Date createTime;
+
+	private Date loginTime;
+
+	private Integer status;
+
+	private static final long serialVersionUID = 1L;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getNickName() {
+		return nickName;
+	}
+
+	public void setNickName(String nickName) {
+		this.nickName = nickName;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
+	}
+
+	public Date getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+	public Date getLoginTime() {
+		return loginTime;
+	}
+
+	public void setLoginTime(Date loginTime) {
+		this.loginTime = loginTime;
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append(" [");
+		sb.append("Hash = ").append(hashCode());
+		sb.append(", id=").append(id);
+		sb.append(", username=").append(username);
+		sb.append(", password=").append(password);
+		sb.append(", icon=").append(icon);
+		sb.append(", email=").append(email);
+		sb.append(", nickName=").append(nickName);
+		sb.append(", note=").append(note);
+		sb.append(", createTime=").append(createTime);
+		sb.append(", loginTime=").append(loginTime);
+		sb.append(", status=").append(status);
+		sb.append(", serialVersionUID=").append(serialVersionUID);
+		sb.append("]");
+		return sb.toString();
+	}
+}
+```
+
+```java
+package com.xuzhihao.mapper.model;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+public class UmsAdminExample {
+	protected String orderByClause;
+
+	protected boolean distinct;
+
+	protected List<Criteria> oredCriteria;
+
+	public UmsAdminExample() {
+		oredCriteria = new ArrayList<Criteria>();
+	}
+
+	public void setOrderByClause(String orderByClause) {
+		this.orderByClause = orderByClause;
+	}
+
+	public String getOrderByClause() {
+		return orderByClause;
+	}
+
+	public void setDistinct(boolean distinct) {
+		this.distinct = distinct;
+	}
+
+	public boolean isDistinct() {
+		return distinct;
+	}
+
+	public List<Criteria> getOredCriteria() {
+		return oredCriteria;
+	}
+
+	public void or(Criteria criteria) {
+		oredCriteria.add(criteria);
+	}
+
+	public Criteria or() {
+		Criteria criteria = createCriteriaInternal();
+		oredCriteria.add(criteria);
+		return criteria;
+	}
+
+	public Criteria createCriteria() {
+		Criteria criteria = createCriteriaInternal();
+		if (oredCriteria.size() == 0) {
+			oredCriteria.add(criteria);
+		}
+		return criteria;
+	}
+
+	protected Criteria createCriteriaInternal() {
+		Criteria criteria = new Criteria();
+		return criteria;
+	}
+
+	public void clear() {
+		oredCriteria.clear();
+		orderByClause = null;
+		distinct = false;
+	}
+
+	protected abstract static class GeneratedCriteria {
+		protected List<Criterion> criteria;
+
+		protected GeneratedCriteria() {
+			super();
+			criteria = new ArrayList<Criterion>();
+		}
+
+		public boolean isValid() {
+			return criteria.size() > 0;
+		}
+
+		public List<Criterion> getAllCriteria() {
+			return criteria;
+		}
+
+		public List<Criterion> getCriteria() {
+			return criteria;
+		}
+
+		protected void addCriterion(String condition) {
+			if (condition == null) {
+				throw new RuntimeException("Value for condition cannot be null");
+			}
+			criteria.add(new Criterion(condition));
+		}
+
+		protected void addCriterion(String condition, Object value, String property) {
+			if (value == null) {
+				throw new RuntimeException("Value for " + property + " cannot be null");
+			}
+			criteria.add(new Criterion(condition, value));
+		}
+
+		protected void addCriterion(String condition, Object value1, Object value2, String property) {
+			if (value1 == null || value2 == null) {
+				throw new RuntimeException("Between values for " + property + " cannot be null");
+			}
+			criteria.add(new Criterion(condition, value1, value2));
+		}
+
+		public Criteria andIdIsNull() {
+			addCriterion("id is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdIsNotNull() {
+			addCriterion("id is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdEqualTo(Long value) {
+			addCriterion("id =", value, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdNotEqualTo(Long value) {
+			addCriterion("id <>", value, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdGreaterThan(Long value) {
+			addCriterion("id >", value, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdGreaterThanOrEqualTo(Long value) {
+			addCriterion("id >=", value, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdLessThan(Long value) {
+			addCriterion("id <", value, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdLessThanOrEqualTo(Long value) {
+			addCriterion("id <=", value, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdIn(List<Long> values) {
+			addCriterion("id in", values, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdNotIn(List<Long> values) {
+			addCriterion("id not in", values, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdBetween(Long value1, Long value2) {
+			addCriterion("id between", value1, value2, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andIdNotBetween(Long value1, Long value2) {
+			addCriterion("id not between", value1, value2, "id");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameIsNull() {
+			addCriterion("username is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameIsNotNull() {
+			addCriterion("username is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameEqualTo(String value) {
+			addCriterion("username =", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameNotEqualTo(String value) {
+			addCriterion("username <>", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameGreaterThan(String value) {
+			addCriterion("username >", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameGreaterThanOrEqualTo(String value) {
+			addCriterion("username >=", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameLessThan(String value) {
+			addCriterion("username <", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameLessThanOrEqualTo(String value) {
+			addCriterion("username <=", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameLike(String value) {
+			addCriterion("username like", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameNotLike(String value) {
+			addCriterion("username not like", value, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameIn(List<String> values) {
+			addCriterion("username in", values, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameNotIn(List<String> values) {
+			addCriterion("username not in", values, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameBetween(String value1, String value2) {
+			addCriterion("username between", value1, value2, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andUsernameNotBetween(String value1, String value2) {
+			addCriterion("username not between", value1, value2, "username");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordIsNull() {
+			addCriterion("password is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordIsNotNull() {
+			addCriterion("password is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordEqualTo(String value) {
+			addCriterion("password =", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordNotEqualTo(String value) {
+			addCriterion("password <>", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordGreaterThan(String value) {
+			addCriterion("password >", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordGreaterThanOrEqualTo(String value) {
+			addCriterion("password >=", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordLessThan(String value) {
+			addCriterion("password <", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordLessThanOrEqualTo(String value) {
+			addCriterion("password <=", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordLike(String value) {
+			addCriterion("password like", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordNotLike(String value) {
+			addCriterion("password not like", value, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordIn(List<String> values) {
+			addCriterion("password in", values, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordNotIn(List<String> values) {
+			addCriterion("password not in", values, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordBetween(String value1, String value2) {
+			addCriterion("password between", value1, value2, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andPasswordNotBetween(String value1, String value2) {
+			addCriterion("password not between", value1, value2, "password");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconIsNull() {
+			addCriterion("icon is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconIsNotNull() {
+			addCriterion("icon is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconEqualTo(String value) {
+			addCriterion("icon =", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconNotEqualTo(String value) {
+			addCriterion("icon <>", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconGreaterThan(String value) {
+			addCriterion("icon >", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconGreaterThanOrEqualTo(String value) {
+			addCriterion("icon >=", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconLessThan(String value) {
+			addCriterion("icon <", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconLessThanOrEqualTo(String value) {
+			addCriterion("icon <=", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconLike(String value) {
+			addCriterion("icon like", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconNotLike(String value) {
+			addCriterion("icon not like", value, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconIn(List<String> values) {
+			addCriterion("icon in", values, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconNotIn(List<String> values) {
+			addCriterion("icon not in", values, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconBetween(String value1, String value2) {
+			addCriterion("icon between", value1, value2, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andIconNotBetween(String value1, String value2) {
+			addCriterion("icon not between", value1, value2, "icon");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailIsNull() {
+			addCriterion("email is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailIsNotNull() {
+			addCriterion("email is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailEqualTo(String value) {
+			addCriterion("email =", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailNotEqualTo(String value) {
+			addCriterion("email <>", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailGreaterThan(String value) {
+			addCriterion("email >", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailGreaterThanOrEqualTo(String value) {
+			addCriterion("email >=", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailLessThan(String value) {
+			addCriterion("email <", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailLessThanOrEqualTo(String value) {
+			addCriterion("email <=", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailLike(String value) {
+			addCriterion("email like", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailNotLike(String value) {
+			addCriterion("email not like", value, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailIn(List<String> values) {
+			addCriterion("email in", values, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailNotIn(List<String> values) {
+			addCriterion("email not in", values, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailBetween(String value1, String value2) {
+			addCriterion("email between", value1, value2, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andEmailNotBetween(String value1, String value2) {
+			addCriterion("email not between", value1, value2, "email");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameIsNull() {
+			addCriterion("nick_name is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameIsNotNull() {
+			addCriterion("nick_name is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameEqualTo(String value) {
+			addCriterion("nick_name =", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameNotEqualTo(String value) {
+			addCriterion("nick_name <>", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameGreaterThan(String value) {
+			addCriterion("nick_name >", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameGreaterThanOrEqualTo(String value) {
+			addCriterion("nick_name >=", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameLessThan(String value) {
+			addCriterion("nick_name <", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameLessThanOrEqualTo(String value) {
+			addCriterion("nick_name <=", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameLike(String value) {
+			addCriterion("nick_name like", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameNotLike(String value) {
+			addCriterion("nick_name not like", value, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameIn(List<String> values) {
+			addCriterion("nick_name in", values, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameNotIn(List<String> values) {
+			addCriterion("nick_name not in", values, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameBetween(String value1, String value2) {
+			addCriterion("nick_name between", value1, value2, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNickNameNotBetween(String value1, String value2) {
+			addCriterion("nick_name not between", value1, value2, "nickName");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteIsNull() {
+			addCriterion("note is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteIsNotNull() {
+			addCriterion("note is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteEqualTo(String value) {
+			addCriterion("note =", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteNotEqualTo(String value) {
+			addCriterion("note <>", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteGreaterThan(String value) {
+			addCriterion("note >", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteGreaterThanOrEqualTo(String value) {
+			addCriterion("note >=", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteLessThan(String value) {
+			addCriterion("note <", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteLessThanOrEqualTo(String value) {
+			addCriterion("note <=", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteLike(String value) {
+			addCriterion("note like", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteNotLike(String value) {
+			addCriterion("note not like", value, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteIn(List<String> values) {
+			addCriterion("note in", values, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteNotIn(List<String> values) {
+			addCriterion("note not in", values, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteBetween(String value1, String value2) {
+			addCriterion("note between", value1, value2, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andNoteNotBetween(String value1, String value2) {
+			addCriterion("note not between", value1, value2, "note");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeIsNull() {
+			addCriterion("create_time is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeIsNotNull() {
+			addCriterion("create_time is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeEqualTo(Date value) {
+			addCriterion("create_time =", value, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeNotEqualTo(Date value) {
+			addCriterion("create_time <>", value, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeGreaterThan(Date value) {
+			addCriterion("create_time >", value, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeGreaterThanOrEqualTo(Date value) {
+			addCriterion("create_time >=", value, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeLessThan(Date value) {
+			addCriterion("create_time <", value, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeLessThanOrEqualTo(Date value) {
+			addCriterion("create_time <=", value, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeIn(List<Date> values) {
+			addCriterion("create_time in", values, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeNotIn(List<Date> values) {
+			addCriterion("create_time not in", values, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeBetween(Date value1, Date value2) {
+			addCriterion("create_time between", value1, value2, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andCreateTimeNotBetween(Date value1, Date value2) {
+			addCriterion("create_time not between", value1, value2, "createTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeIsNull() {
+			addCriterion("login_time is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeIsNotNull() {
+			addCriterion("login_time is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeEqualTo(Date value) {
+			addCriterion("login_time =", value, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeNotEqualTo(Date value) {
+			addCriterion("login_time <>", value, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeGreaterThan(Date value) {
+			addCriterion("login_time >", value, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeGreaterThanOrEqualTo(Date value) {
+			addCriterion("login_time >=", value, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeLessThan(Date value) {
+			addCriterion("login_time <", value, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeLessThanOrEqualTo(Date value) {
+			addCriterion("login_time <=", value, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeIn(List<Date> values) {
+			addCriterion("login_time in", values, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeNotIn(List<Date> values) {
+			addCriterion("login_time not in", values, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeBetween(Date value1, Date value2) {
+			addCriterion("login_time between", value1, value2, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andLoginTimeNotBetween(Date value1, Date value2) {
+			addCriterion("login_time not between", value1, value2, "loginTime");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusIsNull() {
+			addCriterion("status is null");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusIsNotNull() {
+			addCriterion("status is not null");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusEqualTo(Integer value) {
+			addCriterion("status =", value, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusNotEqualTo(Integer value) {
+			addCriterion("status <>", value, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusGreaterThan(Integer value) {
+			addCriterion("status >", value, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusGreaterThanOrEqualTo(Integer value) {
+			addCriterion("status >=", value, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusLessThan(Integer value) {
+			addCriterion("status <", value, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusLessThanOrEqualTo(Integer value) {
+			addCriterion("status <=", value, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusIn(List<Integer> values) {
+			addCriterion("status in", values, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusNotIn(List<Integer> values) {
+			addCriterion("status not in", values, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusBetween(Integer value1, Integer value2) {
+			addCriterion("status between", value1, value2, "status");
+			return (Criteria) this;
+		}
+
+		public Criteria andStatusNotBetween(Integer value1, Integer value2) {
+			addCriterion("status not between", value1, value2, "status");
+			return (Criteria) this;
+		}
+	}
+
+	public static class Criteria extends GeneratedCriteria {
+
+		protected Criteria() {
+			super();
+		}
+	}
+
+	public static class Criterion {
+		private String condition;
+
+		private Object value;
+
+		private Object secondValue;
+
+		private boolean noValue;
+
+		private boolean singleValue;
+
+		private boolean betweenValue;
+
+		private boolean listValue;
+
+		private String typeHandler;
+
+		public String getCondition() {
+			return condition;
+		}
+
+		public Object getValue() {
+			return value;
+		}
+
+		public Object getSecondValue() {
+			return secondValue;
+		}
+
+		public boolean isNoValue() {
+			return noValue;
+		}
+
+		public boolean isSingleValue() {
+			return singleValue;
+		}
+
+		public boolean isBetweenValue() {
+			return betweenValue;
+		}
+
+		public boolean isListValue() {
+			return listValue;
+		}
+
+		public String getTypeHandler() {
+			return typeHandler;
+		}
+
+		protected Criterion(String condition) {
+			super();
+			this.condition = condition;
+			this.typeHandler = null;
+			this.noValue = true;
+		}
+
+		protected Criterion(String condition, Object value, String typeHandler) {
+			super();
+			this.condition = condition;
+			this.value = value;
+			this.typeHandler = typeHandler;
+			if (value instanceof List<?>) {
+				this.listValue = true;
+			} else {
+				this.singleValue = true;
+			}
+		}
+
+		protected Criterion(String condition, Object value) {
+			this(condition, value, null);
+		}
+
+		protected Criterion(String condition, Object value, Object secondValue, String typeHandler) {
+			super();
+			this.condition = condition;
+			this.value = value;
+			this.secondValue = secondValue;
+			this.typeHandler = typeHandler;
+			this.betweenValue = true;
+		}
+
+		protected Criterion(String condition, Object value, Object secondValue) {
+			this(condition, value, secondValue, null);
+		}
+	}
+}
+```
+
+```java
+@RestController
+public class TestController {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestController.class);
+
+	@Autowired
+	private UmsAdminMapper adminMapper;
+    ...
+    /**
+	 * 测试mybatis
+	 */
+	@GetMapping("/user/{id}")
+	public String user(@PathVariable("id") Long id) {
+		return "用户:" + adminMapper.selectByPrimaryKey(id);
+	}
+```
+
+## 11. 整合Druid
+
+```xml
+<dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>druid</artifactId>
+        <version>1.2.3</version>
+    </dependency>
+<dependency>
+```
+
+```java
+package com.xuzhihao.config;
+
+import javax.sql.DataSource;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.alibaba.druid.pool.DruidDataSource;
+import com.alibaba.druid.support.http.StatViewServlet;
+import com.alibaba.druid.support.http.WebStatFilter;
+
+/**
+ * druid 配置类
+ * 
+ * @author Administrator
+ *
+ */
+@Configuration
+public class DruidConfig {
+	/**
+	 * druid本身就是为了扩展jdbc的功能，而dataSource对象就是jdbc的配置
+	 */
+	@Bean
+	// 引入application.properties文件中以spring.datasource开头的信息
+	@ConfigurationProperties(prefix = "spring.datasource")
+	public DataSource druidDataSource() {
+		DruidDataSource druidDataSource = new DruidDataSource();
+		return druidDataSource;
+	}
+
+	/**
+	 * Druid 监控视图配置
+	 */
+	@Bean
+	public ServletRegistrationBean statViewServlet() {
+		ServletRegistrationBean servletRegistrationBean = new ServletRegistrationBean(new StatViewServlet(),
+				"/druid/*");
+		// ip 白名单 没有配置则允许所有访问
+		servletRegistrationBean.addInitParameter("allow", "127.0.0.1");
+		// ip 黑名单 优先级大于白名单
+		servletRegistrationBean.addInitParameter("deny", "192.168.3.200");// 设置ip黑名单，优先级高于白名单
+		// 设置控制台管理用户
+		servletRegistrationBean.addInitParameter("loginUsername", "admin");
+		servletRegistrationBean.addInitParameter("loginPassword", "admin");
+		// 是否可以重置数据
+		servletRegistrationBean.addInitParameter("resetEnable", "true");
+		return servletRegistrationBean;
+	}
+
+	/**
+	 * 监控拦截器
+	 */
+	@Bean
+	public FilterRegistrationBean statFilter() {
+		// 创建过滤器
+		FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean(new WebStatFilter());
+		// 设置过滤器过滤路径
+		filterRegistrationBean.addUrlPatterns("/*");
+		// 忽略过滤的形式
+		filterRegistrationBean.addInitParameter("exclusions", "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*");
+		return filterRegistrationBean;
+	}
+}
+```
+
+```pro
+spring.datasource.url=jdbc:mysql://debug-registry:3306/mall?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+spring.datasource.username=root
+spring.datasource.password=root
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+
+spring.datasource.initialSize=5
+spring.datasource.minIdle=5
+spring.datasource.maxActive=20
+spring.datasource.maxWait=60000
+spring.datasource.timeBetweenEvictionRunsMillis=60000
+spring.datasource.minEvictableIdleTimeMillis=300000
+spring.datasource.validationQuery=SELECT 1 FROM DUAL
+spring.datasource.testWhileIdle=true
+spring.datasource.testOnBorrow=false
+spring.datasource.testOnReturn=false
+spring.datasource.poolPreparedStatements=true
+spring.datasource.filters=stat,wall
+spring.datasource.maxPoolPreparedStatementPerConnectionSize=20
+spring.datasource.useGlobalDataSourceStat=true
+spring.datasource.connectionProperties=druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+
+```
+
+## 12. webjars
+
+```xml
+<!-- 引用bootstrap -->
+    <dependency>
+        <groupId>org.webjars</groupId>
+        <artifactId>bootstrap</artifactId>
+        <version>3.3.7-1</version>
+    </dependency>
+    <!-- 引用jquery -->
+    <dependency>
+        <groupId>org.webjars</groupId>
+        <artifactId>jquery</artifactId>
+        <version>3.1.1</version>
+    </dependency>
+```
+
+```html
+<script>
+	var basepath = "${request.contextPath}";
+</script>
+<script src="${request.contextPath}/webjars/jquery/3.1.1/jquery.min.js"></script>
+<script src="${request.contextPath}/webjars/bootstrap/3.3.7-1/js/bootstrap.min.js"></script>
+```
+
+## 13. 自定义starter
+
+## 14. 启动原理
 
