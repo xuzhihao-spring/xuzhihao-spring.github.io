@@ -24,5 +24,3 @@
 | spring5.3.1-mybatis3.4.6| spring+mybatis整合  | |
 | springboot-2.3.0| springboot集成 | WebMvcConfigurer |
 | springmvc-5.3.1-embed| 源码 | 内嵌Tomcat8，Jetty9，servlet3.0规范扩展SPI,自定义参数解析 |
-| tomcat-7.0.42| | eclipse |
-| tomcat-8.5.61| | Idea |
