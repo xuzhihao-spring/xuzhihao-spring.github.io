@@ -2402,7 +2402,124 @@ spring.datasource.connectionProperties=druid.stat.mergeSql=true;druid.stat.slowS
 <script src="${request.contextPath}/webjars/bootstrap/3.3.7-1/js/bootstrap.min.js"></script>
 ```
 
-## 13. 自定义starter
+## 13. 设置跨域
 
-## 14. 启动原理
+```java
+@Target({ ElementType.METHOD, ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface CrossOrigin {
+
+    String[] DEFAULT_ORIGINS = { "*" };
+
+    String[] DEFAULT_ALLOWED_HEADERS = { "*" };
+
+    boolean DEFAULT_ALLOW_CREDENTIALS = true;
+
+    long DEFAULT_MAX_AGE = 1800;
+
+    /**
+     * 同origins属性一样
+     */
+    @AliasFor("origins")
+    String[] value() default {};
+
+    /**
+     * 所有支持域的集合，例如"http://domain1.com"。
+     * <p>这些值都显示在请求头中的Access-Control-Allow-Origin
+     * "*"代表所有域的请求都支持
+     * <p>如果没有定义，所有请求的域都支持
+     * @see #value
+     */
+    @AliasFor("value")
+    String[] origins() default {};
+
+    /**
+     * 允许请求头重的header，默认都支持
+     */
+    String[] allowedHeaders() default {};
+
+    /**
+     * 响应头中允许访问的header，默认为空
+     */
+    String[] exposedHeaders() default {};
+
+    /**
+     * 请求支持的方法，例如"{RequestMethod.GET, RequestMethod.POST}"}。
+     * 默认支持RequestMapping中设置的方法
+     */
+    RequestMethod[] methods() default {};
+
+    /**
+     * 是否允许cookie随请求发送，使用时必须指定具体的域
+     */
+    String allowCredentials() default "";
+
+    /**
+     * 预请求的结果的有效期，默认30分钟
+     */
+    long maxAge() default -1;
+
+}
+
+在需要跨域的整个Controller或者单个方法上添加@CrossOrigin注解
+
+```java
+@RestController
+//实现跨域注解
+//origin="*"代表所有域名都可访问
+//maxAge飞行前响应的缓存持续时间的最大年龄，简单来说就是Cookie的有效期 单位为秒
+//若maxAge是负数,则代表为临时Cookie,不会被持久化,Cookie信息保存在浏览器内存中,浏览器关闭Cookie就消失
+@CrossOrigin(origins = "*",maxAge = 3600)
+public class UserController {
+    @Resource
+    private IUserFind userFind;
+
+    @GetMapping("finduser")
+    public User finduser(@RequestParam(value="id") Integer id){
+        //此处省略相应代码
+    }
+}
+```
+
+全局配置
+
+```java
+@Configuration
+public class WebMvcConfig extends WebMvcConfigurerAdapter {
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("*")
+                .allowedMethods("POST", "GET", "PUT", "OPTIONS", "DELETE")
+                .maxAge(3600)
+                .allowCredentials(true);
+    }
+}
+```
+
+通过filter
+
+```java
+@Component
+@WebFilter(urlPatterns = "/*", filterName = "authFilter") //这里的“/*” 表示的是需要拦截的请求路径
+public class PassHttpFilter implements Filter {
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException { }
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletResponse httpResponse = (HttpServletResponse)servletResponse;
+        httpResponse.setHeader("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept");
+        httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+        httpResponse.addHeader("Access-Control-Allow-Origin", "http://127.0.0.1:8080");
+        filterChain.doFilter(servletRequest, httpResponse);
+    }
+    @Override
+    public void destroy() { }
+}
+```
+
+## 14. 自定义starter
+
+## 15. 启动原理
 

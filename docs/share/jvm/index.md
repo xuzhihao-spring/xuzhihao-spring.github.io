@@ -329,6 +329,54 @@ public class DecodeClassLoader extends ClassLoader {
 }
 ```
 
+JVM入口
+```java
+public Launcher() {
+        // Create the extension class loader
+        ClassLoader extcl;
+        try {
+            extcl = ExtClassLoader.getExtClassLoader();
+        } catch (IOException e) {
+            throw new InternalError(
+                "Could not create extension class loader", e);
+        }
+
+        // Now create the class loader to use to launch the application
+        try {
+            loader = AppClassLoader.getAppClassLoader(extcl);
+        } catch (IOException e) {
+            throw new InternalError(
+                "Could not create application class loader", e);
+        }
+
+        // Also set the context class loader for the primordial thread.
+        Thread.currentThread().setContextClassLoader(loader);
+
+        // Finally, install a security manager if requested
+        String s = System.getProperty("java.security.manager");
+        if (s != null) {
+            SecurityManager sm = null;
+            if ("".equals(s) || "default".equals(s)) {
+                sm = new java.lang.SecurityManager();
+            } else {
+                try {
+                    sm = (SecurityManager)loader.loadClass(s).newInstance();
+                } catch (IllegalAccessException e) {
+                } catch (InstantiationException e) {
+                } catch (ClassNotFoundException e) {
+                } catch (ClassCastException e) {
+                }
+            }
+            if (sm != null) {
+                System.setSecurityManager(sm);
+            } else {
+                throw new InternalError(
+                    "Could not create SecurityManager: " + s);
+            }
+        }
+    }
+```
+
 ### 4.4 双亲委派模型及如何打破，什么场景下需要打破双亲委派
 
 #### 4.4.1 父类委托的优点
