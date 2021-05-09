@@ -8,5 +8,5 @@
 * 后端框架：Spring Cloud、Spring Boot 、Spring Security Oauth2、MyBatis
 * 基础设施：ELK、MQ、Redis、MongoDB、OSS、Openfire、MediaSoup
 
-[GitHub](https://github.com/xuzhihao-spring/xuzhihao-spring.github.io)
+[GitHub](https://github.com/xuzhihao-java/xuzhihao-java.github.io)
 [Get Started](README.md)
