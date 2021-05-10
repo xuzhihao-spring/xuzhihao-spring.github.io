@@ -261,7 +261,7 @@ schemas=VJSP_JSWZ_191111 REMAP_SCHEMA=VJSP_JSWZ_191111:VJSP_JSWZ_191111_TMP REMA
 execute dbms_stats.delete_schema_stats('xxx');
 ```
 
-## 4.函数、过程
+## 4.函数过程
 
 ```sql
 --blob查询

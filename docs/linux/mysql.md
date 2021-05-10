@@ -7,9 +7,9 @@
 ```sql
 show variables like '%lower_case_table_names%' --大小写敏感
 
-lower_case_table_names=0   	表名存储为给定的大小和比较是区分大小写的 
-lower_case_table_names=1    表名存储在磁盘是小写的，但是比较的时候是不区分大小写
-lower_case_table_names=2	表名存储为给定的大小写但是比较的时候是小写的
+lower_case_table_names=0    --表名存储为给定的大小和比较是区分大小写的 
+lower_case_table_names=1    --表名存储在磁盘是小写的，但是比较的时候是不区分大小写
+lower_case_table_names=2    --表名存储为给定的大小写但是比较的时候是小写的
 
 ```
 
@@ -30,19 +30,15 @@ lower_case_table_names=1
 ### 1.2 慢查询日志
 
 ```bash
-set global slow_query_log = on		#临时开启慢查询日志
-set global slow_query_log = off		#临时关闭
+set global slow_query_log = on      #临时开启慢查询日志
+set global slow_query_log = off     #临时关闭
+set long_query_time = 1             #临时设置查询临界点
+set globle log_output = file        #设置慢查询存储的方式
+show variables like '%quer%'        #开启状态和慢查询日志储存的位置
 
-set long_query_time = 1				#临时设置查询临界点
-set globle log_output = file 		#设置慢查询存储的方式
-
-show variables like '%quer%' 		#开启状态和慢查询日志储存的位置
-
-cat -n  /data/mysql/mysql-slow.log	#查看示例
-
+cat -n  /data/mysql/mysql-slow.log  #查看示例
 
 ## 2. 用户授权
-
 ```sql
 CREATE DATABASE sonar CHARACTER SET utf8 COLLATE utf8_general_ci;
 GRANT ALL ON sonar.* TO 'sonar'@'%' IDENTIFIED BY '123456';
@@ -50,7 +46,7 @@ GRANT ALL ON sonar.* TO 'sonar'@'localhost' IDENTIFIED BY '123456';
 flush privileges;
 ```
 
-## 3. 备份恢复
+## 2. 备份还原
 
 ```bash
 mysqldump -uroot -p123456 -hlocalhost -P3306  --default-character-set=utf8   --flush-privileges  --hex-blob  --routines  --triggers  --tz-utc  --no-create-db jeecmsv9 > d:/aa.dump
@@ -66,7 +62,7 @@ mysqldump -uroot -proot --no-data --databases db1 >/tmp/db1.sql
 ```
 
 
-## 4. 函数、过程
+## 3. 函数过程
 ```sql
 CREATE FUNCTION `F_ACTUSER`(v_FLOWCID varchar(40)) RETURNS longtext CHARSET utf8
 BEGIN
