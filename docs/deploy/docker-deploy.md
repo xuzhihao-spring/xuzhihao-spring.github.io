@@ -774,3 +774,38 @@ docker run -d --name emqx-ee -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084
 ```bash
 sudo docker run -it -p 1880:1880 --name=nodered --restart=always --user=root --net=host -v /data/nodered:/data -e TZ=Asia/Shanghai nodered/node-red
 ```
+
+## 34. TDengine
+
+```bash
+docker run -d -p 6041:6041 \
+	-v /mydata/taos/conf:/etc/taos \
+	-v /mydata/taos/data:/var/lib/taos \
+	-v /mydata/taos/logs:/var/log/taos \
+	--name tdengine 
+	tdengine:2.0.19.1
+```
+
+## 35. InfluxDB
+
+1.x
+```bash
+docker run -d -p 8086:8086 \
+      -v /mydata/influxdb1:/var/lib/influxdb \
+      --name influxdb1 \
+      influxdb:1.8
+```
+
+2.x
+```bash
+docker run -d -p 8086:8086 \
+      -v /mydata/influxdb2/data:/var/lib/influxdb2 \
+      -v /mydata/influxdb2/config:/etc/influxdb2 \
+      -e DOCKER_INFLUXDB_INIT_MODE=setup \
+	    -e DOCKER_INFLUXDB_INIT_USERNAME=my-user \
+      -e DOCKER_INFLUXDB_INIT_PASSWORD=my-password \
+      -e DOCKER_INFLUXDB_INIT_ORG=org \
+      -e DOCKER_INFLUXDB_INIT_BUCKET=bucket \
+	    --name influxdb2 \
+      influxdb:2.0.6
+```
