@@ -755,7 +755,7 @@ localhost:9090/metrics
 ## 31. Grafana
 
 ```bash
-docker run -d -p 3300:3000 --name grafana grafana/grafana
+docker run -d -p 3000:3000 --name grafana grafana/grafana
 ```
 
 admin:admin
