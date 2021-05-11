@@ -48,7 +48,7 @@
    * [JUC类全汇总](share/concurrent/juc2)
    * [线程池源码](share/concurrent/thread)
    * [Spring的底层原理与源码实现](share/frame/spring)
-   * [Spring Mvc源码](share/frame/springMvc)
+   * [Spring Mvc源码](share/frame/springmvc)
    * [SpringBoot源码](share/frame/springboot)
    * [Mybatis源码](share/frame/mybatis)
    * [响应式开发框架Akka应用与原理](share/frame/akka)
