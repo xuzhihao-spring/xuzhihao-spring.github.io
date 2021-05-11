@@ -2,28 +2,26 @@
 
 ## 1. Docker
 
-- 安装yum-utils：
-
 ```bash
-yum install -y yum-utils device-mapper-persistent-data lvm2
-```
-
-- 为yum源添加docker仓库位置：
-
-```bash
-yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-```
-
-- 安装docker：
-
-```bash
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 yum install docker-ce
-```
-
-- 启动docker：
-
-```bash
+yum install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7 -y
 systemctl start docker
+chkconfig docker on
+systemctl start docker
+
+vi /etc/docker/daemon.json
+{
+    "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
+    "insecure-registries": ["192.168.3.200:5000"],
+    "exec-opts":["native.cgroupdriver=systemd"]
+}
+
+vi /usr/lib/systemd/system/docker.service
+ExecStart=/usr/bin/dockerd  # 如果原文件此行后面有-H选项，请删除-H(含)后面所有内容。
+
+sudo systemctl daemon-reload
+sudo systemctl restart docker
 ```
 
 ## 2. Fastdfs
