@@ -47,12 +47,14 @@ sudo systemctl restart docker
 docker version              #查看docker容器版本
 docker info                 #查看docker容器信息
 docker --help               #查看docker容器帮助
-docker info |grep Cgroup    #查看驱动
+docker info | grep Cgroup   #查看驱动
 
 #镜像操作
 docker images                   #查看镜像
 docker rmi [imageid]            #删除镜像
 docker rmi $(docker images -q)  #删除本地所有镜像
+docker inspect                  #容器IP查询/镜像元数据
+docker history                  #构建历史
 
 #容器操作
 docker ps -a|-q|-l              #查看容器
@@ -69,16 +71,11 @@ docker stats $(docker ps -a -q)  #监控所有容器
 docker stats --no-stream=true $(docker ps -a -q)        #监控所有容器当前
 docker container update --restart=always [containerid]  #容器自动启动
 docker update --restart=always $(docker ps -q -a)       #更新所有容器启动时自动启动
-
-##基于当前redis容器创建一个新的镜像；参数：-a 提交的镜像作者；-c 使用Dockerfile指令来创建镜像；-m :提交时的说明文字；-p :在commit时，将容器暂停
-docker commit -a="DeepInThought" -m="my redis" [redis容器ID]  myredis:v1.1
-
 docker-compose -f docker-compose-env.yml up -d  
 
 #容器进入
 docker exec -it [containerid] /bin/bash
 docker run --net=host           #host模式执行容器，使用主机网络堆栈.因此无法将端口暴露给主机,因为它是主机
-docker inspect [containerid]    #容器IP查询
 
 #容器日志
 docker logs -t --since="2018-02-08T13:23:37" [containerid]          #查看某时间之后的日志
@@ -92,6 +89,13 @@ docker cp [local_path] rabbitmq:/[container_path]/  # 将主机文件copy至rabb
 docker cp [local_path] rabbitmq:/[container_path]   # 将主机文件copy至rabbitmq容器，目录重命名为[container_path]（注意与非重命名copy的区别）
 docker run -it -v /[local_path]:/[container_path] [imageid] /bin/bash   # 挂载宿主机的一个目录
 docker update --restart=always [container_id]       # 修改容器自动启动
+
+#镜像分析
+docker pull wagoodman/dive
+
+docker run --rm -it \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    wagoodman/dive:latest influxdb:1.8
 ```
 
 ## 4. Dockerfile
@@ -164,6 +168,13 @@ RUN wget https://github.com/eclipse/eclipse.jdt.ls/archive/v0.48.0.tar.gz \
     && tar xvf v0.48.0.tar.gz \
     && cd eclipse.jdt.ls-0.48.0 \
     && ./mvnw build
+```
+
+### 4.5 从容器构建镜像
+
+```bash
+##基于当前redis容器创建一个新的镜像；参数：-a 提交的镜像作者；-c 使用Dockerfile指令来创建镜像；-m :提交时的说明文字；-p :在commit时，将容器暂停
+docker commit -a="DeepInThought" -m="my redis" [redis容器ID]  myredis:v1.1
 ```
 
 ## 5. Docker Compose
