@@ -10,34 +10,32 @@
   * [Windows](linux/windows.md)
 
 * 数据库
-  * [Oracle](linux/oracle.md)
-  * [PostgreSQL](linux/postgre.md)
-  * [MySQL](linux/mysql.md)
-  * [Redis](linux/redis.md)
+  * [Oracle](linux/database/oracle.md)
+  * [PostgreSQL](linux/database/postgre.md)
+  * [MySQL](linux/database/mysql.md)
+  * [Redis](linux/database/redis.md)
+  * [InfluxDB ](linux/database/influxdb.md)
+  * [MongoDB](linux/database/mongodb.md)
+  * [CouchDB ](linux/database/couchdb.md)
 
 * 系统部署
-  * [基于Docker部署](deploy/docker-deploy.md)
-  * [Minikube安装](deploy/minikube.md)
-  * [Nginx配置HTTPS](deploy/nginx_https.md)
-  * [Gitlab搭建](deploy/gitlab.md)
-  * [Zabbix安装](deploy/zabbix5.0.md)
-  * [Mycat+HA+keepalived](deploy/mycat.md)
-  * [Turnserver搭建](deploy/turnserve.md)
+  * [基于Docker部署](linux/deploy/docker-deploy.md)
+  * [Minikube安装](linux/deploy/minikube.md)
+  * [Nginx配置HTTPS](linux/deploy/nginx_https.md)
+  * [Gitlab搭建](linux/deploy/gitlab.md)
+  * [Zabbix安装](linux/deploy/zabbix5.0.md)
   
-* 开发工具API
+* 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
-  * [MongoDB客户端工具Robo 3T](tools/robo3t.md)
   * [C/C++ IDE CLion 配置使用教程](tools/clion.md)
   * [阿里开源的诊断神器Arthas](tools/arthas.md)
   * [Hutool常用的工具类和方法](tools/hutool.md)
-
-* 技术分享
-  * [开源协议](share/openSource.md)
-  * [服务端高并发分布式架构演进之路](share/thevolve.md)
-  * [算法函数](share/function.md)
-  * [参考](share/参考.md)
+  * [服务端高并发分布式架构演进之路](tools/style.md)
+  * [开源协议](tools/opensource.md)
+  * [参考](tools/node.md)
 
 * 学习笔记
+   * [算法函数](share/function.md)
    * [JVM底层原理](share/jvm/index.md)
    * [Map源码](share/j2se/map)
    * [List源码](share/j2se/list)
@@ -78,11 +76,11 @@
    * [Spring Cloud Netflix](share/microservice/springcloud)
    * [Spring Cloud Alibaba](share/microservice/springclouda)
    * [服务网格Service Mesh](share/microservice/servicemesh)
-   * [Redis](linux/redis.md)
+   * [Redis](linux/database/redis.md)
    * [MongoDB](share/database/mongodb)
    * [Mysql](share/database/mysql)
-   * [Oracle](share/database/oracle)
-   * [Mycat](/deploy/mycat)
+   * [Oracle](/share/database/oracle)
+   * [Mycat](/share/database/mycat)
    * [ShardingSphere](share/database/shardingsphere)
    * [DBLE](share/database/dble)
    * [分布式数据库OceanBase](share/database/oceanbase)

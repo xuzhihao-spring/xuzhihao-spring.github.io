@@ -62,7 +62,7 @@ systemctl daemon-reload #加载docker守护线程
 systemctl restart docker #重启docker
 ```
 
-![](../images/deploy/docker/5.portainer.png)
+![](../../images/linux/deploy/docker/5.portainer.png)
 
 
 ## 6. MinIO
@@ -202,7 +202,7 @@ docker run -p 6379:6379 --name redis \
 docker exec -it redis redis-cli
 ```
 
-![](../images/deploy/docker/mall_linux_deploy_01.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_01.png)
 
 
 监控工具redis-stat
@@ -281,7 +281,7 @@ rabbitmq-plugins enable rabbitmq_mqtt
 rabbitmq-plugins enable rabbitmq_management
 ```
 
-![](../images/deploy/docker/mall_linux_deploy_02.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_02.png)
 
 - 开启防火墙：
 
@@ -291,25 +291,25 @@ firewall-cmd --reload
 ```
 - 访问地址查看是否安装成功：http://192.168.3.200:15672
 
-![](../images/deploy/docker/mall_linux_deploy_03.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_03.png)
 
 - 输入账号密码并登录：guest guest
 
 - 创建帐号并设置其角色为管理员：mall mall
 
-![](../images/deploy/docker/mall_linux_deploy_04.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_04.png)
 
 - 创建一个新的虚拟host为：/mall
 
-![](../images/deploy/docker/mall_linux_deploy_05.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_05.png)
 
 - 点击mall用户进入用户配置页面
 
-![](../images/deploy/docker/mall_linux_deploy_06.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_06.png)
 
 - 给mall用户配置该虚拟host的权限
 
-![](../images/deploy/docker/mall_linux_deploy_07.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_07.png)
 
 ## 15. Elasticsearch
 
@@ -360,7 +360,7 @@ firewall-cmd --reload
 
 - 访问会返回版本信息：http://192.168.3.200:9200
 
-![](../images/deploy/docker/mall_linux_deploy_08.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_08.png)
 
 
 - 安装elasticsearch-head插件
@@ -442,7 +442,7 @@ firewall-cmd --reload
 ```
 - 访问地址进行测试：http://192.168.3.200:5601
 
-![](../images/deploy/docker/mall_linux_deploy_09.png)
+![](../../images/linux/deploy/docker/mall_linux_deploy_09.png)
 
 ## 18. MongoDB
 
@@ -470,7 +470,7 @@ docker run --name openfire -d --restart=always \
   gizmotronic/openfire
 ```
 
-![](../images/deploy/docker/19.openfire.png)
+![](../../images/linux/deploy/docker/19.openfire.png)
 
 
 ## 20. Eclipse/che
@@ -484,7 +484,7 @@ docker run -it -d --rm \
 eclipse/che start
 ```
 
-![](../images/deploy/docker/20.eclipse-che.png)
+![](../../images/linux/deploy/docker/20.eclipse-che.png)
 
 ## 21. Theia
 
@@ -495,7 +495,7 @@ docker run -it -d -p 3000:3000 -v "/mydata/theia-java:/home/project:cached" thei
 docker run -it -d --init -p 3000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
 ```
 
-![](../images/deploy/docker/21.Theia.png)
+![](../../images/linux/deploy/docker/21.Theia.png)
 
 
 ## 22. Nexus3
@@ -506,7 +506,7 @@ mkdir -p /home/mvn/nexus-data  && chown -R 200 /home/mvn/nexus-data
 docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sonatype/nexus3
 ```
 
-![](../images/deploy/docker/22.Nexus3.png)
+![](../../images/linux/deploy/docker/22.Nexus3.png)
 
 ## 23. Zentao
 

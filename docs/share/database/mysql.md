@@ -5,6 +5,12 @@
 
 ## 1. 索引
 
+btree
+![](../../images/share/database/mysql/btree.png)
+
+b+tree
+![](../../images/share/database/mysql/b+tree.png)
+
 InnoDB（索引组织表）使用的聚簇索引、索引就是数据，顺序存储，因此能缓存索引，也能缓存数据
 
 MyISAM（堆组织表）使用的是非聚簇索引、索引和文件分开，随机存储，只能缓存索引

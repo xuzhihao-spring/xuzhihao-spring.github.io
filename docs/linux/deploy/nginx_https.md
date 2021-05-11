@@ -199,11 +199,11 @@ server {
 
 - 阿里云上可以申请的免费证书目前只有支持单个域名的DV级SSL证书。比如说你有`blog.xuzhihao.com`和`api.xuzhihao.com`两个二级域名需要使用HTTPS，就需要申请两个SSL证书。
 
-![](../images/deploy/https/nginx_https_start_05.png)
+![](../../images/linux/deploy/https/nginx_https_start_05.png)
 
 - 申请成功后点击下载Nginx证书即可；
 
-![](../images/deploy/https/nginx_https_start_06.png)
+![](../../images/linux/deploy/https/nginx_https_start_06.png)
 
 - 下载完成后解压会有下面两个文件；
 
@@ -227,7 +227,7 @@ ssl_certificate_key  /usr/share/nginx/html/ssl/blog/blog.xuzhihao.com.key; # 配
 
 - 如果你有使用通配符域名的需求，可以上`FreeSSL`申请SSL证书，不过免费的有效期只有3个月，这就意味着你过3个月就要重新申请一次了。
 
-![](../images/deploy/https/nginx_https_start_08.png)
+![](../../images/linux/deploy/https/nginx_https_start_08.png)
 
 - 附上官网地址：https://freessl.cn/
 
@@ -235,7 +235,7 @@ ssl_certificate_key  /usr/share/nginx/html/ssl/blog/blog.xuzhihao.com.key; # 配
 
 - `acme.sh`脚本实现了`acme`协议, 可以从`letsencrypt`生成免费的证书。一般我们申请的证书有效期都是1年，过期就要重新申请了，使用`acme.sh`脚本可以实现到期自动申请，再也不用担心证书过期了！
 
-![](../images/deploy/https/nginx_https_start_09.png)
+![](../../images/linux/deploy/https/nginx_https_start_09.png)
 
 - 附上官网地址：https://github.com/acmesh-official/acme.sh
 

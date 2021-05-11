@@ -2,35 +2,19 @@
 
 ## 1. 介绍
 
-### 1.1 使用场景
-1. 取最新n个数据的操作
-2. 排行榜，取top前n个数据 //最佳人气前10条
-3. 精确的设置过期时间
-4. 计数器
-5. 实时系统，反垃圾系统
-6. pub，sub发布订阅构建实时消息系统
-7. 构建消息队列
-8. 缓存
+### 1.1 设计规范
 
-优势
-- 性能极高 – Redis能读的速度是110000次/s,写的速度是81000次/s
-- 丰富的数据类型 – Redis支持二进制案例的 Strings, Lists, Hashes, Sets 及 Ordered Sets 数据类型操作。
-- 原子 – Redis的所有操作都是原子性的，同时Redis还支持对几个操作合并后的原子性执行。（事务）
-- 丰富的特性 – Redis还支持 publish/subscribe, 通知, key 过期等等特性。
-
-### 1.2 设计规范
-
-#### 1.2.1 key的规范要点
+#### 1.1.1 key的规范要点
 - 以业务名为key前缀，用冒号隔开，以防止key冲突覆盖。如，`live:rank:1`
 - 确保key的语义清晰的情况下，key的长度尽量小于30个字符。拒绝bigkey
 - key禁止包含特殊字符，如空格、换行、单双引号以及其他转义字符。
 
-#### 1.2.2 value的规范要点
+#### 1.1.2 value的规范要点
 - string类型控制在10KB以内，hash、list、set、zset元素个数不要超过5000
 - 要选择适合的数据类型
 - 使用expire设置过期时间(条件允许可以打散过期时间，防止集中过期)，不过期的数据重点关注idletime
 
-#### 1.2.3 命令使用
+#### 1.1.3 命令使用
 - [推荐]禁止线上使用keys、flushall、flushdb等，通过redis的rename机制禁掉命令，或者使用scan渐进式处理
 - [推荐]使用pipeline批量操作提高效率
 - [推荐]O(N)命令关注N的数量,hgetall、lrange、smembers、zrange、sinter等并非不能使用，但是需要明确N的值。有遍历的需求可以使用hscan、sscan、zscan代替
@@ -38,7 +22,7 @@
 - [建议]集群版本Lua上有特殊要求:所有key，必须在1个slot上
 - [建议]必要情况下使用monitor命令时，要注意不要长时间使用
 
-#### 1.2.4 相关工具
+#### 1.1.4 相关工具
 
 1. 数据同步工具redis-port
 2. big key搜索
@@ -48,9 +32,9 @@
 redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 ```
 
-#### 1.2.5 删除bigkey
+#### 1.1.5 删除bigkey
 
-##### 1.2.5.1 Hash删除: hscan + hdel
+##### 1.1.5.1 Hash删除: hscan + hdel
 
 ```java
 public void delBigHash(String host, int port, String password, String bigHashKey) {
@@ -75,7 +59,7 @@ public void delBigHash(String host, int port, String password, String bigHashKey
 		jedis.del(bigHashKey);
 	}
 ```
-##### 1.2.5.2 List删除: ltrim
+##### 1.1.5.2 List删除: ltrim
 
 ```java
 public void delBigList(String host, int port, String password, String bigListKey) {
@@ -96,7 +80,7 @@ public void delBigList(String host, int port, String password, String bigListKey
 	}
 ```
 
-##### 1.2.5.3 Set删除: sscan + srem
+##### 1.1.5.3 Set删除: sscan + srem
 
 ```java
 public void delBigSet(String host, int port, String password, String bigSetKey) {
@@ -122,7 +106,7 @@ public void delBigSet(String host, int port, String password, String bigSetKey) 
 	}
 ```
 
-##### 1.2.5.4 SortedSet删除: zscan + zrem
+##### 1.1.5.4 SortedSet删除: zscan + zrem
 
 ```java
 public void delBigZset(String host, int port, String password, String bigZsetKey) {
@@ -148,9 +132,9 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 	}
 ```
 
-### 1.3 常见问题
+### 1.2 企业级解决方案
 
-#### 1.3.1 缓存穿透(安全问题)
+#### 1.2.1 缓存穿透(安全问题)
 
 指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，这将导致这个不存在的数据每次请求都要到数据库去查询，进而给数据库带来压力
 
@@ -168,14 +152,14 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 
 `无法确定你是否真的存在，但是可以确定真的不存在。`
 
-#### 1.3.2 缓存雪奔
+#### 1.2.2 缓存雪奔
 
 指缓存中数据大批量到过期时间，而查询数据量巨大，请求都直接访问数据库，引起数据库压力过大甚至down机
 
 解决方案：
 1. 均匀设置过期时间解决，即让过期时间相对离散一点。如采用一个较大固定值+一个较小的随机值
 
-#### 1.3.3 缓存击穿
+#### 1.2.3 缓存击穿
 
 指热点key在某个时间点过期的时候，而恰好在这个时间点对这个Key有大量的并发请求过来，从而大量的请求打到db
 
@@ -184,7 +168,7 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 2. 永不过期，是指没有设置过期时间，但是热点数据快要过期时，异步线程去更新和设置过期时间。
 
 
-#### 1.3.4 缓存热key
+#### 1.2.4 缓存热key
 
 某一热点key的请求到服务器主机时，由于请求量特别大，可能会导致主机资源不足，甚至宕机，从而影响正常的服务
 
@@ -200,7 +184,7 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 2. 对热key进行hash散列，比如将一个key备份为key1,key2……keyN，同样的数据N个备份，N个备份分布到不同分片，访问时可随机访问N个备份中的一个，进一步分担读流量；
 3. 使用二级缓存，即JVM本地缓存,减少Redis的读请求
 
-#### 1.3.5 数据倾斜
+#### 1.2.5 数据倾斜
 
 即热点 key，指的是在一段时间内，该 key 的访问量远远高于其他的 redis key， 导致大部分的访问流量在经过 proxy 分片之后，都集中访问到某一个 redis 实例上
 
@@ -251,7 +235,7 @@ func main() {
 }
 ```
 
-#### 1.3.6 分布不均问题、Hash Tags
+#### 1.2.6 分布不均问题、Hash Tags
 
 1. 问题原理
 
@@ -278,7 +262,7 @@ HashTag即是用{}包裹key的一个子串，如{user:}1, {user:}2，在设置�
 
 HashTag不支持嵌套，可能会使过多的key分配到同一个slot中，造成数据倾斜影响系统的吞吐量，务必谨慎使用
 
-### 1.4 配置运维
+### 1.3 配置运维
 
 - Redis Cluster只支持db0，切换会损耗新能，迁移成本高
 - 开启 lazy-free机制，减少对主线程的阻塞
@@ -295,35 +279,18 @@ HashTag不支持嵌套，可能会使过多的key分配到同一个slot中，造
 7. volatile-ttl：当内存不足以容纳新写入数据时，在设置了过期时间的key中，根据过期时间进行淘汰，越早过期的优先被淘汰
 8. oeviction：默认策略，当内存不足以容纳新写入数据时，新写入操作会报错。
 
-#### 1.4.1 Redis Cluster 只支持 db0
+
+### 1.4 集群
+Redis Cluster 只支持 db0
 
 
 
 ## 2. 命令
 
-### 2.1 键命令
+### 2.1 数据命令
 
-redis-cli -h 127.0.0.1 -p 6379
-```bash
-DEL key [key ...]       # 该命令用于在 key 存在是删除 key。
-DUMP key                # 序列化给定 key ，并返回被序列化的值。
-EXISTS key              # 检查给定 key 是否存在。
-EXPIRE key seconds      # seconds 为给定 key 设置过期时间。
-KEYS pattern            # 查找所有符合给定模式( pattern)的 key 。
-MOVE key db             # 将当前数据库的 key 移动到给定的数据库 db 当中。
-PERSIST key             # 移除 key 的过期时间，key 将持久保持。
-RENAME key newkey       # 修改 key 的名称
-RENAMENX key newkey     # 仅当 newkey 不存在时，将 key 改名为 newkey 。
-RANDOMKEY               # 从当前数据库中随机返回一个 key 。
-Type key                # 返回 key 所储存的值的类型。
-EXPIREAT key timestamp  # 设置 key 过期时间的时间戳(unix timestamp)
-TTL key                 # 以秒为单位，返回给定 key 的剩余生存时间(TTL, time to live)。
-Pttl key                # 以毫秒为单位返回 key 的剩余的过期时间。
-PEXPIREAT key milliseconds-timestamp # 设置 key 的过期时间亿以毫秒计。
-```
-
-### 2.2 String命令
-
+#### 2.1.1 String命令
+可实现：`缓存，限流，计数器，分布式锁，session共享`
 ```bash
 SETEX key seconds value          # 将值 value 关联到 key ，并将 key 的过期时间设为 seconds (以秒为单位)。
 MSETNX key value [key value ...] # 同时设置一个或多个 key-value 对，当且仅当所有给定 key 都不存在。
@@ -349,8 +316,8 @@ GETSET key value                # 将给定 key 的值设为 value ，并返回 
 MGET key [key ...]              # 获取所有(一个或多个)给定 key 的值。
 ```
 
-### 2.3 Hash命令
-
+#### 2.1.2 Hash命令
+可实现：`用户信息存储，访问量等组合查询`
 ```bash
 HMSET key field value [field value ...] # 同时将多个 field-value (域-值)对设置到哈希表 key 中。
 HMGET key field [field ...]             # 获取所有给定字段的值
@@ -367,8 +334,8 @@ HKEYS key                       # 获取所有哈希表中的字段
 HSETNX key field value          # 只有在字段 field 不存在时，设置哈希表字段的值。
 ```
 
-### 2.4 List命令
-
+#### 2.1.3 List命令
+可实现：`取最新n个，简单队列`
 ```bash
 RPOPLPUSH source destination            # 移除列表的最后一个元素，并将该元素添加到另一个列表并返回
 
@@ -391,8 +358,8 @@ RPUSHX key value                    # 为已存在的列表添加值
 LINSERT key BEFORE|AFTER pivot value # 在列表的元素前或者后插入元素
 ```
 
-### 2.5 Set命令
-
+#### 2.1.4 Set命令
+可实现：`共同好友，交集差集，踩，赞，标签`
 ```bash
 SUNION key [key ...]            # 返回所有给定集合的并集
 SCARD key                       # 获取集合的成员数
@@ -409,11 +376,10 @@ SSCAN key cursor [MATCH pattern] [COUNT count] # 迭代集合中的元素
 SDIFFSTORE destination key [key ...]            # 返回给定所有集合的差集并存储在 destination 中
 SINTERSTORE destination key [key ...]           # 返回给定所有集合的交集并存储在 destination 中
 SUNIONSTORE destination key [key ...]           # 所有给定集合的并集存储在 destination 集合中
-
 ```
 
-### 2.6 sorted set命令
-
+#### 2.1.5 Sorted Set命令
+可实现：`排行榜`
 ```bash
 ZCARD key                           # 获取有序集合的成员数
 ZSCORE key member                   # 返回有序集中，成员的分数值
@@ -434,7 +400,30 @@ ZSCAN key cursor [MATCH pattern] [COUNT count]                  # 迭代有序�
 ZADD key score member [[score member] [score member] ...]       # 向有序集合添加一个或多个成员，或者更新已存在成员的分数
 ```
 
-### 2.7 连接命令
+### 2.2 其他命令
+
+#### 2.2.1 键命令
+
+redis-cli -h 127.0.0.1 -p 6379
+```bash
+DEL key [key ...]       # 该命令用于在 key 存在是删除 key。
+DUMP key                # 序列化给定 key ，并返回被序列化的值。
+EXISTS key              # 检查给定 key 是否存在。
+EXPIRE key seconds      # seconds 为给定 key 设置过期时间。
+KEYS pattern            # 查找所有符合给定模式( pattern)的 key 。
+MOVE key db             # 将当前数据库的 key 移动到给定的数据库 db 当中。
+PERSIST key             # 移除 key 的过期时间，key 将持久保持。
+RENAME key newkey       # 修改 key 的名称
+RENAMENX key newkey     # 仅当 newkey 不存在时，将 key 改名为 newkey 。
+RANDOMKEY               # 从当前数据库中随机返回一个 key 。
+Type key                # 返回 key 所储存的值的类型。
+EXPIREAT key timestamp  # 设置 key 过期时间的时间戳(unix timestamp)
+TTL key                 # 以秒为单位，返回给定 key 的剩余生存时间(TTL, time to live)。
+Pttl key                # 以毫秒为单位返回 key 的剩余的过期时间。
+PEXPIREAT key milliseconds-timestamp # 设置 key 的过期时间亿以毫秒计。
+```
+
+#### 2.2.2 连接命令
 
 ```bash
 Ping # 查看服务是否运行
@@ -444,7 +433,7 @@ SELECT index  # 切换到指定的数据库
 AUTH password # 验证密码是否正确
 ```
 
-### 2.8 服务器命令
+#### 2.2.3 服务器命令
 
 ```bash
 redis-server --version
@@ -484,7 +473,7 @@ COMMAND INFO command-name [command-name ...]  # 获取指定 命令描述的数�
 
 ```
 
-### 2.9 脚本命令
+#### 2.2.4 脚本命令
 
 ```bash
 Script kill             # 杀死当前正在运行的 Lua 脚本。
@@ -496,7 +485,7 @@ SCRIPT EXISTS script [script ...]                   # 查看指定的脚本是�
 
 ```
 
-### 2.10 事务命令
+#### 2.2.5 事务命令
 
 ```bash
 Exec                # 执行所有事务块内的命令。
@@ -506,7 +495,7 @@ Discard             # 取消事务，放弃执行事务块内的所有命令。
 Multi               # 标记一个事务块的开始。
 ```
 
-### 2.11 HyperLogLog命令
+#### 2.2.6 HyperLogLog命令
 
 ```bash
 PFMERGE destkey sourcekey [sourcekey ...] # 将多个 HyperLogLog 合并为一个 HyperLogLog
@@ -514,7 +503,7 @@ PFADD key element [element ...] # 添加指定元素到 HyperLogLog 中。
 PFCOUNT key [key ...] # 返回给定 HyperLogLog 的基数估算值。
 ```
 
-### 2.12 发布订阅命令
+#### 2.2.7 发布订阅命令
 
 ```bash
 UNSUBSCRIBE [channel [channel ...]] # 指退订给定的频道。
@@ -525,7 +514,7 @@ PUBLISH channel message # 将信息发送到指定的频道。
 PSUBSCRIBE pattern [pattern ...] # 订阅一个或多个符合给定模式的频道。
 ```
 
-### 2.13 geo命令
+#### 2.2.8 geo命令
 
 ```bash
 GEOHASH # 返回一个或多个位置元素的 Geohash 表示
@@ -536,7 +525,9 @@ GEOADD # 将指定的地理空间位置（纬度、经度、名称）添加到�
 GEORADIUSBYMEMBER # 找出位于指定范围内的元素，中心点是由给定的位置元素决定
 ```
 
-### 2.13 redis.conf配置文件6.0
+## 3. 配置文件6.0
+
+redis.conf
 ```conf
 #指定 redis 只接收来自于该 IP 地址的请求，如果不进行设置，那么将处理所有请求 
 #bind 127.0.0.1 
@@ -810,4 +801,289 @@ rdb-save-incremental-fsync yes
 
 #默认情况下，用于清除的Jemalloc后台线程是启用的
 jemalloc-bg-thread yes
+```
+
+## 4. Lua 脚本
+
+limit.lua自定义限流
+```lua
+-- 下标从开始
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local ttl = tonumber(ARGV[2])
+local expired = tonumber(ARGV[3])
+-- 最大访问量
+local max = tonumber(ARGV[4])
+
+-- 清除过期的数据
+-- 移除指定分数区间内的所有元素，expired 即已经过期的 score
+-- 根据当前时间毫秒数 - 超时毫秒数，得到过期时间 expired
+redis.call('zremrangebyscore', key, 0, expired)
+
+-- 获取 zset 中的当前元素个数
+local current = tonumber(redis.call('zcard', key))
+local next = current + 1
+
+if next > max then
+  -- 达到限流大小 返回 0
+  return 0;
+else
+  -- 往 zset 中添加一个值、得分均为当前时间戳的元素，[value,score]
+  redis.call("zadd", key, now, now)
+  -- 每次访问均重新设置 zset 的过期时间，单位毫秒
+  redis.call("pexpire", key, ttl)
+  return next
+end
+```
+
+自定义注解
+```java
+package com.xuzhihao.shop.common.annotation;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
+
+import com.xuzhihao.shop.common.api.LimitType;
+
+/**
+ * @author Limit (Redis实现)
+ * @description 自定义限流注解
+ * @date 2020/4/8 13:15
+ */
+@Target({ ElementType.METHOD, ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+public @interface Limit {
+
+	/**
+	 * key
+	 */
+	String key() default "";
+
+	/**
+	 * 前缀
+	 */
+	String prefix() default "limit:";
+
+	/**
+	 * max 最大请求数
+	 */
+	long max() default 10;
+
+	/**
+	 * 超时时长，默认1分钟
+	 */
+	long timeout() default 1;
+
+	/**
+	 * 超时时间单位，默认 分钟
+	 */
+	TimeUnit timeUnit() default TimeUnit.MINUTES; //
+
+	/**
+	 * 限流的类型(用户自定义key 或者 请求ip)
+	 */
+	LimitType limitType() default LimitType.DEFAULT;
+}
+
+```
+
+限流类型定义
+```java
+package com.xuzhihao.shop.common.api;
+
+/**
+ * @author Redis 限流类型
+ * @date 2020/4/8 13:47
+ */
+public enum LimitType {
+
+	/**
+	 * 自定义key
+	 */
+	CUSTOMER,
+
+	/**
+	 * 请求者IP
+	 */
+	IP,
+
+	/**
+	 * UserId+Url MD5
+	 */
+	DEFAULT;
+}
+```
+
+拦截器
+```java
+package com.xuzhihao.shop.common.aspect;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.xuzhihao.shop.common.annotation.Limit;
+import com.xuzhihao.shop.common.api.CommonResult;
+import com.xuzhihao.shop.common.api.LimitType;
+import com.xuzhihao.shop.common.constant.AuthConstant;
+
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SecureUtil;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 限流切面实现
+ * 
+ * @author Administrator
+ *
+ */
+@Aspect
+@Component
+@Slf4j
+public class LimitAspect {
+	private final static String UNKNOWN = "unknown";
+	@Autowired
+	private StringRedisTemplate stringRedisTemplate;
+	@Autowired
+	private DefaultRedisScript<Long> redisScript;
+
+	@Around("@annotation(limit)")
+	public Object around(ProceedingJoinPoint joinPoint, Limit limit) throws Throwable {
+		ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		HttpServletRequest request = attributes.getRequest();
+		Object[] args = joinPoint.getArgs();
+		String key;
+		long now = Instant.now().toEpochMilli();
+		TimeUnit timeUnit = limit.timeUnit();
+		long max = limit.max();
+		long timeout = limit.timeout();
+		long ttl = timeUnit.toMillis(timeout);
+		long expired = now - ttl;
+		LimitType limitType = limit.limitType();
+		String jwtToken = request.getHeader(AuthConstant.JWT_TOKEN_HEADER);
+		switch (limitType) {
+		case IP:
+			key = getIpAddr();
+			break;
+		case CUSTOMER:
+			key = limit.key();
+			break;
+		default:
+			key = SecureUtil.md5(jwtToken + "-" + request.getRequestURL().toString() + "-" + Arrays.asList(args));
+			break;
+		}
+		Long executeTimes = stringRedisTemplate.execute(redisScript, Collections.singletonList(limit.prefix() + key),
+				now + "", ttl + "", expired + "", max + "");
+		if (executeTimes != null) {
+			if (executeTimes == 0) {
+				log.error("【{}】在单位时间 {} 毫秒内已达到访问上限，当前接口上限 {}", key, ttl, max);
+				return CommonResult.validateRepeat();
+			} else {
+				log.info("【{}】在单位时间 {} 毫秒内访问 {} 次", key, ttl, executeTimes);
+
+			}
+		}
+		return joinPoint.proceed();
+	}
+
+	/**
+	 * 获取IP地址 使用Nginx等反向代理软件， 则不能通过request.getRemoteAddr()获取IP地址
+	 * 如果使用了多级反向代理的话，X-Forwarded-For的值并不止一个，而是一串IP地址，X-Forwarded-For中第一个非unknown的有效IP字符串，则为真实IP地址
+	 */
+	public static String getIpAddr() {
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		String ip = null;
+		try {
+			ip = request.getHeader("x-forwarded-for");
+			if (StrUtil.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+				ip = request.getHeader("Proxy-Client-IP");
+			}
+			if (StrUtil.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+				ip = request.getHeader("WL-Proxy-Client-IP");
+			}
+			if (StrUtil.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+				ip = request.getHeader("HTTP_CLIENT_IP");
+			}
+			if (StrUtil.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+				ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+			}
+			if (StrUtil.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+				ip = request.getRemoteAddr();
+			}
+		} catch (Exception e) {
+			log.error("IPUtils ERROR ", e);
+		}
+		// 使用代理，则获取第一个IP地址
+		if (!StrUtil.isEmpty(ip) && ip.length() > 15) {
+			if (ip.indexOf(StrUtil.COMMA) > 0) {
+				ip = ip.substring(0, ip.indexOf(StrUtil.COMMA));
+			}
+		}
+		return ip;
+	}
+
+}
+```
+
+功能使用
+```java
+/**
+ * 
+ * 商品管理Controller
+ */
+@RestController
+@Api(tags = "ProductController", description = "商品管理")
+@RequestMapping("/product")
+@Slf4j
+public class ProductController {
+	private static final AtomicInteger ATOMIC_INTEGER_1 = new AtomicInteger();
+	private static final AtomicInteger ATOMIC_INTEGER_2 = new AtomicInteger();
+	private static final AtomicInteger ATOMIC_INTEGER_3 = new AtomicInteger();
+	@ApiLogs
+	@ApiOperation("查询商品")
+	@RequestMapping(value = "/list", method = RequestMethod.GET)
+	public String list() {
+		log.info(System.currentTimeMillis() + "-查询商品");
+		return System.currentTimeMillis() + "商品";
+	}
+	
+	@Limit
+	@GetMapping("/limitTest1")
+	public CommonResult<Integer> testLimiter1(@RequestParam String id) {
+		return CommonResult.success(ATOMIC_INTEGER_1.incrementAndGet());
+	}
+
+	@Limit(key = "customer_limit_test", limitType = LimitType.CUSTOMER)
+	@GetMapping("/limitTest2")
+	public CommonResult<Integer> testLimiter2(@RequestParam String id) {
+		return CommonResult.success(ATOMIC_INTEGER_2.incrementAndGet());
+	}
+
+	@Limit(limitType = LimitType.IP)
+	@GetMapping("/limitTest3")
+	public CommonResult<Integer> testLimiter3(@RequestParam String id) {
+		return CommonResult.success(ATOMIC_INTEGER_3.incrementAndGet());
+	}
+}
 ```

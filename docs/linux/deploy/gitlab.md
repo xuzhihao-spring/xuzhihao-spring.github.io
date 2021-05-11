@@ -43,55 +43,55 @@ firewall-cmd --list-ports
 - 访问地址：[http://192.168.3.200:1080/](http://192.168.3.200:1080/)
 - 由于Gitlab启动比较慢，需要耐心等待10分钟左右，如果Gitlab没有启动完成访问，会出现如下错误。
 
-![](../images/deploy/gitlab/gitlab_screen_04.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_04.png)
 - 可以通过docker命令动态查看容器启动日志来知道gitlab是否已经启动完成。
 ```bash
 docker logs gitlab -f
 ```
 
-![](../images/deploy/gitlab/gitlab_screen_05.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_05.png)
 
 
 ## 2. Gitlab的使用
 
 ### 2.1 Gitlab启动完成后第一次访问，会让你重置root帐号的密码
-![](../images/deploy/gitlab/gitlab_screen_06.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_06.png)
 
 ### 2.2 重置完成后输入帐号密码登录
-![](../images/deploy/gitlab/gitlab_screen_07.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_07.png)
 
 ### 2.3 选择创建项目、创建组织、创建帐号
-![](../images/deploy/gitlab/gitlab_screen_08.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_08.png)
 
 ### 2.4 创建组织
 首先我们需要创建一个组织，然后在这个组织下分别创建用户和项目，这样同组织的用户就可以使用该组织下的项目了。
-![](../images/deploy/gitlab/gitlab_screen_09.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_09.png)
 
 ### 2.5 创建用户并修改密码
 
 #### 2.5.1 找到添加用户的按钮
 
-![](../images/deploy/gitlab/gitlab_screen_10.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_10.png)
 
 #### 2.5.2 输入用户名密码添加用户
 
-![](../images/deploy/gitlab/gitlab_screen_11.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_11.png)
 
 #### 2.5.3 在编辑界面中修改用户密码
 
-![](../images/deploy/gitlab/gitlab_screen_12.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_12.png)
 
-![](../images/deploy/gitlab/gitlab_screen_13.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_13.png)
 
 ### 2.6 创建项目并添加README文件
 
-![](../images/deploy/gitlab/gitlab_screen_14.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_14.png)
 
-![](../images/deploy/gitlab/gitlab_screen_15.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_15.png)
 
 ### 2.7 将用户分配到组织
 
-![](../images/deploy/gitlab/gitlab_screen_16.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_16.png)
 
 ## 3. Git客户端安装及使用
 
@@ -100,16 +100,16 @@ docker logs gitlab -f
 - 下载地址：https://github.com/git-for-windows/git/releases/download/v2.23.0.windows.1/Git-2.23.0-64-bit.exe
 - 下载完成后，一路点击Next安装即可。
 
-![](../images/deploy/gitlab/gitlab_screen_01.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_01.png)
 
 ### 3.2 clone项目
 
 - 找到项目clone的地址：
 
-![](../images/deploy/gitlab/gitlab_screen_17.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_17.png)
 - 打开Git命令行工具：
   
-![](../images/deploy/gitlab/gitlab_screen_18.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_18.png)
 - 执行以下命令clone项目到本地：
 
 ```bash
@@ -133,13 +133,13 @@ git commit -m "first commit"
 ```bash
 git push
 ```
-![](../images/deploy/gitlab/gitlab_screen_19.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_19.png)
 
 ### 3.5 拉取远程仓库代码
 
 - 在Gitlab上修改readme中的文件内容：
 
-![](../images/deploy/gitlab/gitlab_screen_20.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_20.png)
 - 拉取代码：
  ```bash
 git pull
@@ -153,7 +153,7 @@ git checkout -b dev
 # 将新创建的dev分支推送到远程仓库
 git push origin dev
 ```
-![](../images/deploy/gitlab/gitlab_screen_21.png)
+![](../../images/linux/deploy/gitlab/gitlab_screen_21.png)
 
 ### 3.7 其他常用命令
 

@@ -1,11 +1,6 @@
 # 参考
 
 - https://www.cnblogs.com/dolphin0520/p/3932921.html 线程池原理
-- https://www.jianshu.com/p/e233bb37d2e6 CountDownLatch
-- https://www.jianshu.com/p/333fd8faa56e CyclicBarrier
-- https://www.pianshen.com/article/2095303863/ Java并发工具CyclicBarrier的用法及实现原理
-- https://www.jianshu.com/p/ec637f835e08 Semaphore
-- https://cloud.tencent.com/developer/article/1770379 Semaphore
 - https://blog.csdn.net/no_game_no_life_/article/details/106100813 线程切换
 - https://blog.csdn.net/m0_37135421/article/details/80842085 Threadlocal源码分析
 - https://blog.csdn.net/java_lyvee/article/details/98966684 aqs跟随大师
@@ -25,7 +20,6 @@
 - https://www.jianshu.com/p/1ae227e6af61 深入理解DirectBuffer
 - https://www.bilibili.com/video/BV1f4411y7TJ?p=10 AQS精华
 - https://www.yuque.com/hmohvc/ld4gy3/eib6v1 ts学习
-- https://blog.csdn.net/u010559460/article/details/104888699 springboot2 国际化
 
 
 ## 简介

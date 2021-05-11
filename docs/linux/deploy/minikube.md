@@ -102,6 +102,3 @@ kubectl proxy --port=44469 --address='192.168.3.200' --accept-hosts='^.*' &
 http://192.168.3.200:44469/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
 
 ```
-- 查看K8S集群中的资源状态信息
-
-![](../images/deploy/minikube/kubernetes-dashboard.png)

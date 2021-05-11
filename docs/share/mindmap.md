@@ -1,5 +1,6 @@
 
 JVM底层原理
+ * [算法函数](share/function.md)
  * [JVM内存模型](/share/jvm/index.md?id=_1-jvm内存模型)
  * [M垃圾收集机制](/share/jvm/index.md?id=_2-垃圾收集机制详解)
  * [垃圾收集算法](/share/jvm/index.md?id=_3-垃圾收集算法详解)
@@ -66,11 +67,11 @@ JVM底层原理
  * [服务网格Service Mesh](/share/microservice/servicemesh)
 
 数据库原理调优
- * [Redis](/linux/redis.md)
+ * [Redis](/linux/database/redis.md)
  * [MongoDB](/share/database/mongodb)
  * [Mysql](/share/database/mysql)
  * [Oracle](/share/database/oracle)
- * [Mycat](/deploy/mycat)
+ * [Mycat](/share/database/mycat)
  * [ShardingSphere](/share/database/shardingsphere)
  * [DBLE](/share/database/dble)
  * [分布式数据库OceanBase](/share/database/oceanbase)

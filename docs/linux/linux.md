@@ -17,7 +17,8 @@ apt-get install -y vim
 apt-get --reinstall install python-minimal
 
 lsof -i:80
-echo -n 'admin' | base64
+iostat -mx 5 -t >>vmdisk.log  # 监控磁盘读写
+echo -n 'admin' | base64      # 生成base64编码
 ps -ef | grep xxx             # 查看启动进程参数
 netstat -tunlp | grep 8080    # 端口占用查看
 find / -type f -size +100M    # 查找大文件

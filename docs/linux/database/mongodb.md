@@ -1,16 +1,10 @@
-# MongoDB客户端工具Robo 3T
+# MongoDB
 
-## 1. 介绍
-Robo 3T 由MongoDB客户端Studio 3T的开发人员维护和提供。以前，Robo 3T被称为Robomongo。它也是适用于Windows，MacOS和Linux的跨平台MongoDB GUI管理工具。它具有相同的引擎和环境，是MongoDB shell（3.2）的一部分
+Robo 3T下载地址：https://robomongo.org/download
 
-## 2. 资源下载
-下载地址：https://robomongo.org/download
+## 1. 客户端工具
 
-## 3. 客户端工具
-创建一个到MongoDB的连接
-![](../images/tools/robo3t/mongodb_start_09.png)
-
-> MongoDB是非关系型数据库当中最像关系型数据库的，所以我们通过它与关系型数据库的对比，来了解下它的概念。
+> MongoDB是非关系型数据库当中最像关系型数据库的，通过它与关系型数据库的对比来看下概念。
 
 | SQL概念     | MongoDB概念 | 解释/说明                           |
 | :---------- | :---------- | :---------------------------------- |
@@ -21,7 +15,7 @@ Robo 3T 由MongoDB客户端Studio 3T的开发人员维护和提供。以前，Ro
 | index       | index       | 索引                                |
 | primary key | primary key | 主键,MongoDB自动将_id字段设置为主键 |
 
-### 3.1 数据库操作
+### 1.1 数据库操作
 
 - 创建数据库，使用`use`命令去创建数据库，当插入第一条数据时会创建数据库，例如创建一个`test`数据库；
 
@@ -48,7 +42,7 @@ config  0.000GB
 local   0.000GB
 ```
 
-### 3.2 集合操作
+### 1.2 集合操作
 
 - 创建集合，使用db对象中的`createCollection()`方法来创建集合，例如创建一个`article`集合；
 
@@ -69,11 +63,11 @@ true
 > show collections
 ```
 
-## 4. 文档操作
+## 2. 文档操作
 
 > 上面的数据库和集合操作是在MongoDB的客户端中进行的，下面的文档操作都是在Robomongo中进行的。
 
-### 4.1 插入文档
+### 2.1 插入文档
 
 - MongoDB通过collection对象的`insert()`方法向集合中插入文档，语法如下；
 
@@ -115,7 +109,7 @@ db.article.find({})
 }
 ```
 
-### 4.2 更新文档
+### 2.2 更新文档
 
 - MongoDB通过collection对象的`update()`来更新集合中的文档，语法如下；
 
@@ -161,7 +155,7 @@ db.article.save({
     "likes" : 100.0
 })
 ```
-### 4.3 删除文档
+### 2.3 删除文档
 
 - MongoDB通过collection对象的`remove()`方法来删除集合中的文档，语法如下；
 
@@ -182,7 +176,7 @@ db.collection.remove(
 db.article.remove({'title':'MongoDB 教程'})
 ```
 
-### 4.4 查询文档
+### 2.4 查询文档
 
 - MongoDB通过collection对象的`find()`方法来查询文档，语法如下；
 
@@ -285,9 +279,9 @@ db.article.find({$or:[{"title":"Redis 教程"},{"title": "MongoDB 教程"}]})
 db.article.find({"likes": {$gt:50}, $or: [{"title": "Redis 教程"},{"title": "MongoDB 教程"}]})
 ```
 
-## 5. 其他操作
+## 3. 其他操作
 
-### 5.1 Limit与Skip操作
+### 3.1 Limit与Skip操作
 
 - 读取指定数量的文档，可以使用`limit()`方法，语法如下；
 
@@ -313,7 +307,7 @@ db.collection.find().limit(NUMBER).skip(NUMBER)
 db.article.find().limit(2).skip(1)
 ```
 
-### 5.2 排序
+### 3.2 排序
 
 - 在MongoDB中使用`sort()`方法对数据进行排序，`sort()`方法通过参数来指定排序的字段，并使用1和-1来指定排序方式，1为升序，-1为降序；
 
@@ -327,7 +321,7 @@ db.collection.find().sort({KEY:1})
 db.article.find().sort({likes:-1})
 ```
 
-### 5.3 索引
+### 3.3 索引
 
 - 索引通常能够极大的提高查询的效率，如果没有索引，MongoDB在读取数据时必须扫描集合中的每个文件并选取那些符合查询条件的记录。
 
@@ -376,7 +370,7 @@ db.article.getIndexes()
 ]
 ````
 
-### 5.4 聚合
+### 3.4 聚合
 
 - MongoDB中的聚合使用`aggregate()`方法，类似于SQL中的group by语句，语法如下；
 
@@ -433,7 +427,7 @@ db.article.aggregate([{$group : {_id : "$by", avg_likes : {$avg : "$likes"}}}])
 }
 ```
 
-### 5.5 正则表达式
+### 3.5 正则表达式
 
 - MongoDB使用`$regex`操作符来设置匹配字符串的正则表达式，可以用来模糊查询，类似于SQL中的like操作；
 
