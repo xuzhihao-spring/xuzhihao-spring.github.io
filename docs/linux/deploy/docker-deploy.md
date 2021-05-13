@@ -712,11 +712,47 @@ docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_
 ## 30. Prometheus
 
 ```bash
-mkdir /opt/prometheus    
-cd /opt/prometheus/
-vim prometheus.yml
+docker pull prom/prometheus
+docker pull prom/node-exporter
+docker pull grafana/grafana
 ```
 
+docker-compose-prometheus.yml
+```yml
+version: '2'
+services:
+####################prometheus###############
+  prometheus:
+    image: "prom/prometheus"
+    hostname: prometheus
+    container_name: prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - /mydata/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: always
+
+###############node-exporter###############
+  node-exporter:
+    image: "prom/node-exporter"
+    hostname: node-exporter
+    container_name: node-exporter
+    ports:
+      - '9100:9100'
+    volumes:
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    restart: always
+    network_mode: host
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+```
+
+prometheus.yml
 ```yml
 global:
   scrape_interval:     60s
@@ -729,26 +765,14 @@ scrape_configs:
         labels:
           instance: prometheus
  
+  - job_name: linux
+    static_configs:
+      - targets: ['172.17.17.201:9100']
 ```
 
 ```bash
-mkdir /opt/prometheus/data 
-chmod 777 -R /opt/prometheus
+docker-compose -f docker-compose-prometheus.yml up -d  
 ```
-
-```bash
-docker run  -d \
-  -p 9090:9090 \
-  -v /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
-  -v /opt/prometheus/data:/prometheus \
-  prom/prometheus \
-  --config.file=/etc/prometheus/prometheus.yml \
-  --storage.tsdb.retention.time=100d
-```
-
-localhost:9090/graph
-
-localhost:9090/metrics
 
 ## 31. Grafana
 
