@@ -1,4 +1,3 @@
-
 # Prometheus+Grafana
 
 ## 1. 下载
@@ -7,15 +6,13 @@ Prometheus是由SoundCloud开发的开源监控报警系统和时序列数据库
 
 https://grafana.com/grafana/dashboards?dataSource=prometheus
 
-Prometheus 下载地址：https://prometheus.io/download/
-
-Grafana 下载地址：https://grafana.com/grafana/download
-
-node_exporter 下载地址：https://prometheus.io/download/#node_exporter
+- Prometheus 下载地址：https://prometheus.io/download/
+- Grafana 下载地址：https://grafana.com/grafana/download
+- node_exporter 下载地址：https://prometheus.io/download/#node_exporter
 
 ## 2. 安装
 
-### 2.1 安装Prometheus
+### 2.1 Prometheus
 
 ```bash
 tar zxvf prometheus-2.27.0.linux-amd64.tar.gz
@@ -23,7 +20,7 @@ cd prometheus-2.27.0.linux-amd64/
 curl localhost:9090
 ```
 
-### 2.2 安装Grafana
+### 2.2 Grafana
 
 ```bash
 wget https://dl.grafana.com/oss/release/grafana-7.3.7-1.x86_64.rpm
@@ -33,7 +30,7 @@ systemctl enable grafana-server.service
 curl localhost:3000
 ```
 
-### 2.3 安装node_exporter
+### 2.3 node_exporter
 
 ```bash
 curl -OL https://github.com/prometheus/node_exporter/releases/download/v1.1.2/node_exporter-1.1.2.linux-amd64.tar.gz
@@ -42,6 +39,32 @@ cd node_exporter-1.1.2.linux-amd64
 cp node_exporter-1.1.2.linux-amd64/node_exporter /usr/local/bin/
 node_exporter
 ```
+
+### 2.4 cadvisor
+
+docker-compose-cadvisor.yml
+```yml
+version: '2'
+services:
+  cadvisor:
+    image: "google/cadvisor:v0.32.0"
+    hostname: cadvisor
+    container_name: cadvisor
+    ports:
+      - '18080:8080'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: always
+```
+
+```bash
+docker-compose -f docker-compose-cadvisor.yml up -d  
+```
+
+
 
 ## 3. prometheus.yml配置文件
 
@@ -78,26 +101,4 @@ scrape_configs:
     - targets: ['192.168.3.201:9100']
       labels:
         instance: Linux
-```
-
-## node_exporter安装
-
-```
-#创建目录
-mkdir -p /opt/exporter
-cd /opt/exporter
-#下载安装包
-wget https://github.com/prometheus/node_exporter/releases/download/v0.14.0/node_exporter-0.14.0.linux-amd64.tar.gz
-wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-arm64.tar.gz
-#解压
-tar -xvzf  node_exporter-0.14.0.linux-amd64.tar.gz
-#修改名称
-mv node_exporter-0.14.0.linux-amd64 node_exportercd /opt/exporter/node_exporter
-#修改权限
-chmod 777 node_exporter
-#启动服务
-nohup /opt/exporter/node_exporter/node_exporter &
-#访问
-curl http://IP:9100/metrics
-```
 ```
