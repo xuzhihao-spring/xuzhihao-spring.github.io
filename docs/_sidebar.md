@@ -14,9 +14,7 @@
   * [PostgreSQL](linux/database/postgre.md)
   * [MySQL](linux/database/mysql.md)
   * [Redis](linux/database/redis.md)
-  * [InfluxDB ](linux/database/influxdb.md)
   * [MongoDB](linux/database/mongodb.md)
-  * [CouchDB ](linux/database/couchdb.md)
 
 * 系统部署
   * [基于Docker部署](linux/deploy/docker-deploy.md)
