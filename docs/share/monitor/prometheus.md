@@ -17,6 +17,7 @@ https://grafana.com/grafana/dashboards?dataSource=prometheus
 ```bash
 tar zxvf prometheus-2.27.0.linux-amd64.tar.gz
 cd prometheus-2.27.0.linux-amd64/
+./prometheus --config.file="/usr/local/prometheus/prometheus.yml" &
 curl localhost:9090
 ```
 
@@ -35,12 +36,29 @@ curl localhost:3000
 ```bash
 curl -OL https://github.com/prometheus/node_exporter/releases/download/v1.1.2/node_exporter-1.1.2.linux-amd64.tar.gz
 tar -xzf node_exporter-1.1.2.linux-amd64.tar.gz
-cd node_exporter-1.1.2.linux-amd64
 cp node_exporter-1.1.2.linux-amd64/node_exporter /usr/local/bin/
 node_exporter
+lsof -i:9100
 ```
 
-### 2.4 cadvisor
+https://grafana.com/grafana/dashboards/8919
+
+### 2.4 mysqld_exporter
+
+```sql
+CREATE USER 'mysqld_exporter'@'localhost' IDENTIFIED BY '123456' WITH MAX_USER_CONNECTIONS 3;
+GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'mysqld_exporter'@'localhost';
+flush privileges;
+```
+
+```bash
+docker pull prom/mysqld-exporter
+docker run -d -p 9104:9104 --network mydata_default --link=mysql:mysql -e DATA_SOURCE_NAME="mysqld_exporter:123456@(mysql:3306)/mysql" prom/mysqld-exporter
+```
+
+https://grafana.com/grafana/dashboards/7362
+
+### 2.5 容器监控cAdvisor
 
 docker-compose-cadvisor.yml
 ```yml
@@ -63,8 +81,6 @@ services:
 ```bash
 docker-compose -f docker-compose-cadvisor.yml up -d  
 ```
-
-
 
 ## 3. prometheus.yml配置文件
 
@@ -94,11 +110,25 @@ scrape_configs:
     # metrics_path defaults to '/metrics'
     # scheme defaults to 'http'.
     static_configs:
-    - targets: ['localhost:9090']
-
-  - job_name: 'Linux'
+      - targets: ['localhost:9090']
+        labels:
+          instance: prometheus
+        
+  - job_name: linux
     static_configs:
-    - targets: ['192.168.3.201:9100']
-      labels:
-        instance: Linux
+      - targets: ['172.17.17.201:9100','172.17.17.200:9100']
+        labels:
+          instance: Linux
+
+  - job_name: docker
+    static_configs:
+      - targets: ['172.17.17.80:18080']
+        labels:
+          instance: docker18
+      
+  - job_name: mysql
+    static_configs:
+      - targets: ['172.17.17.80:9104']
+        labels:
+          instance: mysql8
 ```

@@ -6,8 +6,6 @@
 * Linux
   * [Linux](linux/linux.md)
   * [Docker](linux/docker.md)
-  * [Kubernetes](linux/kubernetes.md)
-  * [NodeJS](linux/node.md)
   * [Windows](linux/windows.md)
 
 * 数据库
@@ -18,8 +16,10 @@
   * [MongoDB](linux/database/mongodb.md)
 
 * 系统部署
-  * [基于Docker部署](linux/deploy/docker-deploy.md)
-  * [Minikube安装](linux/deploy/minikube.md)
+  * [Docker镜像](linux/deploy/docker-deploy.md)
+  * [Kubernetes](linux/deploy/kubernetes.md)
+  * [Minikube](linux/deploy/minikube.md)
+  * [Prometheus+Grafana](share/monitor/prometheus)
   * [Nginx配置HTTPS](linux/deploy/nginx_https.md)
   * [Gitlab搭建](linux/deploy/gitlab.md)
   * [Zabbix安装](linux/deploy/zabbix5.0.md)
