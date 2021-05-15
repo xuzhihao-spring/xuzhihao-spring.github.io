@@ -36,7 +36,8 @@ nginx['listen_port'] = 82
 4. 重载配置及启动gitlab添加到防火墙
 
 ```bash
-gitlab-ctl reconfigure<br>gitlab-ctl restart
+gitlab-ctl reconfigure
+gitlab-ctl restart
 firewall-cmd --zone=public --add-port=82/tcp --permanent
 firewall-cmd --reload
 ```

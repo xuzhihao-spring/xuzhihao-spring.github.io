@@ -1,5 +1,4 @@
 * 序章
-  * [技术栈](share/framework.md)
   * [学习路线](share/mindmap.md)
   * [开发手册](share/coding_guidelines.md)
 
