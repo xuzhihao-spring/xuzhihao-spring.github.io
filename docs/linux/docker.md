@@ -35,9 +35,12 @@ docker-compose -v
 {
     "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
     "insecure-registries": ["192.168.3.200:5000"],
-    "exec-opts":["native.cgroupdriver=systemd"]
+    "exec-opts":["native.cgroupdriver=systemd"],
+    "data-root": "/data/docker"
 }
-sudo systemctl daemon-reload
+
+mv /var/lib/docker /data # images位置迁移
+sudo systemctl daemon-reload 
 sudo systemctl restart docker 
 ```
 

@@ -1,6 +1,6 @@
 # Linux
 
-## 1. 基础命令
+## 1. 常用命令
 ```bash
 ntpdate time.nist.gov
 ntpdate pool.ntp.org                           # 同步时间
@@ -53,7 +53,26 @@ vim /etc/profile
 export http_proxy=http://127.0.0.1:7890
 export https_proxy=http://127.0.0.1:7890
 source /etc/profile
+
+# 断电处理
+ls /dev/mapper
+xfs_repair /dev/mapper/rhel-root -L
+reboot
+
+# 磁盘挂载
+sudo fdisk -l              # 查看磁盘空间
+fdisk /dev/sdb             # 磁盘分区
+m/n/p/1/w
+sudo mkfs.ext4 /dev/sdb1   # 格式化磁盘分区
+sudo mkdir /data           # 创建挂载点
+sudo mount -t ext4 /dev/sdb1 /data   # 磁盘挂载到 /data
+df -h
+
+sudo vim /etc/fstab        # 自动挂载
+/dev/sdb1 /data ext4 errors=remount-ro 0 1
 ```
+
+
 
 ## 2. 脚本
 
