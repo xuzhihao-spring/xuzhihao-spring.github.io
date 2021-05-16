@@ -267,7 +267,7 @@ services:
     ports:
       - 27017:27017
   nacos-registry:
-    image: nacos/nacos-server:1.3.0
+    image: nacos/nacos-server:2.0.1
     container_name: nacos-registry
     environment:
       - "MODE=standalone"

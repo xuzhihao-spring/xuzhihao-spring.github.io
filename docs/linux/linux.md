@@ -34,7 +34,7 @@ yum install -y wget         # 远程下载
 yum -y install curl
 tar –zcvf jpg.tar *.jpg     # 压缩
 tar –xvf file.tar           # 解压
-rpm -qa | grep jdk                  # 查找程序
+rpm -qa | grep openssh              # 查找程序
 rpm -e --nodeps java-1.6.0          # 删除程序
 nohup sh /data/kh_shell/jb.sh &     # 重新执行数据库
 
@@ -43,7 +43,7 @@ systemctl restart firewalld.service   # 重启firewall
 systemctl stop firewalld.service      # 关闭firewall
 systemctl status firewalld.service    # 查看防火墙状态
 systemctl disable firewalld.service   # 禁止firewall随系统启动
-systemctl enable firewalld.service    # firewall随系统启动
+systemctl enable sshd.service         # openssh随系统启动
 firewall-cmd --zone=public --add-port=80/tcp --permanent # 开放端口
 firewall-cmd --reload
 systemctl enable iptables

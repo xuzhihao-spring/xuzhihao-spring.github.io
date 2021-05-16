@@ -6,7 +6,6 @@
 yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 yum install docker-ce
 yum install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7 -y
-systemctl start docker
 chkconfig docker on
 systemctl start docker
 
@@ -27,10 +26,33 @@ sudo systemctl restart docker
 ## 2. Fastdfs
 
 ```bash
+docker run -ti -d --name trakcer -v /mydata/tracker_data:/fastdfs/tracker/data --net=host season/fastdfs tracker
+docker run -ti --name storage  \
+  -v /mydata/storage_data:/fastdfs/storage/data  \
+  -v /mydata/store_path:/fastdfs/store_path  \
+  --net=host  \
+  -e TRACKER_SERVER:192.168.3.200:22122  \
+  season/fastdfs storage
+```
+
+```bash
 netstat -unltp | grep fdfs  #检测fdfs
 docker run -dti --network=host --name tracker -v /mydata/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
 docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /mydata/fdfs/storage:/var/fdfs delron/fastdfs storage
 ```
+
+一体安装
+```bash
+docker run \
+	--net=host \
+	--name=fastdfs \
+	-e IP=192.168.3.200 \
+	-e WEB_PORT=80 \
+	-v /mydata/fdfs:/var/local/fdfs \
+	-d registry.cn-beijing.aliyuncs.com/tianzuo/fastdfs
+```
+
+
 ## 3. Zookeeper
 
 ```bash
@@ -228,23 +250,10 @@ docker run -p 80:80 --name nginx \
 -d nginx:1.10
 ```
 
-- 将容器内的配置文件拷贝到指定目录：
-
 ```bash
-docker container cp nginx:/etc/nginx /mydata/nginx/
-```
-
-- 修改文件名称：
-
-```bash
-mv /mydata/nginx/nginx /mydata/nginx/conf
-```
-
-- 终止并删除容器：
-
-```bash
-docker stop nginx
-docker rm nginx
+docker container cp nginx:/etc/nginx /mydata/nginx/ # 将容器内的配置文件拷贝到指定目录
+mv /mydata/nginx/nginx /mydata/nginx/conf           # 修改文件
+docker rm -f nginx
 ```
 
 - 使用如下命令启动Nginx服务：
