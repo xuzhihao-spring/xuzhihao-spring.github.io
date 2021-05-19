@@ -46,45 +46,47 @@ sudo systemctl restart docker
 
 ## 3. 命令
 ```bash
-#容器信息
-docker version              #查看docker容器版本
-docker info                 #查看docker容器信息
-docker --help               #查看docker容器帮助
-docker info | grep Cgroup   #查看驱动
+# 容器信息
+docker version              # 查看docker容器版本
+docker info                 # 查看docker容器信息
+docker --help               # 查看docker容器帮助
+docker info | grep Cgroup   # 查看驱动
 
-#镜像操作
-docker images                   #查看镜像
-docker rmi [imageid]            #删除镜像
-docker rmi $(docker images -q)  #删除本地所有镜像
-docker inspect                  #容器IP查询/镜像元数据
-docker history                  #构建历史
+# 镜像操作
+docker images                   # 查看镜像
+docker rmi [imageid]            # 删除镜像
+docker rmi $(docker images -q)  # 删除本地所有镜像
+docker inspect                  # 容器IP查询/镜像元数据
+docker history                  # 构建历史
+docker save -o logstash_7.6.2.tar logstash:7.6.2 # 镜像备份
+docker load -i logstash_7.6.2.tar                # 镜像导入
 
-#容器操作
-docker ps -a|-q|-l              #查看容器
+# 容器操作
+docker ps -a|-q|-l              # 查看容器
 docker inspect nodered | grep Mounts -A 20  # 查看容器映射目录
 docker restart [containerid]
 docker stop [containerid]
 docker start [containerid]
-docker start $(docker ps -a -q)  #启动所有容器
+docker start $(docker ps -a -q)  # 启动所有容器
 docker rmi -f $(docker images -qa)
-docker rm [containerid]          #删除容器
+docker rm [containerid]          # 删除容器
 docker rmi $(docker images | grep "none" | awk '{print $3}')    #删除none的镜像
-docker stats [containerid]       #监控
-docker stats $(docker ps -a -q)  #监控所有容器
-docker stats --no-stream=true $(docker ps -a -q)        #监控所有容器当前
-docker container update --restart=always [containerid]  #容器自动启动
-docker update --restart=always $(docker ps -q -a)       #更新所有容器启动时自动启动
+docker stats [containerid]       # 监控
+docker stats $(docker ps -a -q)  # 监控所有容器
+docker stats --no-stream=true $(docker ps -a -q)        # 监控所有容器当前
+docker container update --restart=always [containerid]  # 容器自动启动
+docker update --restart=always $(docker ps -q -a)       # 更新所有容器启动时自动启动
 docker-compose -f docker-compose-env.yml up -d  
 
-#容器进入
+# 容器进入
 docker exec -it [containerid] /bin/bash
-docker run --net=host           #host模式执行容器，使用主机网络堆栈.因此无法将端口暴露给主机,因为它是主机
+docker run --net=host           # host模式执行容器，使用主机网络堆栈.因此无法将端口暴露给主机,因为它是主机
 
-#容器日志
-docker logs -t --since="2018-02-08T13:23:37" [containerid]          #查看某时间之后的日志
-docker logs -f -t --since="2018-02-08" --tail=100 [containerid]     #查看指定时间后的日志，只显示最后100行
-docker logs --since 30m [containerid]                               #查看最近30分钟的日志
-docker logs -t --since="2018-02-08T13:23:37" --until "2018-02-09T12:23:37" [containerid]  #查看某时间段日志
+# 容器日志
+docker logs -t --since="2018-02-08T13:23:37" [containerid]          # 查看某时间之后的日志
+docker logs -f -t --since="2018-02-08" --tail=100 [containerid]     # 查看指定时间后的日志，只显示最后100行
+docker logs --since 30m [containerid]                               # 查看最近30分钟的日志
+docker logs -t --since="2018-02-08T13:23:37" --until "2018-02-09T12:23:37" [containerid]  # 查看某时间段日志
 
 #容器与主机间的数据拷贝
 docker cp rabbitmq:/[container_path] [local_path]   # 将rabbitmq容器中的文件copy至本地路径
