@@ -1,6 +1,8 @@
-# Docker镜像
+# Docker
 
-## 1. Docker
+## 1. 容器
+
+### docker
 
 ```bash
 yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
@@ -23,49 +25,7 @@ sudo systemctl daemon-reload
 sudo systemctl restart docker
 ```
 
-## 2. Fastdfs
-
-```bash
-docker run -ti -d --name trakcer -v /mydata/tracker_data:/fastdfs/tracker/data --net=host season/fastdfs tracker
-docker run -ti --name storage  \
-  -v /mydata/storage_data:/fastdfs/storage/data  \
-  -v /mydata/store_path:/fastdfs/store_path  \
-  --net=host  \
-  -e TRACKER_SERVER:192.168.3.200:22122  \
-  season/fastdfs storage
-```
-
-```bash
-netstat -unltp | grep fdfs  #检测fdfs
-docker run -dti --network=host --name tracker -v /mydata/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
-docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /mydata/fdfs/storage:/var/fdfs delron/fastdfs storage
-```
-
-一体安装
-```bash
-docker run \
-	--net=host \
-	--name=fastdfs \
-	-e IP=192.168.3.200 \
-	-e WEB_PORT=80 \
-	-v /mydata/fdfs:/var/local/fdfs \
-	-d registry.cn-beijing.aliyuncs.com/tianzuo/fastdfs
-```
-
-
-## 3. Zookeeper
-
-```bash
-docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
-```
-
-## 4. Dubbo-admin
-
-```bash
-docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 -e dubbo.admin.root.password=root -e dubbo.admin.guest.password=guest chenchuxin/dubbo-admin 
-```
-
-## 5. Portainer
+### portainer
 
 ```bash
 docker run -p 9000:9000 -p 8000:8000 --name portainer \
@@ -85,157 +45,7 @@ systemctl restart docker #重启docker
 ![](../../images/linux/deploy/docker/5.portainer.png)
 
 
-## 6. MinIO
-默认Access Key和Secret都是minioadmin
-
-```bash
-docker run -p 9090:9000 --name minio \
-  -v /mydata/minio/data:/data \
-  -v /mydata/minio/config:/root/.minio \
-  -d minio/minio server /data
-```
-
-## 7. Nginx-fancyindex
-
-```bash
-docker run -d \
-  -p 8083:80 \
-  -p 8084:443 \
-  -e HTTP_AUTH="off" \
-  -e HTTP_USERNAME="admin" \
-  -e HTTP_PASSWD="admin" \
-  -v /home/my-files:/app/public \
-  --restart unless-stopped \
-  --mount type=tmpfs,destination=/tmp \
-  80x86/nginx-fancyindex
-```
-
-## 8. Activemq
-
-```bash
-docker run -d --name activemq -p 61616:61616 -p 8161:8161 webcenter/activemq
-```
-
-## 9. Zipkin
-
-```bash
-docker run -d --name zipkin -p  9411:9411 openzipkin/zipkin
-```
-
-## 10. Kafka
-
-```bash
-docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 --link zookeeper -e 	KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -t wurstmeister/kafka
-
-docker run -d --name kafka-manager \--link zookeeper:zookeeper \--link kafka:kafka -p 9001:9000 \--restart=always \--env ZK_HOSTS=zookeeper:2181 \sheepkiller/kafka-manager
-
-```
-
-## 11. MySQL
-
-- 下载MySQL`5.7`的docker镜像：
-
-```bash
-docker pull mysql:5.7
-```
-
-- 使用如下命令启动MySQL服务：
-
-```bash
-docker run -p 3306:3306 --name mysql \
--v /mydata/mysql/log:/var/log/mysql \
--v /mydata/mysql/data:/var/lib/mysql \
--v /mydata/mysql/conf:/etc/mysql \
--e MYSQL_ROOT_PASSWORD=root  \
--d mysql:5.7
-```
-
-- 参数说明
-  - -p 3306:3306：将容器的3306端口映射到主机的3306端口
-  - -v /mydata/mysql/conf:/etc/mysql：将配置文件夹挂在到主机
-  - -v /mydata/mysql/log:/var/log/mysql：将日志文件夹挂载到主机
-  - -v /mydata/mysql/data:/var/lib/mysql/：将数据文件夹挂载到主机
-  - -e MYSQL_ROOT_PASSWORD=root：初始化root用户的密码
-  
-- 进入运行MySQL的docker容器：
-
-```bash
-docker exec -it mysql /bin/bash
-```
-
-- 使用MySQL命令打开客户端：
-
-```bash
-mysql -uroot -proot --default-character-set=utf8
-```
-
-- 创建shop数据库：
-
-```sql
-create database shop character set utf8
-```
-
-- 安装上传下载插件，并将`document/sql/shop.sql`上传到Linux服务器上：
-
-```bash
-yum -y install lrzsz
-```
-
-- 将`shop.sql`文件拷贝到mysql容器的`/`目录下：
-
-```bash
-docker cp /mydata/shop.sql mysql:/
-```
-
-- 将sql文件导入到数据库：
-
-```bash
-use shop;
-source /shop.sql;
-```
-
-- 创建一个`reader:123456`帐号并修改权限，使得任何ip都能访问：
-
-```sql
-grant all privileges on *.* to 'reader' @'%' identified by '123456';
-```
-
-## 12. Redis
-
-- 下载Redis`5.0`的docker镜像：
-
-```bash
-docker pull redis:5
-```
-
-- 使用如下命令启动Redis服务：
-
-```bash
-docker run -p 6379:6379 --name redis \
--v /mydata/redis/data:/data \
--d redis:5 redis-server --appendonly yes
-```
-
-- 进入Redis容器使用`redis-cli`命令进行连接：
-
-```bash
-docker exec -it redis redis-cli
-```
-
-![](../../images/linux/deploy/docker/mall_linux_deploy_01.png)
-
-
-监控工具redis-stat
-
-```bash
-docker run --name redis-stat --link redis6380:redis -p 8080:63790 -d insready/redis-stat --server redis          # 容器内部自连接
-docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.168.3.200:6379 192.168.3.201:6379 # 远程集群或单机
-```
-
-
-## 13. Nginx
-
-- 下载Nginx`1.10`的docker镜像：
+### nginx
 
 ```bash
 docker pull nginx:1.10
@@ -266,17 +76,241 @@ docker run -p 80:80 -p 443:443 --name nginx \
 -d nginx:1.10
 ```
 
-## 14. RabbitMQ
+### nginx-fancyindex
 
-- 下载rabbitmq`3.7.15`的docker镜像：
+```bash
+docker run -d \
+  -p 8083:80 \
+  -p 8084:443 \
+  -e HTTP_AUTH="off" \
+  -e HTTP_USERNAME="admin" \
+  -e HTTP_PASSWD="admin" \
+  -v /home/my-files:/app/public \
+  --restart unless-stopped \
+  --mount type=tmpfs,destination=/tmp \
+  80x86/nginx-fancyindex
+```
+
+
+### rancher
+
+```bash
+mkdir -p /mydata/rancher_home/rancher
+mkdir -p /mydata/rancher_home/auditlog
+
+docker run --privileged -d --restart=unless-stopped -p 80:80 -p 443:443 \
+  -v /mydata/rancher_home/rancher:/var/lib/rancher \
+  -v /mydata/rancher_home/auditlog:/var/log/auditlog \
+  --name rancher rancher/rancher  
+
+```
+
+## 2. 数据库
+
+### mysql
+
+
+```bash
+docker pull mysql:5.7
+```
+
+- 使用如下命令启动MySQL服务：
+
+```bash
+docker run -p 3306:3306 --name mysql \
+-v /mydata/mysql/log:/var/log/mysql \
+-v /mydata/mysql/data:/var/lib/mysql \
+-v /mydata/mysql/conf:/etc/mysql \
+-e MYSQL_ROOT_PASSWORD=root  \
+-d mysql:5.7
+```
+
+- 参数说明
+  - -p 3306:3306：将容器的3306端口映射到主机的3306端口
+  - -v /mydata/mysql/conf:/etc/mysql：将配置文件夹挂在到主机
+  - -v /mydata/mysql/log:/var/log/mysql：将日志文件夹挂载到主机
+  - -v /mydata/mysql/data:/var/lib/mysql/：将数据文件夹挂载到主机
+  - -e MYSQL_ROOT_PASSWORD=root：初始化root用户的密码
+  
+### redis
+
+- 下载Redis`5.0`的docker镜像：
+
+```bash
+docker pull redis:5
+```
+
+```bash
+docker run -p 6379:6379 --name redis \
+-v /mydata/redis/data:/data \
+-d redis:5 redis-server --appendonly yes
+```
+
+监控工具redis-stat
+
+```bash
+docker run --name redis-stat --link redis6380:redis -p 8080:63790 -d insready/redis-stat --server redis          # 容器内部自连接
+docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.168.3.200:6379 192.168.3.201:6379 # 远程集群或单机
+```
+
+### mongo
+
+- 下载MongoDB`4.2.5`的docker镜像：
+
+```bash
+docker pull mongo:4.2.5
+```
+
+- 使用docker命令启动：
+
+```bash
+docker run -p 27017:27017 --name mongo \
+-v /mydata/mongo/db:/data/db \
+-d mongo:4.2.5
+```
+
+### postgres
+
+```bash
+docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
+docker run --name postgres -e POSTGRES_PASSWORD=123456 -d -p 54321:5432 -v /etc/data/pgdata:/var/lib/postgresql/data-d postgres
+默认用户：postgres 密码：POSTGRES_PASSWORD
+
+/var/lib/postgresql/data  #镜像的data目录
+/usr/lib/postgresql/??/bin #进入postgresql的工具目录
+psql -Upostgres # 连接数据库
+
+-it -d 这两个参数一般同时使用，保证 container 以交互的方式在后台运行。
+--rm 这个参数是指在 container 停止时自动将 container 删除。
+--name 你在使用 docker ps 命令时看到的 container 的名字。
+-e POSTGRES_USER=dbuser 这个是设置 container 中的环境变量用的参数，指的是设计数据库用户为 dbuser 。之后登录数据库时就是使用这个用户名。
+-e POSTGRES_PASSWORD=password 同上，也是设置 container 中的环境变量，这个是设置你登录数据库的密码，这里设置的密码为"password"。
+-e POSTGRES_DB=testdb 同上，初始化一个新的数据库，其名字为 testdb。
+-p 5432:5432 这个是将主机的端口与 container 暴露的端口进行映射。其格式为 -p 主机端口: container 端口。即 : 前为主机端口，后为 container 端口。
+-v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
+```
+
+### tdengine
+
+```bash
+docker run -d -p 6041:6041 \
+	-v /mydata/taos/conf:/etc/taos \
+	-v /mydata/taos/data:/var/lib/taos \
+	-v /mydata/taos/logs:/var/log/taos \
+	--name tdengine 
+	tdengine:2.0.19.1
+```
+
+### influxdb
+
+1.x
+```bash
+docker run -d -p 8086:8086 \
+      -v /mydata/influxdb1:/var/lib/influxdb \
+      --name influxdb1 \
+      influxdb:1.8
+```
+
+2.x
+```bash
+docker run -d -p 8086:8086 \
+      -v /mydata/influxdb2/data:/var/lib/influxdb2 \
+      -v /mydata/influxdb2/config:/etc/influxdb2 \
+      -e DOCKER_INFLUXDB_INIT_MODE=setup \
+	    -e DOCKER_INFLUXDB_INIT_USERNAME=my-user \
+      -e DOCKER_INFLUXDB_INIT_PASSWORD=my-password \
+      -e DOCKER_INFLUXDB_INIT_ORG=org \
+      -e DOCKER_INFLUXDB_INIT_BUCKET=bucket \
+	    --name influxdb2 \
+      influxdb:2.0.6
+```
+
+## 3. 存储
+
+### fastdfs
+
+```bash
+docker run -ti -d --name trakcer -v /mydata/tracker_data:/fastdfs/tracker/data --net=host season/fastdfs tracker
+docker run -ti --name storage  \
+  -v /mydata/storage_data:/fastdfs/storage/data  \
+  -v /mydata/store_path:/fastdfs/store_path  \
+  --net=host  \
+  -e TRACKER_SERVER:192.168.3.200:22122  \
+  season/fastdfs storage
+```
+
+```bash
+netstat -unltp | grep fdfs  #检测fdfs
+docker run -dti --network=host --name tracker -v /mydata/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
+docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /mydata/fdfs/storage:/var/fdfs delron/fastdfs storage
+```
+
+一体安装
+```bash
+docker run \
+	--net=host \
+	--name=fastdfs \
+	-e IP=192.168.3.200 \
+	-e WEB_PORT=80 \
+	-v /mydata/fdfs:/var/local/fdfs \
+	-d registry.cn-beijing.aliyuncs.com/tianzuo/fastdfs
+```
+
+### minio
+默认Access Key和Secret都是minioadmin
+
+```bash
+docker run -p 9090:9000 --name minio \
+  -v /mydata/minio/data:/data \
+  -v /mydata/minio/config:/root/.minio \
+  -d minio/minio server /data
+```
+
+
+## 4. 分布式
+
+### sentinel-dashboard
+
+```bash
+docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard:1.7.2
+```
+
+### nacos-server
+
+```bash
+docker run --name nacos -d -p 8848:8848 -e MODE=standalone nacos/nacos-server
+```
+
+### dubbo-admin
+
+```bash
+docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 -e dubbo.admin.root.password=root -e dubbo.admin.guest.password=guest chenchuxin/dubbo-admin 
+```
+
+### zookeeper
+
+```bash
+docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
+```
+
+### zipkin
+
+```bash
+docker run -d --name zipkin -p  9411:9411 openzipkin/zipkin
+```
+
+## 5. MQ
+
+### activemq
+
+```bash
+docker run -d --name activemq -p 61616:61616 -p 8161:8161 webcenter/activemq
+```
+
+### rabbitmq
 
 ```bash
 docker pull rabbitmq:3.7.15
-```
-
-- 使用如下命令启动RabbitMQ服务：
-
-```bash
 docker run -p 5672:5672 -p 15672:15672 -p 1883:1883 --name rabbitmq -d rabbitmq:3.7.15
 ```
 
@@ -287,8 +321,6 @@ docker exec -it rabbitmq /bin/bash
 rabbitmq-plugins enable rabbitmq_mqtt
 rabbitmq-plugins enable rabbitmq_management
 ```
-
-![](../../images/linux/deploy/docker/mall_linux_deploy_02.png)
 
 - 开启防火墙：
 
@@ -318,7 +350,74 @@ firewall-cmd --reload
 
 ![](../../images/linux/deploy/docker/mall_linux_deploy_07.png)
 
-## 15. Elasticsearch
+
+### rocketmq
+
+开通防火墙
+```bash
+firewall-cmd --zone=public --add-port=9876/tcp --permanent
+firewall-cmd --zone=public --add-port=10911/tcp --permanent
+firewall-cmd --zone=public --add-port=9800/tcp --permanent
+firewall-cmd --reload
+```
+
+创建存储文件夹
+```bash
+mkdir -p /mydata/rocketmq/data/namesrv/logs /root/rocketmq/data/namesrv/store /mydata/rocketmq/conf /mydata/rocketmq/data/broker/logs /mydata/rocketmq/data/broker/stor
+```
+
+
+进入到 /mydata/rocketmq/conf 文件夹下 创建文件 broker.conf
+```bash
+cd /mydata/rocketmq/conf
+touch broker.conf
+vi broker.conf
+
+brokerClusterName = DefaultCluster
+brokerName = broker-a
+brokerId = 0
+deleteWhen = 04
+fileReservedTime = 48
+brokerRole = ASYNC_MASTER
+flushDiskType = ASYNC_FLUSH
+brokerIP1 = 172.17.17.80
+messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
+```
+
+拉取镜像
+```bash
+docker pull rocketmqinc/rocketmq:4.4.0
+docker pull styletang/rocketmq-console-ng
+
+docker run -d -p 9876:9876 -v /mydata/rocketmq/data/namesrv/logs:/root/logs -v /mydata/rocketmq/data/namesrv/store:/root/store --name rmqnamesrv -e "MAX_POSSIBLE_HEAP=100000000" rocketmqinc/rocketmq:4.4.0 sh mqnamesrv
+
+docker run -d -p 10911:10911 -p 10909:10909 -v  /mydata/rocketmq/data/broker/logs:/root/logs -v  /mydata/rocketmq/data/broker/store:/root/store -v  /mydata/rocketmq/conf/broker.conf:/opt/rocketmq-4.4.0/conf/broker.conf --name rmqbroker --link rmqnamesrv:namesrv -e "NAMESRV_ADDR=namesrv:9876" -e "MAX_POSSIBLE_HEAP=200000000" rocketmqinc/rocketmq:4.4.0 sh mqbroker -c /opt/rocketmq-4.4.0/conf/broker.conf
+
+docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false" -t styletang/rocketmq-console-ng
+
+```
+
+### kafka
+
+```bash
+docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 --link zookeeper -e     KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -t wurstmeister/kafka
+
+docker run -d --name kafka-manager \--link zookeeper:zookeeper \--link kafka:kafka -p 9001:9000 \--restart=always \--env ZK_HOSTS=zookeeper:2181 \sheepkiller/kafka-manager
+
+```
+
+### emqx
+
+```bash
+# 开源版
+docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083 emqx/emqx:v4.0.5
+# 企业版
+docker run -d --name emqx-ee -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083 emqx/emqx-ee:4.2.5
+```
+
+## 6. 大数据
+
+### elasticsearch
 
 - 下载Elasticsearch`7.6.2`的docker镜像：
 
@@ -384,7 +483,7 @@ http.cors.allow-origin: "*"
 ```
 
 
-## 16. Logstash
+### logstash
 
 - 下载Logstash`7.6.2`的docker镜像：
 
@@ -424,7 +523,7 @@ docker run --name logstash -p 4560:4560 -p 4561:4561 -p 4562:4562 -p 4563:4563 \
 logstash-plugin install logstash-codec-json_lines
 ```
 
-## 17. Kibana
+### kibana
 
 - 下载Kibana`7.6.2`的docker镜像：
 
@@ -451,61 +550,10 @@ firewall-cmd --reload
 
 ![](../../images/linux/deploy/docker/mall_linux_deploy_09.png)
 
-## 18. MongoDB
 
-- 下载MongoDB`4.2.5`的docker镜像：
+## 7. 持续集成
 
-```bash
-docker pull mongo:4.2.5
-```
-
-- 使用docker命令启动：
-
-```bash
-docker run -p 27017:27017 --name mongo \
--v /mydata/mongo/db:/data/db \
--d mongo:4.2.5
-```
-
-## 19. Openfire
-```bash
-docker pull gizmotronic/openfire
-
-docker run --name openfire -d --restart=always \
-  --publish 9090:9090 --publish 5222:5222 --publish 7070:7070 \
-  --volume /srv/docker/openfire:/var/lib/openfire \
-  gizmotronic/openfire
-```
-
-![](../../images/linux/deploy/docker/19.openfire.png)
-
-
-## 20. Eclipse/che
-
-http://ip:8080
-
-```bash
-docker run -it -d --rm \
--v /var/run/docker.sock:/var/run/docker.sock \
--v /mydata/che:/data \
-eclipse/che start
-```
-
-![](../../images/linux/deploy/docker/20.eclipse-che.png)
-
-## 21. Theia
-
-```bash
-chown -R 1000:1000 /mydata/
-docker run -it -d -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/theia
-docker run -it -d -p 3000:3000 -v "/mydata/theia-java:/home/project:cached" theiaide/theia-java
-docker run -it -d --init -p 3000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
-```
-
-![](../../images/linux/deploy/docker/21.Theia.png)
-
-
-## 22. Nexus3
+### nexus3
 
 ```bash
 docker pull sonatype/nexus3
@@ -515,21 +563,9 @@ docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sona
 
 ![](../../images/linux/deploy/docker/22.Nexus3.png)
 
-## 23. Zentao
 
-```bash
-mkdir -p /data/zbox
 
-docker run -d -p 8080:80 -p 3316:3306 -e USER="admin" -e PASSWD="admin" -e BIND_ADDRESS="false" -e SMTP_HOST="163.177.90.125 smtp.exmail.qq.com" -v /data/zbox/:/opt/zbox/ --name zentao-server idoop/zentao:latest 
-```
-
-- 8080 访问禅道外部端口号
-- 3316 把容器3306数据库端口映射到主机3316端口
-- USER 设置登录账号 admin
-- PASSWD 设置登录密码 123456
-- BIND_ADDRESS 设置为false
-
-## 24. Registry
+### registry
 
 修改Docker Daemon的配置文件，文件位置为/etc/docker/daemon.json，由于Docker默认使用HTTPS推送镜像，而我们的镜像仓库没有支持，所以需要添加如下配置，改为使用HTTP推送
 
@@ -556,7 +592,8 @@ docker run -p 8280:80 --name registry-ui \
 -e REGISTRY_TITLE="Registry2" \
 -d joxit/docker-registry-ui:static
 ```
-## 25. Harbor
+
+### harbor
 
 > wget https://github.com/goharbor/harbor/releases/download/v2.0.1/harbor-offline-installer-v2.0.1.tgz
 
@@ -606,28 +643,8 @@ docker-compose restart #重新启动
 
 默认账户密码：admin/Harbor12345
 
-## 26. Postgres
 
-```bash
-docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
-docker run --name postgres -e POSTGRES_PASSWORD=123456 -d -p 54321:5432 -v /etc/data/pgdata:/var/lib/postgresql/data-d postgres
-默认用户：postgres 密码：POSTGRES_PASSWORD
-
-/var/lib/postgresql/data  #镜像的data目录
-/usr/lib/postgresql/??/bin #进入postgresql的工具目录
-psql -Upostgres # 连接数据库
-
--it -d 这两个参数一般同时使用，保证 container 以交互的方式在后台运行。
---rm 这个参数是指在 container 停止时自动将 container 删除。
---name 你在使用 docker ps 命令时看到的 container 的名字。
--e POSTGRES_USER=dbuser 这个是设置 container 中的环境变量用的参数，指的是设计数据库用户为 dbuser 。之后登录数据库时就是使用这个用户名。
--e POSTGRES_PASSWORD=password 同上，也是设置 container 中的环境变量，这个是设置你登录数据库的密码，这里设置的密码为"password"。
--e POSTGRES_DB=testdb 同上，初始化一个新的数据库，其名字为 testdb。
--p 5432:5432 这个是将主机的端口与 container 暴露的端口进行映射。其格式为 -p 主机端口: container 端口。即 : 前为主机端口，后为 container 端口。
--v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
-```
-
-## 27. Sonarqube
+### sonarqube
 
 ```bash
 docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:8.6-community #H2默认存储
@@ -645,7 +662,7 @@ docker run -d --name sonarqube \
     sonarqube:8.6-community
 ```
 
-## 28. Jenkins
+### jenkins
 
 ```bash
 docker pull jenkins/jenkins:lts
@@ -662,63 +679,7 @@ vi hudson.model.UpdateCenter.xml
 
 ```
 
-## 29. Sentinel
-
-```bash
-docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard:1.7.2
-docker run --name nacos -d -p 8848:8848 -e MODE=standalone nacos/nacos-server
-```
-
-
-
-## 30. Rocketmq
-
-开通防火墙
-```bash
-firewall-cmd --zone=public --add-port=9876/tcp --permanent
-firewall-cmd --zone=public --add-port=10911/tcp --permanent
-firewall-cmd --zone=public --add-port=9800/tcp --permanent
-firewall-cmd --reload
-```
-
-创建存储文件夹
-```bash
-mkdir -p /mydata/rocketmq/data/namesrv/logs /root/rocketmq/data/namesrv/store /mydata/rocketmq/conf /mydata/rocketmq/data/broker/logs /mydata/rocketmq/data/broker/stor
-```
-
-
-进入到 /mydata/rocketmq/conf 文件夹下 创建文件 broker.conf
-```bash
-cd /mydata/rocketmq/conf
-touch broker.conf
-vi broker.conf
-
-
-brokerClusterName = DefaultCluster
-brokerName = broker-a
-brokerId = 0
-deleteWhen = 04
-fileReservedTime = 48
-brokerRole = ASYNC_MASTER
-flushDiskType = ASYNC_FLUSH
-brokerIP1 = 172.17.17.80
-messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
-```
-
-拉取镜像
-```bash
-docker pull rocketmqinc/rocketmq:4.4.0
-docker pull styletang/rocketmq-console-ng
-
-docker run -d -p 9876:9876 -v /mydata/rocketmq/data/namesrv/logs:/root/logs -v /mydata/rocketmq/data/namesrv/store:/root/store --name rmqnamesrv -e "MAX_POSSIBLE_HEAP=100000000" rocketmqinc/rocketmq:4.4.0 sh mqnamesrv
-
-docker run -d -p 10911:10911 -p 10909:10909 -v  /mydata/rocketmq/data/broker/logs:/root/logs -v  /mydata/rocketmq/data/broker/store:/root/store -v  /mydata/rocketmq/conf/broker.conf:/opt/rocketmq-4.4.0/conf/broker.conf --name rmqbroker --link rmqnamesrv:namesrv -e "NAMESRV_ADDR=namesrv:9876" -e "MAX_POSSIBLE_HEAP=200000000" rocketmqinc/rocketmq:4.4.0 sh mqbroker -c /opt/rocketmq-4.4.0/conf/broker.conf
-
-docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false" -t styletang/rocketmq-console-ng
-
-```
-
-## 30. Prometheus
+### prometheus
 
 ```bash
 docker pull prom/prometheus
@@ -783,7 +744,7 @@ scrape_configs:
 docker-compose -f docker-compose-prometheus.yml up -d  
 ```
 
-## 31. Grafana
+### grafana
 
 ```bash
 docker run -d -p 3000:3000 --name grafana grafana/grafana
@@ -791,52 +752,67 @@ docker run -d -p 3000:3000 --name grafana grafana/grafana
 
 admin:admin
 
-## 32. EMQX
+
+## 8. 其他
+
+### zentao
 
 ```bash
-# 开源版
-docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083 emqx/emqx:v4.0.5
-# 企业版
-docker run -d --name emqx-ee -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083 emqx/emqx-ee:4.2.5
+mkdir -p /data/zbox
+
+docker run -d -p 8080:80 -p 3316:3306 -e USER="admin" -e PASSWD="admin" -e BIND_ADDRESS="false" -e SMTP_HOST="163.177.90.125 smtp.exmail.qq.com" -v /data/zbox/:/opt/zbox/ --name zentao-server idoop/zentao:latest 
 ```
 
-## 33. Nodered
+- 8080 访问禅道外部端口号
+- 3316 把容器3306数据库端口映射到主机3316端口
+- USER 设置登录账号 admin
+- PASSWD 设置登录密码 123456
+- BIND_ADDRESS 设置为false
+
+
+### node-red
 
 ```bash
 sudo docker run -it -p 1880:1880 --name=nodered --restart=always --user=root --net=host -v /data/nodered:/data -e TZ=Asia/Shanghai nodered/node-red
 ```
 
-## 34. TDengine
-
+### openfire
 ```bash
-docker run -d -p 6041:6041 \
-	-v /mydata/taos/conf:/etc/taos \
-	-v /mydata/taos/data:/var/lib/taos \
-	-v /mydata/taos/logs:/var/log/taos \
-	--name tdengine 
-	tdengine:2.0.19.1
+docker pull gizmotronic/openfire
+
+docker run --name openfire -d --restart=always \
+  --publish 9090:9090 --publish 5222:5222 --publish 7070:7070 \
+  --volume /srv/docker/openfire:/var/lib/openfire \
+  gizmotronic/openfire
 ```
 
-## 35. InfluxDB
+![](../../images/linux/deploy/docker/19.openfire.png)
 
-1.x
+
+### eclipse/che
+
+http://ip:8080
+
 ```bash
-docker run -d -p 8086:8086 \
-      -v /mydata/influxdb1:/var/lib/influxdb \
-      --name influxdb1 \
-      influxdb:1.8
+docker run -it -d --rm \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v /mydata/che:/data \
+eclipse/che start
 ```
 
-2.x
+![](../../images/linux/deploy/docker/20.eclipse-che.png)
+
+### theia
+
 ```bash
-docker run -d -p 8086:8086 \
-      -v /mydata/influxdb2/data:/var/lib/influxdb2 \
-      -v /mydata/influxdb2/config:/etc/influxdb2 \
-      -e DOCKER_INFLUXDB_INIT_MODE=setup \
-	    -e DOCKER_INFLUXDB_INIT_USERNAME=my-user \
-      -e DOCKER_INFLUXDB_INIT_PASSWORD=my-password \
-      -e DOCKER_INFLUXDB_INIT_ORG=org \
-      -e DOCKER_INFLUXDB_INIT_BUCKET=bucket \
-	    --name influxdb2 \
-      influxdb:2.0.6
+chown -R 1000:1000 /mydata/
+docker run -it -d -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/theia
+docker run -it -d -p 3000:3000 -v "/mydata/theia-java:/home/project:cached" theiaide/theia-java
+docker run -it -d --init -p 3000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
 ```
+
+![](../../images/linux/deploy/docker/21.Theia.png)
+
+
+
+
