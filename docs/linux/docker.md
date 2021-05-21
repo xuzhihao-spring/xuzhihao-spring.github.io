@@ -71,6 +71,7 @@ docker start $(docker ps -a -q)  # 启动所有容器
 docker rmi -f $(docker images -qa)
 docker rm [containerid]          # 删除容器
 docker rmi $(docker images | grep "none" | awk '{print $3}')    #删除none的镜像
+docker rm $(docker ps -a | awk '/[imageid]/ {print $1}')        #删除相同imageid的容器
 docker stats [containerid]       # 监控
 docker stats $(docker ps -a -q)  # 监控所有容器
 docker stats --no-stream=true $(docker ps -a -q)        # 监控所有容器当前
