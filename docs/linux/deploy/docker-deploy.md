@@ -15,12 +15,13 @@ vi /etc/docker/daemon.json
 {
     "registry-mirrors":["https://docker.mirrors.ustc.edu.cn"],
     "insecure-registries": ["192.168.3.200:5000"],
-    "exec-opts":["native.cgroupdriver=systemd"]
+    "exec-opts":["native.cgroupdriver=systemd"],
+    "data-root": "/data/docker"
 }
 
 vi /usr/lib/systemd/system/docker.service
 ExecStart=/usr/bin/dockerd  # 如果原文件此行后面有-H选项，请删除-H(含)后面所有内容。
-
+mv /var/lib/docker /data    # images位置迁移
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 ```
@@ -41,8 +42,6 @@ ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock #
 systemctl daemon-reload #加载docker守护线程
 systemctl restart docker #重启docker
 ```
-
-![](../../images/linux/deploy/docker/5.portainer.png)
 
 
 ### nginx
@@ -112,11 +111,7 @@ docker run --privileged -d --restart=unless-stopped -p 80:80 -p 443:443 \
 
 ```bash
 docker pull mysql:5.7
-```
 
-- 使用如下命令启动MySQL服务：
-
-```bash
 docker run -p 3306:3306 --name mysql \
 -v /mydata/mysql/log:/var/log/mysql \
 -v /mydata/mysql/data:/var/lib/mysql \
@@ -140,13 +135,10 @@ grant all privileges on *.* to 'root' @'%' identified by '123456';
 
 ### redis
 
-- 下载Redis`5.0`的docker镜像：
 
 ```bash
 docker pull redis:5
-```
 
-```bash
 docker run -p 6379:6379 --name redis \
 -v /mydata/redis/data:/data \
 -d redis:5 redis-server --appendonly yes
@@ -161,15 +153,9 @@ docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.1
 
 ### mongo
 
-- 下载MongoDB`4.2.5`的docker镜像：
-
 ```bash
 docker pull mongo:4.2.5
-```
 
-- 使用docker命令启动：
-
-```bash
 docker run -p 27017:27017 --name mongo \
 -v /mydata/mongo/db:/data/db \
 -d mongo:4.2.5
@@ -182,7 +168,7 @@ docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e
 docker run --name postgres -e POSTGRES_PASSWORD=123456 -d -p 54321:5432 -v /etc/data/pgdata:/var/lib/postgresql/data-d postgres
 默认用户：postgres 密码：POSTGRES_PASSWORD
 
-/var/lib/postgresql/data  #镜像的data目录
+/var/lib/postgresql/data   #镜像的data目录
 /usr/lib/postgresql/??/bin #进入postgresql的工具目录
 psql -Upostgres # 连接数据库
 
@@ -246,7 +232,6 @@ docker run -ti --name storage  \
 ```
 
 ```bash
-netstat -unltp | grep fdfs  #检测fdfs
 docker run -dti --network=host --name tracker -v /mydata/fdfs/tracker:/var/fdfs delron/fastdfs tracker 
 docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /mydata/fdfs/storage:/var/fdfs delron/fastdfs storage
 ```
@@ -425,8 +410,6 @@ docker run -d --name emqx-ee -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8084:8084
 
 ### elasticsearch
 
-- 下载Elasticsearch`7.6.2`的docker镜像：
-
 ```bash
 docker pull elasticsearch:7.6.2
 ```
@@ -492,15 +475,56 @@ http.cors.allow-origin: "*"
 
 ### logstash
 
-- 下载Logstash`7.6.2`的docker镜像：
-
 ```bash
 docker pull logstash:7.6.2
 ```
 
-- 修改Logstash的配置文件`logstash.conf`中`output`节点下的Elasticsearch连接地址为`es:9200`
+- 创建logstash.conf文件
 
 ```
+input {
+  tcp {
+    mode => "server"
+    host => "0.0.0.0"
+    port => 4560
+    codec => json_lines
+    type => "debug"
+  }
+  tcp {
+    mode => "server"
+    host => "0.0.0.0"
+    port => 4561
+    codec => json_lines
+    type => "error"
+  }
+  tcp {
+    mode => "server"
+    host => "0.0.0.0"
+    port => 4562
+    codec => json_lines
+    type => "business"
+  }
+  tcp {
+    mode => "server"
+    host => "0.0.0.0"
+    port => 4563
+    codec => json_lines
+    type => "record"
+  }
+}
+filter{
+  if [type] == "record" {
+    mutate {
+      remove_field => "port"
+      remove_field => "host"
+      remove_field => "@version"
+    }
+    json {
+      source => "message"
+      remove_field => ["message"]
+    }
+  }
+}
 output {
   elasticsearch {
     hosts => "es:9200"
@@ -534,15 +558,9 @@ logstash-plugin install logstash-codec-json_lines
 
 ### kibana
 
-- 下载Kibana`7.6.2`的docker镜像：
-
 ```bash
 docker pull kibana:7.6.2
-```
 
-- 使用如下命令启动Kibana服务：
-
-```bash
 docker run --name kibana -p 5601:5601 \
 --link elasticsearch:es \
 -e "elasticsearch.hosts=http://es:9200" \
@@ -557,9 +575,6 @@ firewall-cmd --reload
 ```
 - 访问地址进行测试：http://192.168.3.200:5601
 
-![](../../images/linux/deploy/docker/mall_linux_deploy_09.png)
-
-
 ## 7. 持续集成
 
 ### nexus3
@@ -569,9 +584,6 @@ docker pull sonatype/nexus3
 mkdir -p /home/mvn/nexus-data  && chown -R 200 /home/mvn/nexus-data
 docker run -d -p 8081:8081 --name nexus -v /home/mvn/nexus-data:/nexus-data sonatype/nexus3
 ```
-
-![](../../images/linux/deploy/docker/22.Nexus3.png)
-
 
 
 ### registry
@@ -795,8 +807,6 @@ docker run --name openfire -d --restart=always \
   gizmotronic/openfire
 ```
 
-![](../../images/linux/deploy/docker/19.openfire.png)
-
 
 ### eclipse/che
 
@@ -809,7 +819,6 @@ docker run -it -d --rm \
 eclipse/che start
 ```
 
-![](../../images/linux/deploy/docker/20.eclipse-che.png)
 
 ### theia
 
@@ -819,9 +828,4 @@ docker run -it -d -p 3000:3000 -v "/mydata/theia:/home/project:cached" theiaide/
 docker run -it -d -p 3000:3000 -v "/mydata/theia-java:/home/project:cached" theiaide/theia-java
 docker run -it -d --init -p 3000:3000 -v "/mydata/theia-full:/home/project:cached" theiaide/theia-full
 ```
-
-![](../../images/linux/deploy/docker/21.Theia.png)
-
-
-
 

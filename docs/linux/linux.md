@@ -74,7 +74,7 @@ sudo vim /etc/fstab        # 自动挂载
 
 
 
-## 2. 脚本
+## 2. 自动脚本
 
 重启脚本restart_3001.sh
 ```bash
@@ -96,7 +96,7 @@ cp -r /opt/tomcat/code/servlet-2.war /opt/tomcat/webapps/servlet.war
 sh /opt/tomcat/bin/startup.sh;tail -f /opt/tomcat/logs/catalina.out
 ```
 
-## 3. 安装jdk、Maven
+## 3. JDK、MAVEN配置
 
 ```bash
 # jdk
@@ -122,7 +122,7 @@ source /etc/profile   # 配置生效
 mvn -v                # 查找Maven版本
 ```
 
-## 4. 安装Ftp
+## 4. FTP配置
 ```bash
 yum install vsftpd    # ftp
 cat /etc/passwd       # 新增用户
@@ -151,7 +151,7 @@ cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &    #
 java -jar sentinel-dashboard-1.7.2.jar &                # sentinel
 ```
 
-## 6. yum仓库配置
+## 6. YUM仓库配置
 
 备份原有yum源
 
@@ -219,7 +219,7 @@ yum makecache
 
 wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 
-## 7. gcc升级
+## 7. GCC升级
 
 ```
 yum -y install centos-release-scl
@@ -232,7 +232,7 @@ which gcc
 gcc --version
 ```
 
-## 8. Ifstat网络流量实时监控
+## 8. IFSTAT流量监控
 
 下载
 
@@ -381,7 +381,7 @@ svctm:    表示平均每次设备I/O操作的服务时间（以毫秒为单位�
 %util： 在统计时间内所有处理IO时间，除以总共统计时间。例如，如果统计间隔1秒，该设备有0.8秒在处理IO，而0.2秒闲置，那么该设备的%util = 0.8/1 = 80%，所以该参数暗示了设备的繁忙程度。一般地，如果该参数是100%表示设备已经接近满负荷运行了（当然如果是多磁盘，即使%util是100%，因为磁盘的并发能力，所以磁盘使用未必就到了瓶颈）。
 ```
 
-## 10. Nginx安装
+## 10. NGINX安装
 
 官方安装文档
 
@@ -424,7 +424,7 @@ cd /usr/local/nginx/sbin  ./nginx  ./nginx -s reload # 重载
 
 nginx服务的默认配置文件在 vim `/etc/nginx/conf.d/default.conf` ，打开可看到，默认端口为80，项目部署目录为`/usr/share/nginx/html/`。
 
-## 11. Node
+## 11. NODE
 
 ```bash
 yum install -y git
@@ -440,6 +440,18 @@ source /etc/profile
 node -v
 npm -v
 ```
+
+```bash
+npm install forever -g      #全局安装forever启动命令
+forever start app.js        #启动进程
+forever stop  app.js        #关闭进程
+forever stopall             #关闭所有进程
+forever restart app.js      #重启进程
+forever list                #查看服务进程
+forever start -w app.js     #监听文件改动
+forever start -l forever.log -o out.log -e err.log app.js #日志输出
+```
+
 
 ## 12. NPM
 
@@ -466,20 +478,7 @@ npm list                #查看当前目录下已安装的node包
 npm list parseable=true #以目录的形式来展现当前安装的所有node包
 ```
 
-## 13. forever
-
-```bash
-npm install forever -g      #全局安装forever启动命令
-forever start app.js        #启动进程
-forever stop  app.js        #关闭进程
-forever stopall             #关闭所有进程
-forever restart app.js      #重启进程
-forever list                #查看服务进程
-forever start -w app.js     #监听文件改动
-forever start -l forever.log -o out.log -e err.log app.js #日志输出
-```
-
-## 14. TypeScript
+## 13. TS
 
 ```bash
 npm init -y                     # 生成package.json配置文件
