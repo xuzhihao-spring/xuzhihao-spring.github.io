@@ -132,6 +132,12 @@ docker run -p 3306:3306 --name mysql \
   - -v /mydata/mysql/data:/var/lib/mysql/：将数据文件夹挂载到主机
   - -e MYSQL_ROOT_PASSWORD=root：初始化root用户的密码
   
+```bash
+docker exec -it mysql /bin/bash
+mysql -uroot -proot --default-character-set=utf8
+grant all privileges on *.* to 'root' @'%' identified by '123456';
+```
+
 ### redis
 
 - 下载Redis`5.0`的docker镜像：
@@ -455,6 +461,7 @@ docker exec -it elasticsearch /bin/bash
 #此命令需要在容器中运行
 elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.6.2/elasticsearch-analysis-ik-7.6.2.zip
 docker restart elasticsearch
+http://192.168.3.200:9200/_cat/plugins
 ```
 
 - 开启防火墙：
@@ -520,6 +527,8 @@ docker run --name logstash -p 4560:4560 -p 4561:4561 -p 4562:4562 -p 4563:4563 \
 - 进入容器内部，安装`json_lines`插件。
 
 ```bash
+docker exec -it logstash /bin/bash
+cd /usr/share/logstash/bin
 logstash-plugin install logstash-codec-json_lines
 ```
 
