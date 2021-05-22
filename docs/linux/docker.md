@@ -3,7 +3,6 @@
 ## 1. 安装
 
 ```bash
-yum install -y yum-utils device-mapper-persistent-data lvm2
 yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 yum makecache fast
 yum list docker-ce --showduplicates | sort -r
@@ -11,13 +10,7 @@ yum install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7 -y
 systemctl start docker
 chkconfig docker on
 
-yum install -y epel-release
-yum install -y python-pip
-pip install docker-compose 
-pip install --upgrade pip
-docker-compose -version
 curl -L https://get.daocloud.io/docker/compose/releases/download/1.25.5/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose -v
 
@@ -208,8 +201,12 @@ RUN wget https://github.com/eclipse/eclipse.jdt.ls/archive/v0.48.0.tar.gz \
 ### 4.5 从容器构建镜像
 
 ```bash
-##基于当前redis容器创建一个新的镜像；参数：-a 提交的镜像作者；-c 使用Dockerfile指令来创建镜像；-m :提交时的说明文字；-p :在commit时，将容器暂停
-docker commit -a="DeepInThought" -m="my redis" [redis容器ID]  myredis:v1.1
+# 基于当前redis容器创建一个新的镜像；
+# -a 提交的镜像作者；
+# -c 使用Dockerfile指令来创建镜像；
+# -m :提交时的说明文字；
+# -p :在commit时，将容器暂停
+docker commit -a="xzh" -m="my redis" [redis容器ID]  myredis:v1.1
 ```
 
 ## 5. Docker Compose
