@@ -76,14 +76,24 @@ sudo vim /etc/fstab        # 自动挂载
 
 ## 2. 脚本
 
-tomcat重启脚本restart_3001.sh
-
+重启脚本restart_3001.sh
 ```bash
 sh /data/tomcat_webapp_3001/bin/shutdown.sh
 sleep 2s
 ps -ef | grep tomcat_webapp_3001 | grep -v grep | awk '{print $2}'| xargs kill -9
 sleep 1s
 sh /data/tomcat_webapp_3001/bin/startup.sh;tail -f /data/tomcat_webapp_3001/logs/catalina.out
+```
+
+自动部署
+```
+sh /opt/tomcat/bin/shutdown.sh
+sleep 2s
+ps -ef | grep /opt/tomcat/ | grep -v grep | awk '{print $2}'| xargs kill -9
+sleep 1s
+rm -rf /opt/tomcat/webapps/servlet*
+cp -r /opt/tomcat/code/servlet-2.war /opt/tomcat/webapps/servlet.war
+sh /opt/tomcat/bin/startup.sh;tail -f /opt/tomcat/logs/catalina.out
 ```
 
 ## 3. 安装jdk、Maven
