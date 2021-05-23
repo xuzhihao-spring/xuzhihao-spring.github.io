@@ -161,14 +161,659 @@ B) 领域模型命名规约
 
 ### (二) 常量定义
 
+1. 【强制】在 long 或者 Long 赋值时，数值后使用大写的 L，不能是小写的 l，小写容易跟数字混淆，造成误解。
 
+说明：Long a = 2l; 写的是数字的 21，还是 Long 型的 2。
 
+2. 【推荐】不要使用一个常量类维护所有常量，要按常量功能进行归类，分开维护。
+
+说明：大而全的常量类，杂乱无章，使用查找功能才能定位到修改的常量，不利于理解，也不利于维护。
+
+正例：缓存相关常量放在类 CacheConsts 下；系统配置相关常量放在类 ConfigConsts 下。
+
+3. 【推荐】常量的复用层次有五层：跨应用共享常量、应用内共享常量、子工程内共享常量、包内共享常量、类内共享常量。
+
+    1） 跨应用共享常量：放置在二方库中，通常是 client.jar 中的 constant 目录下。
+
+    2） 应用内共享常量：放置在一方库中，通常是子模块中的 constant 目录下。
+
+        反例：易懂变量也要统一定义成应用内共享常量，两位工程师在两个类中分别定义了“YES”的变量：
+        类 A 中：public static final String YES = "yes";
+        类 B 中：public static final String YES = "y";
+
+    A.YES.equals(B.YES)，预期是 true，但实际返回为 false，导致线上问题。
+
+    3） 子工程内部共享常量：即在当前子工程的 constant 目录下。
+
+    4） 包内共享常量：即在当前包下单独的 constant 目录下。
+
+    5） 类内共享常量：直接在类内部 private static final 定义。
+
+4. 【推荐】如果变量值仅在一个固定范围内变化用 enum 类型来定义。
+
+说明：如果存在名称之外的延伸属性应使用 enum 类型，下面正例中的数字就是延伸信息，表示一年中的第几个季节。
+
+正例：
+```java
+public enum SeasonEnum {
+    SPRING(1), SUMMER(2), AUTUMN(3), WINTER(4);
+    private int seq;
+    SeasonEnum(int seq) {
+        this.seq = seq;
+    }
+    public int getSeq() {
+        return seq;
+    }
+}
+```
 
 
 ### (三) 代码格式
+
+1. 【强制】如果是大括号内为空，则简洁地写成{}即可，大括号中间无需换行和空格；如果是非空代码块则：
+
+说明：
+
+    1） 左大括号前不换行。
+    2） 左大括号后换行。
+    3） 右大括号前换行。
+    4） 右大括号后还有 else 等代码则不换行；表示终止的右大括号后必须换行。
+
+2. 【强制】左小括号和右边相邻字符之间不出现空格；右小括号和左边相邻字符之间也不出现空格；而左大括号前需要加空格。详见第 5 条下方正例提示。
+
+反例：if (空格 a == b 空格)
+
+3. 【强制】if/for/while/switch/do 等保留字与括号之间都必须加空格。
+
+4. 【强制】任何二目、三目运算符的左右两边都需要加一个空格。
+
+说明：包括赋值运算符=、逻辑运算符&&、加减乘除符号等。
+
+5. 【强制】采用 4 个空格缩进，禁止使用 tab 字符。
+
+说明：如果使用 tab 缩进，必须设置 1 个 tab 为 4 个空格。IDEA 设置 tab 为 4 个空格时，请勿勾选 Use tab character；而在 eclipse 中，必须勾选 insert spaces for tabs。
+
+正例： （涉及 1-5 点）
+```java
+public static void main(String[] args) {
+    // 缩进 4 个空格
+    String say = "hello";
+    // 运算符的左右必须有一个空格
+    int flag = 0;
+    // 关键词 if 与括号之间必须有一个空格，括号内的 f 与左括号，0 与右括号不需要空格
+    if (flag == 0) {
+        System.out.println(say);
+    }
+    // 左大括号前加空格且不换行；左大括号后换行
+    if (flag == 1) {
+        System.out.println("world");
+        // 右大括号前换行，右大括号后有 else，不用换行
+    } else {
+        System.out.println("ok");
+        // 在右大括号后直接结束，则必须换行
+    }
+}
+```
+
+6. 【强制】注释的双斜线与注释内容之间有且仅有一个空格。
+
+正例：
+```java
+// 这是示例注释，请注意在双斜线之后有一个空格
+String commentString = new String();
+```
+
+7. 【强制】在进行类型强制转换时，右括号与强制转换值之间不需要任何空格隔开。
+
+正例：
+```java
+long first = 1000000000000L;
+int second = (int)first + 2;
+```
+
+8. 【强制】单行字符数限制不超过 120 个，超出需要换行，换行时遵循如下原则：
+
+说明：
+
+    1）第二行相对第一行缩进 4 个空格，从第三行开始，不再继续缩进，参考示例。
+    2）运算符与下文一起换行。
+    3）方法调用的点符号与下文一起换行。
+    4）方法调用中的多个参数需要换行时，在逗号后进行。
+    5）在括号前不要换行，见反例。
+
+正例：
+```java
+    StringBuilder sb = new StringBuilder();
+    // 超过 120 个字符的情况下，换行缩进 4 个空格，并且方法前的点号一起换行
+    sb.append("zi").append("xin")...
+    .append("huang")...
+    .append("huang")...
+    .append("huang");
+```
+反例：
+```java
+StringBuilder sb = new StringBuilder();
+// 超过 120 个字符的情况下，不要在括号前换行
+sb.append("you").append("are")...append
+ ("lucky");
+// 参数很多的方法调用可能超过 120 个字符，逗号后才是换行处
+method(args1, args2, args3, ...
+ , argsX);
+```
+
+9. 【强制】方法参数在定义和传入时，多个参数逗号后边必须加空格。
+
+正例：下例中实参的 args1，后边必须要有一个空格。
+```java
+method(args1, args2, args3); 
+ ```
+
+10. 【强制】IDE 的 text file encoding 设置为 UTF-8; IDE 中文件的换行符使用 Unix 格式，不要使用 Windows 格式。
+
+11. 【推荐】单个方法的总行数不超过 80 行。
+
+说明：除注释之外的方法签名、左右大括号、方法内代码、空行、回车及任何不可见字符的总行数不超过80 行。
+
+正例：代码逻辑分清红花和绿叶，个性和共性，绿叶逻辑单独出来成为额外方法，使主干代码更加清晰；共性逻辑抽取成为共性方法，便于复用和维护。
+
+12. 【推荐】没有必要增加若干空格来使变量的赋值等号与上一行对应位置的等号对齐。
+
+正例：
+```java
+int one = 1;
+long two = 2L;
+float three = 3F;
+StringBuilder sb = new StringBuilder();
+```
+说明：增加 sb 这个变量，如果需要对齐，则给 one、two、three 都要增加几个空格，在变量比较多的情况下，是非常累赘的事情。
+
+13. 【推荐】不同逻辑、不同语义、不同业务的代码之间插入一个空行分隔开来以提升可读性。
+
+说明：任何情形，没有必要插入多个空行进行隔开。
+
+
 ### (四) OOP规约
+
+1. 【强制】避免通过一个类的对象引用访问此类的静态变量或静态方法，无谓增加编译器解析成本，直接用类名来访问即可。
+
+2. 【强制】所有的覆写方法，必须加@Override 注解。
+
+说明：getObject()与 get0bject()的问题。一个是字母的 O，一个是数字的 0，加@Override 可以准确判断是否覆盖成功。另外，如果在抽象类中对方法签名进行修改，其实现类会马上编译报错。
+
+3. 【强制】相同参数类型，相同业务含义，才可以使用 Java 的可变参数，避免使用 Object。
+
+说明：可变参数必须放置在参数列表的最后。（提倡同学们尽量不用可变参数编程）
+
+正例：public List<User> listUsers(String type, Long... ids) {...}
+
+4. 【强制】外部正在调用或者二方库依赖的接口，不允许修改方法签名，避免对接口调用方产生影响。接口过时必须加@Deprecated 注解，并清晰地说明采用的新接口或者新服务是什么。
+
+5. 【强制】不能使用过时的类或方法。
+
+说明：java.net.URLDecoder 中的方法 decode(String encodeStr) 这个方法已经过时，应该使用双参数decode(String source, String encode)。接口提供方既然明确是过时接口，那么有义务同时提供新的接口；
+
+作为调用方来说，有义务去考证过时方法的新实现是什么。
+
+6. 【强制】Object 的 equals 方法容易抛空指针异常，应使用常量或确定有值的对象来调用 equals。
+
+正例："test".equals(object);
+
+反例：object.equals("test");
+
+说明：推荐使用 java.util.Objects#equals（JDK7 引入的工具类）。
+
+7. 【强制】所有整型包装类对象之间值的比较，全部使用 equals 方法比较。
+
+说明：对于 Integer var = ? 在-128 至 127 之间的赋值，Integer 对象是在 IntegerCache.cache 产生，会复用已有对象，这个区间内的 Integer 值可以直接使用==进行判断，但是这个区间之外的所有数据，都会在堆上产生，并不会复用已有对象，这是一个大坑，推荐使用 equals 方法进行判断。
+
+8. 【强制】任何货币金额，均以最小货币单位且整型类型来进行存储。
+
+9. 【强制】浮点数之间的等值判断，基本数据类型不能用==来比较，包装数据类型不能用 equals来判断。
+
+说明：浮点数采用“尾数+阶码”的编码方式，类似于科学计数法的“有效数字+指数”的表示方式。二进制无法精确表示大部分的十进制小数，具体原理参考《码出高效》。
+
+反例：
+```java
+float a = 1.0f - 0.9f;
+float b = 0.9f - 0.8f;
+if (a == b) {
+ // 预期进入此代码快，执行其它业务逻辑
+ // 但事实上 a==b 的结果为 false
+}
+Float x = Float.valueOf(a);
+Float y = Float.valueOf(b);
+if (x.equals(y)) {
+ // 预期进入此代码快，执行其它业务逻辑
+ // 但事实上 equals 的结果为 false
+}
+```
+
+正例：
+
+(1) 指定一个误差范围，两个浮点数的差值在此范围之内，则认为是相等的。
+```java
+float a = 1.0f - 0.9f;
+float b = 0.9f - 0.8f;
+float diff = 1e-6f;
+if (Math.abs(a - b) < diff) {
+    System.out.println("true");
+}
+```
+(2) 使用 BigDecimal 来定义值，再进行浮点数的运算操作。
+```java
+BigDecimal a = new BigDecimal("1.0");
+BigDecimal b = new BigDecimal("0.9");
+BigDecimal c = new BigDecimal("0.8");
+BigDecimal x = a.subtract(b);
+BigDecimal y = b.subtract(c);
+if (x.equals(y)) {
+    System.out.println("true");
+}
+```
+
+10. 【强制】定义数据对象 DO 类时，属性类型要与数据库字段类型相匹配。
+
+正例：数据库字段的 bigint 必须与类属性的 Long 类型相对应。
+
+反例：某个案例的数据库表 id 字段定义类型 bigint unsigned，实际类对象属性为 Integer，随着 id 越来越大，超过 Integer 的表示范围而溢出成为负数。
+
+11. 【强制】禁止使用构造方法 BigDecimal(double)的方式把 double 值转化为 BigDecimal 对象。
+
+说明：BigDecimal(double)存在精度损失风险，在精确计算或值比较的场景中可能会导致业务逻辑异常。
+
+如：BigDecimal g = new BigDecimal(0.1f); 实际的存储值为：0.10000000149
+
+正例：优先推荐入参为 String 的构造方法，或使用 BigDecimal 的 valueOf 方法，此方法内部其实执行了Double 的 toString，而 Double 的 toString 按 double 的实际能表达的精度对尾数进行了截断。
+```java
+ BigDecimal recommend1 = new BigDecimal("0.1");
+ BigDecimal recommend2 = BigDecimal.valueOf(0.1);
+```
+
+12. 关于基本数据类型与包装数据类型的使用标准如下：
+
+说明：
+
+    1）【强制】所有的 POJO 类属性必须使用包装数据类型。
+    2）【强制】RPC 方法的返回值和参数必须使用包装数据类型。
+    3）【推荐】所有的局部变量使用基本数据类型。
+
+说明：POJO 类属性没有初值是提醒使用者在需要使用时，必须自己显式地进行赋值，任何 NPE 问题，或者入库检查，都由使用者来保证。
+
+正例：数据库的查询结果可能是 null，因为自动拆箱，用基本数据类型接收有 NPE 风险。
+
+反例：某业务的交易报表上显示成交总额涨跌情况，即正负 x%，x 为基本数据类型，调用的 RPC 服务，调用不成功时，返回的是默认值，页面显示为 0%，这是不合理的，应该显示成中划线-。所以包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出。
+
+13. 【强制】定义 DO/DTO/VO 等 POJO 类时，不要设定任何属性默认值。
+
+反例：POJO 类的 createTime 默认值为 new Date()，但是这个属性在数据提取时并没有置入具体值，在更新其它字段时又附带更新了此字段，导致创建时间被修改成当前时间。
+
+
+14. 【强制】序列化类新增属性时，请不要修改 serialVersionUID 字段，避免反序列失败；如果完全不兼容升级，避免反序列化混乱，那么请修改 serialVersionUID 值。
+
+说明：注意 serialVersionUID 不一致会抛出序列化运行时异常。
+
+15. 【强制】构造方法里面禁止加入任何业务逻辑，如果有初始化逻辑，请放在 init 方法中。
+
+16. 【强制】POJO 类必须写 toString 方法。使用 IDE 中的工具：source> generate toString时，如果继承了另一个 POJO 类，注意在前面加一下 super.toString。
+
+说明：在方法执行抛出异常时，可以直接调用 POJO 的 toString()方法打印其属性值，便于排查问题。
+
+17. 【强制】禁止在 POJO 类中，同时存在对应属性 xxx 的 isXxx()和 getXxx()方法。
+
+说明：框架在调用属性 xxx 的提取方法时，并不能确定哪个方法一定是被优先调用到，神坑之一。
+
+18. 【推荐】使用索引访问用 String 的 split 方法得到的数组时，需做最后一个分隔符后有无内容的检查，否则会有抛 IndexOutOfBoundsException 的风险。
+
+说明：
+```java
+String str = "a,b,c,,";
+String[] ary = str.split(",");
+// 预期大于 3，结果是 3
+System.out.println(ary.length);
+```
+
+19. 【推荐】当一个类有多个构造方法，或者多个同名方法，这些方法应该按顺序放置在一起，便于阅读，此条规则优先于下一条。
+
+20. 【推荐】 类内方法定义的顺序依次是：公有方法或保护方法 > 私有方法 > getter / setter方法。
+
+说明：公有方法是类的调用者和维护者最关心的方法，首屏展示最好；保护方法虽然只是子类关心，也可能是“模板设计模式”下的核心方法；而私有方法外部一般不需要特别关心，是一个黑盒实现；因为承载的信息价值较低，所有 Service 和 DAO 的 getter/setter 方法放在类体最后。
+
+21. 【推荐】setter 方法中，参数名称与类成员变量名称一致，this.成员名 = 参数名。在 getter/setter 方法中，不要增加业务逻辑，增加排查问题的难度。
+
+反例：
+```java
+public Integer getData () {
+    if (condition) {
+        return this.data + 100;
+    } else {
+        return this.data - 100;
+    }
+}
+```
+
+22. 【推荐】循环体内，字符串的连接方式，使用 StringBuilder 的 append 方法进行扩展。
+
+说明：下例中，反编译出的字节码文件显示每次循环都会 new 出一个 StringBuilder 对象，然后进行 append操作，最后通过 toString 方法返回 String 对象，造成内存资源浪费。
+
+反例：
+```java
+String str = "start";
+for (int i = 0; i < 100; i++) {
+    str = str + "hello";
+}
+```
+
+23. 【推荐】final 可以声明类、成员变量、方法、以及本地变量，下列情况使用 final 关键字：
+
+说明：
+
+    1）不允许被继承的类，如：String 类。
+    2）不允许修改引用的域对象，如：POJO 类的域变量。
+    3）不允许被覆写的方法，如：POJO 类的 setter 方法。
+    4）不允许运行过程中重新赋值的局部变量。
+    5）避免上下文重复使用一个变量，使用 final 可以强制重新定义一个变量，方便更好地进行重构。
+
+24. 【推荐】慎用 Object 的 clone 方法来拷贝对象。
+
+说明：对象 clone 方法默认是浅拷贝，若想实现深拷贝需覆写 clone 方法实现域对象的深度遍历式拷贝。
+
+25. 【推荐】类成员与方法访问控制从严：
+
+说明：
+
+    1） 如果不允许外部直接通过 new 来创建对象，那么构造方法必须是 private
+    2） 工具类不允许有 public 或 default 构造方法。
+    3） 类非 static 成员变量并且与子类共享，必须是 protected。
+    4） 类非 static 成员变量并且仅在本类使用，必须是 private。
+    5） 类 static 成员变量如果仅在本类使用，必须是 private。
+    6） 若是 static 成员变量，考虑是否为 final。
+    7） 类成员方法只供类内部调用，必须是 private。
+    8） 类成员方法只对继承类公开，那么限制为 protected。
+
+说明：任何类、方法、参数、变量，严控访问范围。过于宽泛的访问范围，不利于模块解耦。思考：如果是一个 private 的方法，想删除就删除，可是一个 public 的 service 成员方法或成员变量，删除一下，不得手心冒点汗吗？变量像自己的小孩，尽量在自己的视线内，变量作用域太大，无限制的到处跑，那么你会担心的。
+
+
 ### (五) 日期时间
+
+1. 【强制】日期格式化时，传入 pattern 中表示年份统一使用小写的 y。
+
+说明：日期格式化时，yyyy 表示当天所在的年，而大写的 YYYY 代表是 week in which year（JDK7 之后引入的概念），意思是当天所在的周属于的年份，一周从周日开始，周六结束，只要本周跨年，返回的 YYYY就是下一年。
+
+正例：表示日期和时间的格式如下所示：
+```java
+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+```
+
+2. 【强制】在日期格式中分清楚大写的 M 和小写的 m，大写的 H 和小写的 h 分别指代的意义。
+
+说明：日期格式中的这两对字母表意如下：
+
+    1） 表示月份是大写的 M；
+    2） 表示分钟则是小写的 m；
+    3） 24 小时制的是大写的 H；
+    4） 12 小时制的则是小写的 h。
+
+3.  【强制】获取当前毫秒数：System.currentTimeMillis(); 而不是 new Date().getTime()。
+
+说明：如果想获取更加精确的纳秒级时间值，使用 System.nanoTime 的方式。在 JDK8 中，针对统计时间等场景，推荐使用 Instant 类。
+
+4. 【强制】不允许在程序任何地方中使用：1）java.sql.Date 2）java.sql.Time 3）java.sql.Timestamp。
+
+说明：第 1 个不记录时间，getHours()抛出异常；第 2 个不记录日期，getYear()抛出异常；第 3 个在构造方法 super((time/1000)*1000)，fastTime 和 nanos 分开存储秒和纳秒信息。
+
+反例： java.util.Date.after(Date)进行时间比较时，当入参是 java.sql.Timestamp 时，会触发 JDKBUG(JDK9 已修复)，可能导致比较时的意外结果。
+
+
+5. 【强制】不要在程序中写死一年为 365 天，避免在公历闰年时出现日期转换错误或程序逻辑错误
+
+正例：
+```java
+// 获取今年的天数
+int daysOfThisYear = LocalDate.now().lengthOfYear();
+// 获取指定某年的天数
+LocalDate.of(2011, 1, 1).lengthOfYear();
+```
+反例：
+```java
+// 第一种情况：在闰年 366 天时，出现数组越界异常
+int[] dayArray = new int[365];
+// 第二种情况：一年有效期的会员制，今年 1 月 26 日注册，硬编码 365 返回的却是 1 月 25 日
+Calendar calendar = Calendar.getInstance();
+calendar.set(2020, 1, 26);
+calendar.add(Calendar.DATE, 365);
+```
+
+6. 【推荐】避免公历闰年 2 月问题。闰年的 2 月份有 29 天，一年后的那一天不可能是 2 月 29日。
+
+7. 【推荐】使用枚举值来指代月份。如果使用数字，注意 Date，Calendar 等日期相关类的月份month 取值在 0-11 之间。
+
+说明：参考 JDK 原生注释，Month value is 0-based. e.g., 0 for January.
+
+正例： Calendar.JANUARY，Calendar.FEBRUARY，Calendar.MARCH 等来指代相应月份来进行传参或比较。
+
+
+
 ### (六) 集合处理
+
+1. 【强制】关于 hashCode 和 equals 的处理，遵循如下规则：
+
+说明：String 因为重写了 hashCode 和 equals 方法，所以我们可以愉快地使用 String 对象作为 key 来使用。
+
+    1） 只要重写 equals，就必须重写 hashCode。
+    2） 因为 Set 存储的是不重复的对象，依据 hashCode 和 equals 进行判断，所以 Set 存储的对象必须重写这两个方法。
+    3） 如果自定义对象作为 Map 的键，那么必须覆写 hashCode 和 equals。
+
+
+2. 【强制】判断所有集合内部的元素是否为空，使用 isEmpty()方法，而不是 size()==0 的方式。
+
+说明：前者的时间复杂度为 O(1)，而且可读性更好。
+
+正例：
+```java
+Map<String, Object> map = new HashMap<>();
+if(map.isEmpty()) {
+    System.out.println("no element in this map.");
+}
+```
+
+3. 【强制】在使用 java.util.stream.Collectors 类的 toMap()方法转为 Map 集合时，一定要使用含有参数类型为 BinaryOperator，参数名为 mergeFunction 的方法，否则当出现相同 key值时会抛出 IllegalStateException 异常。
+
+说明：参数 mergeFunction 的作用是当出现 key 重复时，自定义对 value 的处理策略。
+
+正例：
+```java
+List<Pair<String, Double>> pairArrayList = new ArrayList<>(3);
+pairArrayList.add(new Pair<>("version", 6.19));
+pairArrayList.add(new Pair<>("version", 10.24));
+pairArrayList.add(new Pair<>("version", 13.14));
+Map<String, Double> map = pairArrayList.stream().collect(
+// 生成的 map 集合中只有一个键值对：{version=13.14}
+Collectors.toMap(Pair::getKey, Pair::getValue, (v1, v2) -> v2));
+```
+反例：
+```java
+String[] departments = new String[] {"iERP", "iERP", "EIBU"};
+// 抛出 IllegalStateException 异常
+Map<Integer, String> map = Arrays.stream(departments)
+ .collect(Collectors.toMap(String::hashCode, str -> str));
+```
+
+4. 【强制】在使用 java.util.stream.Collectors 类的 toMap()方法转为 Map 集合时，一定要注意当 value 为 null 时会抛 NPE 异常。
+
+说明：在 java.util.HashMap 的 merge 方法里会进行如下的判断：
+```java
+if (value == null || remappingFunction == null)
+throw new NullPointerException();
+```
+反例：
+```java
+List<Pair<String, Double>> pairArrayList = new ArrayList<>(2);
+pairArrayList.add(new Pair<>("version1", 4.22));
+pairArrayList.add(new Pair<>("version2", null));
+Map<String, Double> map = pairArrayList.stream().collect(
+// 抛出 NullPointerException 异常
+Collectors.toMap(Pair::getKey, Pair::getValue, (v1, v2) -> v2));
+```
+
+5. 【强制】ArrayList 的 subList 结果不可强转成 ArrayList，否则会抛出 ClassCastException 异常：java.util.RandomAccessSubList cannot be cast to java.util.ArrayList。
+
+说明：subList 返回的是 ArrayList 的内部类 SubList，并不是 ArrayList 而是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终会反映到原列表上。
+
+6. 【强制】使用 Map 的方法 keySet()/values()/entrySet()返回集合对象时，不可以对其进行添加元素操作，否则会抛出 UnsupportedOperationException 异常。
+
+7. 【强制】Collections 类返回的对象，如：emptyList()/singletonList()等都是 immutable list，不可对其进行添加或者删除元素的操作。
+
+反例：如果查询无结果，返回 Collections.emptyList()空集合对象，调用方一旦进行了添加元素的操作，就会触发 UnsupportedOperationException 异常。
+
+8. 【强制】在 subList 场景中，高度注意对父集合元素的增加或删除，均会导致子列表的遍历、增加、删除产生 ConcurrentModificationException 异常。
+
+9. 【强制】使用集合转数组的方法，必须使用集合的 toArray(T[] array)，传入的是类型完全一致、长度为 0 的空数组。
+
+反例：直接使用 toArray 无参方法存在问题，此方法返回值只能是 Object[]类，若强转其它类型数组将出现ClassCastException 错误。
+
+正例：
+```java
+List<String> list = new ArrayList<>(2);
+list.add("guan");
+list.add("bao");
+String[] array = list.toArray(new String[0]);
+```
+说明：使用 toArray 带参方法，数组空间大小的 length
+
+    1） 等于 0，动态创建与 size 相同的数组，性能最好。
+    2） 大于 0 但小于 size，重新创建大小等于 size 的数组，增加 GC 负担。
+    3） 等于 size，在高并发情况下，数组创建完成之后，size 正在变大的情况下，负面影响与 2 相同。
+    4） 大于 size，空间浪费，且在 size 处插入 null 值，存在 NPE 隐患。
+
+
+10. 【强制】在使用 Collection 接口任何实现类的 addAll()方法时，都要对输入的集合参数进行NPE 判断。
+
+说明：在 ArrayList#addAll 方法的第一行代码即 Object[] a = c.toArray(); 其中 c 为输入集合参数，如果为 null，则直接抛出异常。
+
+
+11. 【强制】使用工具类 Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的 add/remove/clear 方法会抛UnsupportedOperationException 异常。
+
+说明：asList 的返回对象是一个 Arrays 内部类，并没有实现集合的修改方法。Arrays.asList 体现的是适配器模式，只是转换接口，后台的数据仍是数组。
+```java 
+String[] str = new String[] { "yang", "hao" };
+List list = Arrays.asList(str);
+```
+第一种情况：list.add("yangguanbao"); 运行时异常。
+
+第二种情况：str[0] = "changed"; 也会随之修改，反之亦然。
+
+12. 【强制】泛型通配符<? extends T>来接收返回的数据，此写法的泛型集合不能使用 add 方法，而<? super T>不能使用 get 方法，两者在接口调用赋值的场景中容易出错。
+
+说明：扩展说一下 PECS(Producer Extends Consumer Super)原则：第一、频繁往外读取内容的，适合用<? extends T>。第二、经常往里插入的，适合用<? super T>
+
+13. 【强制】在无泛型限制定义的集合赋值给泛型限制的集合时，在使用集合元素时，需要进行instanceof 判断，避免抛出 ClassCastException 异常。
+
+说明：毕竟泛型是在 JDK5 后才出现，考虑到向前兼容，编译器是允许非泛型集合与泛型集合互相赋值。
+
+反例：
+```java
+List<String> generics = null;
+List notGenerics = new ArrayList(10);
+notGenerics.add(new Object());
+notGenerics.add(new Integer(1));
+generics = notGenerics;
+// 此处抛出 ClassCastException 异常
+String string = generics.get(0);
+```
+
+
+14. 【强制】不要在 foreach 循环里进行元素的 remove/add 操作。remove 元素请使用 Iterator方式，如果并发操作，需要对 Iterator 对象加锁。
+
+正例：
+```java
+List<String> list = new ArrayList<>();
+list.add("1");
+list.add("2");
+Iterator<String> iterator = list.iterator();
+while (iterator.hasNext()) {
+    String item = iterator.next();
+    if (删除元素的条件) {
+        iterator.remove();
+    }
+}
+```
+反例：
+```java
+for (String item : list) {
+    if ("1".equals(item)) {
+        list.remove(item);
+    }
+}
+```
+说明：以上代码的执行结果肯定会出乎大家的意料，那么试一下把“1”换成“2”，会是同样的结果吗？
+
+15. 【强制】在 JDK7 版本及以上，Comparator 实现类要满足如下三个条件，不然 Arrays.sort，Collections.sort 会抛 IllegalArgumentException 异常。
+
+说明：三个条件如下
+
+    1） x，y 的比较结果和 y，x 的比较结果相反。
+    2） x>y，y>z，则 x>z。
+    3） x=y，则 x，z 比较结果和 y，z 比较结果相同。
+
+反例：下例中没有处理相等的情况，交换两个对象判断结果并不互反，不符合第一个条件，在实际使用中可能会出现异常。
+```java
+new Comparator<Student>() {
+    @Override
+    public int compare(Student o1, Student o2) {
+        return o1.getId() > o2.getId() ? 1 : -1;
+    }
+};
+```
+
+16. 【推荐】集合泛型定义时，在 JDK7 及以上，使用 diamond 语法或全省略。
+
+说明：菱形泛型，即 diamond，直接使用<>来指代前边已经指定的类型。
+
+正例：
+```java
+// diamond 方式，即<>
+HashMap<String, String> userCache = new HashMap<>(16);
+// 全省略方式
+ArrayList<User> users = new ArrayList(10);
+```
+
+17. 【推荐】集合初始化时，指定集合初始值大小。
+
+说明：HashMap 使用 HashMap(int initialCapacity) 初始化，如果暂时无法确定集合大小，那么指定默认值（16）即可。
+
+正例：initialCapacity = (需要存储的元素个数 / 负载因子) + 1。注意负载因子（即 loader factor）默认为 0.75，如果暂时无法确定初始值大小，请设置为 16（即默认值）。
+
+反例：HashMap 需要放置 1024 个元素，由于没有设置容量初始大小，随着元素不断增加，容量 7 次被迫扩大，resize 需要重建 hash 表。当放置的集合元素个数达千万级别时，不断扩容会严重影响性能。
+
+
+18. 【推荐】使用 entrySet 遍历 Map 类集合 KV，而不是 keySet 方式进行遍历。
+
+说明：keySet 其实是遍历了 2 次，一次是转为 Iterator 对象，另一次是从 hashMap 中取出 key 所对应的value。而 entrySet 只是遍历了一次就把 key 和 value 都放到了 entry 中，效率更高。如果是 JDK8，使用Map.forEach 方法。
+
+正例：values()返回的是 V 值集合，是一个 list 集合对象；keySet()返回的是 K 值集合，是一个 Set 集合对象；entrySet()返回的是 K-V 值组合集合。
+
+
+19. 【推荐】高度注意 Map 类集合 K/V 能不能存储 null 值的情况，如下表格：
+
+
+| 集合类 | Key | Value | Super | 说明 |
+| - | - | - | - | - |
+| Hashtable | 不允许为 null | 不允许为 null| Dictionary | 线程安全 |
+| ConcurrentHashMap | 不允许为 null | 不允许为 null | AbstractMap | 锁分段技术（JDK8:CAS） |
+| TreeMap | 不允许为 null | 允许为 null | AbstractMap | 线程不安全 |
+| HashMap | 允许为 null | 允许为 null | AbstractMap | 线程不安全 |
+
+反例：由于 HashMap 的干扰，很多人认为 ConcurrentHashMap 是可以置入 null 值，而事实上，存储null 值时会抛出 NPE 异常。
+
+20. 【参考】合理利用好集合的有序性(sort)和稳定性(order)，避免集合的无序性(unsort)和不稳定性(unorder)带来的负面影响。
+
+说明：有序性是指遍历的结果是按某种比较规则依次排列的。稳定性指集合每次遍历的元素次序是一定的。
+
+如：ArrayList 是 order/unsort；HashMap 是 unorder/unsort；TreeSet 是 order/sort。
+
+21. 【参考】利用 Set 元素唯一的特性，可以快速对一个集合进行去重操作，避免使用 List 的contains()进行遍历去重或者判断包含操作。
+
+
 ### (七) 并发处理
 ### (八) 控制语句
 ### (九) 前后端规约

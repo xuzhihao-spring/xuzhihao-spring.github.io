@@ -101,6 +101,7 @@ sh /opt/tomcat/bin/startup.sh;tail -f /opt/tomcat/logs/catalina.out
 ```bash
 # jdk
 yum install java-1.8.0-openjdk* -y
+yum install java-1.8.0-openjdk
 vim /etc/profile
 source /etc/profile
 JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk  # jdk配置

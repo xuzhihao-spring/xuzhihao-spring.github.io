@@ -2,7 +2,7 @@
 
 ## 1.1 HashSet
 
-HashSet初始化容量大小与阿里巴巴Java开发手册约定计算公式一致
+HashSet初始化容量大小与阿里巴巴Java开发手册约定计算公式一致(见编程规约第17条)
 
 即initialCapacity = (需要存储的元素个数 / 负载因子) + 1
 

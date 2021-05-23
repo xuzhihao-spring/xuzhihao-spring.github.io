@@ -82,7 +82,7 @@
    * [ShardingSphere](share/database/shardingsphere)
    * [DBLE](share/database/dble)
    * [分布式数据库OceanBase](share/database/oceanbase)
-   * [Git](/deploy/gitlab)
+   * [Git](linux/deploy/gitlab)
    * [Maven](share/monitor/maven)
    * [Gradle](share/monitor/gradle)
    * [Docker](/linux/docker)
