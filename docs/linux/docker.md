@@ -53,6 +53,8 @@ docker inspect                  # 容器IP查询/镜像元数据
 docker history                  # 构建历史
 docker save -o logstash_7.6.2.tar logstash:7.6.2 # 镜像备份
 docker load -i logstash_7.6.2.tar                # 镜像导入
+docker tag  serv:1.0 192.168.3.200/xzh/serv:1.1  # 镜像标记
+
 
 # 容器操作
 docker ps -a|-q|-l              # 查看容器
