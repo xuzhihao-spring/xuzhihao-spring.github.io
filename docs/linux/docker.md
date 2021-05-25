@@ -137,11 +137,10 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 ```
 
 ```shell
-#-f :指定要使用的Dockerfile路径；
-docker build --build-arg JAR_FILE=eureka-server-0.0.1-SNAPSHOT.jar -t eureka:v0.0.1 .
-docker images       #查看镜像是否创建成功
-docker run -i --name=eureka -p 10086:9001 eureka:v0.0.1     #创建容器
-http://192.168.3.200:10086
+# -f :指定要使用的Dockerfile路径；
+docker build --build-arg JAR_FILE=sc-gateway.jar -t xzh-gateway:1.0 .
+docker images     #查看镜像是否创建成功
+docker run -p 9900:9900 --name=xzh-gateway -d xzh-gateway:1.0     #创建容器
 ```
 
 
@@ -217,13 +216,15 @@ docker commit -a="xzh" -m="my redis" [redis容器ID]  myredis:v1.1
 - redis:5
 - nginx:1.10
 - rabbitmq:3.7.15-management
+- mongo:4.2.5
+- nacos/nacos-server:2.0.1
 - elasticsearch:7.6.2
 - kibana:7.6.2
-- mongo:4.2.5
-- nacos/nacos-server:1.3.0
 - logstash:7.6.2
 
-```bash
+
+docker-compose-env.yaml
+```yaml
 version: '3'
 services:
   mysql:
@@ -265,31 +266,6 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
-  elasticsearch:
-    image: elasticsearch:7.6.2
-    container_name: elasticsearch
-    user: root
-    environment:
-      - "cluster.name=elasticsearch" #设置集群名称为elasticsearch
-      - "discovery.type=single-node" #以单一节点模式启动
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #设置使用jvm内存大小
-    volumes:
-      - /mydata/elasticsearch/plugins:/usr/share/elasticsearch/plugins #插件文件挂载
-      - /mydata/elasticsearch/data:/usr/share/elasticsearch/data #数据文件挂载
-    ports:
-      - 9200:9200
-      - 9300:9300
-  kibana:
-    image: kibana:7.6.2
-    container_name: kibana
-    links:
-      - elasticsearch:es #可以用es这个域名访问elasticsearch服务
-    depends_on:
-      - elasticsearch #kibana在elasticsearch启动之后再启动
-    environment:
-      - "elasticsearch.hosts=http://es:9200" #设置访问elasticsearch的地址
-    ports:
-      - 5601:5601
   mongo:
     image: mongo:4.2.5
     container_name: mongo
@@ -304,13 +280,45 @@ services:
       - "MODE=standalone"
     ports:
       - 8848:8848
+```
+
+
+docker-compose-elk762.yaml
+```yaml
+version: '3'
+services:
+  elasticsearch:
+    image: elasticsearch:7.6.2
+    container_name: elasticsearch
+    user: root
+    environment:
+      - "cluster.name=elasticsearch" #设置集群名称为elasticsearch
+      - "discovery.type=single-node" #以单一节点模式启动
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #设置使用jvm内存大小
+    volumes:
+      - /home/mydata/elasticsearch/plugins:/usr/share/elasticsearch/plugins #插件文件挂载
+      - /home/mydata/elasticsearch/data:/usr/share/elasticsearch/data #数据文件挂载
+    ports:
+      - 9200:9200
+      - 9300:9300
+  kibana:
+    image: kibana:7.6.2
+    container_name: kibana
+    links:
+      - elasticsearch:es #可以用es这个域名访问elasticsearch服务
+    depends_on:
+      - elasticsearch #kibana在elasticsearch启动之后再启动
+    environment:
+      - "elasticsearch.hosts=http://es:9200" #设置访问elasticsearch的地址
+    ports:
+      - 5601:5601
   logstash:
     image: logstash:7.6.2
     container_name: logstash
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - /mydata/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf #挂载logstash的配置文件
+      - /home/mydata/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf #挂载logstash的配置文件
     depends_on:
       - elasticsearch #kibana在elasticsearch启动之后再启动
     links:
