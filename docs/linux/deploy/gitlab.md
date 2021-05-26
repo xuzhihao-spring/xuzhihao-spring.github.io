@@ -113,8 +113,10 @@ docker logs gitlab -f
 - 执行以下命令clone项目到本地：
 
 ```bash
-git clone http://192.168.3.200:1080/xuzhihao/hello.git
 
+git credential-manager uninstall # 清除掉缓存在git中的用户名和密码
+
+git clone http://192.168.3.200:1080/xuzhihao/hello.git
 ```
 
 ### 3.3 提交代码

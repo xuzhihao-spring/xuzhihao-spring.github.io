@@ -326,9 +326,185 @@ Feign build(final FallbackFactory<?> nullableFallbackFactory) {
 
 
 
-## 2. Nacos动态服务发现、配置管理
+## 2. Nacos
 
-### 2.1 集群配置
+### 2.1 配置管理
+
+#### 2.1.1 安装配置
+
+下载地址：https://github.com/alibaba/nacos/releases
+
+```bash
+sh startup.sh -m standalone
+```
+
+数据库配置
+```
+spring.datasource.platform=mysql
+db.num=1
+db.url.0=jdbc:mysql://172.17.17.137:3305/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+db.user.0=root
+db.password.0=root
+```
+
+下载curl的windows版本：curl-7.66.0_2-win64-mingw，下载地址：https://curl.haxx.se/windows/ 
+
+进入curl-7.66.0_2-win64-mingw的bin目录，进行下边的测试，通过测试可判断nacos是否正常工作：
+
+```bash
+curl -X POST "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test&content=HelloWorld" # 发布配置
+curl -X GET "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=nacos.cfg.dataId&group=test"					   # 获取配置
+```
+
+#### 2.1.2 客户端获取
+
+```xml
+<dependency>
+	<groupId>com.alibaba.nacos</groupId>
+	<artifactId>nacos‐client</artifactId>
+	<version>1.1.3</version>
+</dependency>
+```
+
+```java
+package com.itheima.nacos;
+
+import java.util.Properties;
+import java.util.concurrent.Executor;
+
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.exception.NacosException;
+
+/**
+ * @author Administrator
+ * @version 1.0
+ **/
+public class SimpleDemoMain {
+    public static void main(String[] args) throws NacosException {
+        // 使用nacos client远程获取nacos服务上的配置信息
+        // nacos server地址
+        String serverAddr = "127.0.0.1:8848";
+        // data id
+        String dataId = "nacos-simple-demo.yaml";
+        // group
+        String group = "DEFAULT_GROUP";
+
+        // String namespace = "c67e4a97-a698-4d6d-9bb1-cfac5f5b51c4";
+        Properties properties = new Properties();
+        properties.put("serverAddr", serverAddr);
+        // properties.put("namespace", namespace);
+        // 获取配置
+        ConfigService configService = NacosFactory.createConfigService(properties);
+        String config = configService.getConfig(dataId, group, 5000);
+        System.out.println(config);
+        configService.addListener(dataId, group, new Listener() {
+            public Executor getExecutor() {
+                return null;
+            }
+
+            // 当配置有变化 时候获取通知
+            public void receiveConfigInfo(String s) {
+                System.out.println(s);
+            }
+        });
+
+        while (true) {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+}
+```
+
+#### 2.1.3 登录管理
+
+```xml
+<dependency>
+	<groupId>org.springframework.security</groupId>
+	<artifactId>spring‐security‐core</artifactId>
+	<version>5.1.4.RELEASE</version>
+</dependency>
+```
+
+```java
+new BCryptPasswordEncoder().encode("123")
+```
+
+```sql
+INSERT INTO users (username, password, enabled) VALUES ('nacos1','$2a$10$SmtL5C6Gp2sLjBrhrx1vj.dJAbJLa4FiJYZsBb921/wfvKAmxKWyu', TRUE);
+INSERT INTO roles (username, role) VALUES ('nacos1', 'ROLE_ADMIN');
+```
+
+关闭认证修改配置application.properties
+```
+spring.security.enabled=false
+```
+
+#### 2.1.4 动态刷新
+
+单文件
+
+```
+server:
+  port: 8080 #启动端口命令行注入
+
+spring:
+  application:
+    name: admin
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848 # 配置中心地址
+        file-extension: yaml #dataid 的名称就是application的name加file-extension   admin.yaml
+        namespace: c67e4a97-a698-4d6d-9bb1-cfac5f5b51c4 # 开发环境
+        group: TEST_GROUP # 测试组
+```
+
+
+自定义扩展 Data Id 配置
+
+```yaml
+server:
+  port: 8000 #启动端口 命令行注入
+
+spring:
+  application:
+    name: admin
+  cloud:
+    nacos:
+      config:
+        #enabled: false #关闭配置
+        server-addr: 127.0.0.1:8848,127.0.0.1:8849,127.0.0.1:8850 # 配置中心地址
+        file-extension: yaml #dataid 的名称就是application的name加file-extension   service1.yaml
+        namespace: c67e4a97-a698-4d6d-9bb1-cfac5f5b51c4 # 开发环境  指定 具体的namespace
+        group: TEST_GROUP # 测试组
+        ext-config[0]:
+          data-id: ext-config-common01.properties
+        ext-config[1]:
+          data-id: ext-config-common02.properties
+          group: GLOBALE_GROUP
+        ext-config[2]:    # 数字大 优先级高 
+          data-id: ext-config-common03.properties
+          group: REFRESH_GROUP
+          refresh: true  #动态刷新配置
+```
+
+自定义共享 Data Id 配置
+```yaml
+  cloud:
+    nacos:
+      config:
+        shared-dataids: ext-config-common01.properties,ext-config-common02.properties,ext-config-common03.properties
+        refreshable-dataids: ext-config-common01.properties
+```
+
+#### 2.1.5 集群配置
 
 nacos/的conf目录下cluster.conf
 
@@ -339,12 +515,13 @@ nacos/的conf目录下cluster.conf
 ```
 
 application.properties配置主备
-```properties
+
+```
 spring.datasource.platform=mysql
 
 db.num=2
 db.url.0=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
-db.url.1=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+db.url.1=jdbc:mysql://127.0.0.1:3306/nacos1?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
 db.user=root
 db.password=root
 ```
@@ -364,6 +541,11 @@ spring:
 ```
 
 2. 将三个节点映射出一套VIP地址，配置文件中写一个即可
+
+
+### 2.2 服务发现
+
+
 
 
 ## 3. RocketMQ

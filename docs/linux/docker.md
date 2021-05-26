@@ -222,8 +222,8 @@ docker commit -a="xzh" -m="my redis" [redis容器ID]  myredis:v1.1
 - kibana:7.6.2
 - logstash:7.6.2
 
+### 5.1 docker-compose-env.yaml
 
-docker-compose-env.yaml
 ```yaml
 version: '3'
 services:
@@ -282,8 +282,8 @@ services:
       - 8848:8848
 ```
 
+### 5.2 docker-compose-elk762.yaml
 
-docker-compose-elk762.yaml
 ```yaml
 version: '3'
 services:

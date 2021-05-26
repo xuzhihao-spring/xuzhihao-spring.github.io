@@ -654,8 +654,11 @@ docker pull 192.168.3.200:88/test/eureka:v0.0.1
 
 拷贝公钥到远程服务器
 
-> ssh-copy-id 192.168.66.103
-
+```bash
+cd /root/.ssh/
+ssh-keygen
+ssh-copy-id 192.168.3.200
+```
 系统配置->添加远程服务器
 
 ![](../../images/share/monitor/devops/jenkins_ssh_publish.png)
