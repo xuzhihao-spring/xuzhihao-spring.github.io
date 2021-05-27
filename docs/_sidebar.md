@@ -1,6 +1,7 @@
 * 序章
-  * [学习路线](share/mindmap.md)
-  * [开发手册](share/coding_guidelines.md)
+  * [学习路线](share/foreword/mindmap.md)
+  * [开发手册](share/foreword/coding_guidelines.md)
+  * [企业级解决方案](share/foreword/project.md)
 
 * Linux
   * [Linux](linux/linux.md)

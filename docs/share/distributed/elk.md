@@ -64,3 +64,4 @@ get mytest/_search
 
 ```
 
+## 4. Filebeat
