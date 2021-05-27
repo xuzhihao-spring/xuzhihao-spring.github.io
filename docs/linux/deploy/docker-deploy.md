@@ -290,6 +290,43 @@ docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  -
 docker run -d --name zipkin -p  9411:9411 openzipkin/zipkin
 ```
 
+### skywalking
+
+```bash
+docker pull elasticsearch:7.6.2
+docker pull apache/skywalking-oap-server:6.6.0-es7
+docker pull apache/skywalking-ui:6.6.0
+
+# 安装server 因为之前elk是compose安装,默认在mydata_default的网桥中
+docker run --name oap --restart always -d \
+--network mydata_default \
+--restart=always \
+-e TZ=Asia/Shanghai \
+-p 12800:12800 \
+-p 11800:11800 \
+--link elasticsearch:es \
+-e SW_STORAGE=elasticsearch \
+-e SW_STORAGE_ES_CLUSTER_NODES=es:9200 \
+apache/skywalking-oap-server:6.6.0-es7
+
+# 安装ui
+docker run -d --name skywalking-ui \
+--network mydata_default \
+--restart=always \
+-e TZ=Asia/Shanghai \
+-p 8088:8080 \
+--link oap:oap \
+-e SW_OAP_ADDRESS=oap:12800 \
+apache/skywalking-ui:6.6.0
+```
+
+下载源码包，下面会用到agent 
+> https://archive.apache.org/dist/skywalking/6.6.0/apache-skywalking-apm-6.6.0.tar.gz
+
+```bash
+java -jar skywalking_springboot.jar # 原启动方式
+java -javaagent:/home/mydata/app_skywalking/apache-skywalking-apm-bin/agent/skywalking-agent.jar -Dskywalking.agent.service_name=springboot -Dskywalking.collector.backend_service=127.0.0.1:11800 -jar /home/mydata/app_skywalking/skywalking_springboot.jar
+```
 ## 5. MQ
 
 ### activemq

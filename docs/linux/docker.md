@@ -39,11 +39,18 @@ sudo systemctl restart docker
 
 ## 3. 命令
 ```bash
-# 容器信息
-docker version              # 查看docker容器版本
-docker info                 # 查看docker容器信息
-docker --help               # 查看docker容器帮助
+# 基本信息
+docker version              # 查看docker版本
+docker info                 # 查看docker信息
+docker --help               # 查看docker帮助
 docker info | grep Cgroup   # 查看驱动
+
+# 网络
+docker network create -d bridge my-bridge # 创建一个连接方式是bridge网桥
+docker network ls                         # 查看网络
+docker run --name mynginx2 --network my-bridge -p 8080:80 -d nginx:latest # 将容器添加到指定网桥中
+docker inspect mynginx2                   # 查看my-bridge网络里面的容器
+docker network connect my-bridage test2   # 手动将某个容器加入网桥
 
 # 镜像操作
 docker images                   # 查看镜像
@@ -54,7 +61,6 @@ docker history                  # 构建历史
 docker save -o logstash_7.6.2.tar logstash:7.6.2 # 镜像备份
 docker load -i logstash_7.6.2.tar                # 镜像导入
 docker tag  serv:1.0 192.168.3.200/xzh/serv:1.1  # 镜像标记
-
 
 # 容器操作
 docker ps -a|-q|-l              # 查看容器
@@ -72,9 +78,6 @@ docker stats $(docker ps -a -q)  # 监控所有容器
 docker stats --no-stream=true $(docker ps -a -q)        # 监控所有容器当前
 docker container update --restart=always [containerid]  # 容器自动启动
 docker update --restart=always $(docker ps -q -a)       # 更新所有容器启动时自动启动
-docker-compose -f docker-compose-env.yml up -d  
-
-# 容器进入
 docker exec -it [containerid] /bin/bash
 docker run --net=host           # host模式执行容器，使用主机网络堆栈.因此无法将端口暴露给主机,因为它是主机
 
@@ -221,6 +224,11 @@ docker commit -a="xzh" -m="my redis" [redis容器ID]  myredis:v1.1
 - elasticsearch:7.6.2
 - kibana:7.6.2
 - logstash:7.6.2
+
+```
+docker-compose -f docker-compose-env.yml up -d  
+docker-compose -f docker-compose-env.yml down
+```
 
 ### 5.1 docker-compose-env.yaml
 

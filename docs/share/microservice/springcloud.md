@@ -1312,6 +1312,22 @@ java -jar zipkin-server-2.12.9-exec.jar --STORAGE_TYPE=mysql --MYSQL_HOST=127.0.
 - MYSQL_PASS ：mysql密码
 
 
+### 9.5 Skywalking
+
+APM (Application Performance Management) 即应用性能管理系统，是对企业系统即时监控以实现对应用程序性能管理和故障管理的系统化的解决方案。应用性能管理，主要指对企业的关键业务应用进行监测、优化，提高企业应用的可靠性和质量，保证用户得到良好的服务，降低IT总拥有成本
+
+分布式链路跟踪最先由Google在Dapper论文中提出，而OpenTracing通过提供平台无关、厂商无关的API，使得开发人员能够方便的添加（或更换）追踪系统的实现
+
+Skywalking的几大特点：
+  1. 多语言自动探针，Java，.NET Core和Node.JS。
+  2. 多种监控手段，语言探针和service mesh。
+  3. 轻量高效。不需要额外搭建大数据平台。
+  4. 模块化架构。UI、存储、集群管理多种机制可选。
+  5. 支持告警。
+  6. 优秀的可视化效果。
+
+
+
 ## 10. 开源配置中心Apollo
 
 Apollo（阿波罗）是携程框架部门研发的分布式配置中心，通过官网提供的[下载](https://github.com/nobodyiam/apollo-build-scripts)连接下载安装包
