@@ -104,8 +104,6 @@ docker run --rm -it \
 
 ## 4. Dockerfile
 
-### 4.1 参数
-
 ```bash
 FROM        #设置基础镜像
 MAINTAINER  #设置维护者信息
@@ -122,7 +120,9 @@ VOLUME      #设置可被挂载的数据卷（目录映射）
 ONBUILD     #设置在构建时需要自动执行的命令
 ```
 
-### 4.2 本地文件构建镜像
+### 4.1 构建镜像
+
+- 本地构建
 
 在jar包所在的目录下创建一个名为 Dockerfile 的文件，文件内容如下：
 
@@ -174,7 +174,24 @@ docker build -t xzh/tomcat8 .
 ```
 
 
-### 4.3 远程下载构建镜像
+debian构建
+```bash
+FROM debian  
+COPY . /app  
+RUN apt-get update  
+RUN apt-get -y install openjdk-11-jdk ssh emacs  
+CMD [“java”, “-jar”, “/app/target/my-app-1.0-SNAPSHOT.jar”]  
+```
+
+```bash
+cd simple-java-maven-app-master  
+vim Dockerfile  
+docker pull debian:latest 
+time docker build --no-cache -t docker-class . 
+```
+
+
+- 远程下载构建镜像
 
 注意：Dockerfile 的指令每执行一次都会在 docker 上新建一层。所以过多无意义的层，会造成镜像膨胀过大
 
@@ -189,7 +206,7 @@ RUN yum install wget \
 docker build -t xxx:v0.1 .
 ```
 
-### 4.4 仓库下载构建镜像
+- 仓库下载构建镜像
 
 ```bash
 FROM openjdk:9-jdk
@@ -202,7 +219,7 @@ RUN wget https://github.com/eclipse/eclipse.jdt.ls/archive/v0.48.0.tar.gz \
     && ./mvnw build
 ```
 
-### 4.5 从容器构建镜像
+-  从容器构建镜像
 
 ```bash
 # 基于当前redis容器创建一个新的镜像；
