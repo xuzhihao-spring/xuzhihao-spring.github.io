@@ -440,4 +440,350 @@ es客户端的api比较复杂难懂，通过通用的搜索服务对外提供res
 
 ## 2. 企业级功能
 
-## 3. 持续集成部署
+### 2.1 单点登录
+
+#### 2.1.1 原理说明
+
+SSO单点登录是基于共享uaa授权中心的cookie来实现的，大概流程如下：
+
+1. 当系统1登录成功后
+2. uaa授权中心里面会保存了系统1中的登录信息建立全局会话，并把自己的cookie写到用户的浏览器中
+3. 当同一个浏览器访问系统2时，当跳转到uaa授权中心授权时会把浏览器中uaa的cookie也带过去
+4. uaa授权中心根据自己的cookie判断该浏览器的用户已经登录过，则自动登录完成单点登录
+
+#### 2.1.2 OAuth 2.0 四种授权模式
+
+1. 授权码（authorization code）方式，指的是第三方应用先申请一个授权码，然后再用该码获取令牌
+2. 简化模式（implicit）去掉了授权码获取的流程
+3. 密码模式（resource owner password credentials）应用直接都是受信任的(都是由一家公司开发的)
+4. 客户端模式（client credentials）用在应用间API访问
+
+### 2.2 alibaba/nacos注册中心
+
+- Nacos 致力于帮助您发现、配置和管理微服务。Nacos 提供了一组简单易用的特性集，帮助您快速实现动态服务发现、服务配置、服务元数据及流量管理。
+- Nacos 帮助您更敏捷和容易地构建、交付和管理微服务平台。 Nacos 是构建以“服务”为中心的现代应用架构 (例如微服务范式、云原生范式) 的服务基础设施。
+- 关键特性包括
+    - 服务发现和服务健康监测
+    - 动态配置服务
+    - 动态 DNS 服务
+    - 服务及其元数据管理
+
+### 2.3 alibaba/sentinel限流熔断
+
+Sentinel 是阿里巴巴开源的分布式系统的流量防卫组件，Sentinel 把流量作为切入点，从流量控制，熔断降级，系统负载保护等多个维度保护服务的稳定性。
+
+```java
+package com.central.sentinel.config;
+
+import cn.hutool.json.JSONUtil;
+import com.alibaba.csp.sentinel.adapter.spring.webflux.callback.BlockRequestHandler;
+import com.alibaba.csp.sentinel.adapter.spring.webmvc.callback.BlockExceptionHandler;
+import com.central.common.model.Result;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.server.ServerResponse;
+
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Sentinel配置全局异常
+ */
+public class SentinelAutoConfigure {
+    /**
+     * 限流、熔断统一处理类
+     */
+    @Configuration
+    @ConditionalOnClass(HttpServletRequest.class)
+    public static class WebmvcHandler {
+        @Bean
+        public BlockExceptionHandler webmvcBlockExceptionHandler() {
+            return (request, response, e) -> {
+                response.setStatus(429);
+                Result result = Result.failed(e.getMessage());
+                response.getWriter().print(JSONUtil.toJsonStr(result));
+            };
+        }
+    }
+
+
+    /**
+     * 限流、熔断统一处理类
+     */
+    @Configuration
+    @ConditionalOnClass(ServerResponse.class)
+    public static class WebfluxHandler {
+        @Bean
+        public BlockRequestHandler webfluxBlockExceptionHandler() {
+            return (exchange, t) ->
+                    ServerResponse.status(HttpStatus.TOO_MANY_REQUESTS)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(BodyInserters.fromValue(Result.failed(t.getMessage())));
+        }
+    }
+}
+```
+
+网关流控
+
+### 2.4 APM监控-SkyWalking
+
+SkyWalking开源项目由吴晟2015年创建，同年10月在GitHub上作为个人项目开源。SkyWalking项目的核心目标，是针对微服务、Cloud Native、容器化架构，提供应用性能监控和分布式调用链追踪能力。 2019年4月毕业，成为Apache基金会顶级项目。目前支持链路追踪和监控应用组件如下，基本涵盖主流框架和容器，如国产PRC Dubbo和motan等，国际化的spring boot,spring cloud。提供以下主要功能：
+ - 分布式追踪和上下文传输
+ - 应用、实例、服务性能指标分析
+ - 根源分析
+ - 应用拓扑分析
+ - 应用和服务依赖分析
+ - 慢服务检测
+ - 性能优化
+
+
+### 2.5 Metrics监控
+
+1. Prometheus（普罗米修斯）是一套开源的监控&报警&时间序列数据库的组合，起始是由SoundCloud公司开发的。随着发展，越来越多公司和组织接受采用Prometheus，社会也十分活跃，他们便将它独立成开源项目，并且有公司来运作。Google SRE的书内也曾提到跟他们BorgMon监控系统相似的实现是Prometheus。现在最常见的Kubernetes容器管理系统中，通常会搭配Prometheus进行监控。
+2. Prometheus基本原理是通过HTTP协议周期性抓取被监控组件的状态，这样做的好处是任意组件只要提供HTTP接口就可以接入监控系统，不需要任何SDK或者其他的集成过程。这样做非常适合虚拟化环境比如VM或者Docker 。
+3. Prometheus应该是为数不多的适合Docker、Mesos、Kubernetes环境的监控系统之一。输出被监控组件信息的HTTP接口被叫做exporter 。目前互联网公司常用的组件大部分都有exporter可以直接使用，比如Varnish、Haproxy、Nginx、MySQL、Linux 系统信息 (包括磁盘、内存、CPU、网络等等)，具体支持的源看：https://github.com/prometheus。与其他监控系统相比，Prometheus的主要特点是：
+  - 一个多维数据模型（时间序列由指标名称定义和设置键/值尺寸）。
+  - 非常高效的存储，平均一个采样数据占~3.5bytes左右，320万的时间序列，每30秒采样，保持60天，消耗磁盘大概228G。
+  - 一种灵活的查询语言。
+  - 不依赖分布式存储，单个服务器节点。
+  - 时间集合通过HTTP上的PULL模型进行。
+  - 通过中间网关支持推送时间。
+  - 通过服务发现或静态配置发现目标。
+  - 多种模式的图形和仪表板支持。
+
+### 2.6 消息队列
+
+1. 消息队列对比参照表
+
+![](../../images/share/foreword/mq_vs.png)
+
+2. RocketMQ
+
+消息队列作为高并发系统的核心组件之一，能够帮助业务系统解构提升开发效率和系统稳定性。主要具有以下优势：
+
+- 削峰填谷：主要解决瞬时写压力大于应用服务能力导致消息丢失、系统奔溃等问题
+- 系统解耦：解决不同重要程度、不同能力级别系统之间依赖导致一死全死
+- 提升性能：当存在一对多调用时，可以发一条消息给消息系统，让消息系统通知相关系统
+- 蓄流压测：线上有些链路不好压测，可以通过堆积一定量消息再放开来压测
+
+Apache Alibaba RocketMQ 是一款分布式、队列模型的消息中间件，具有以下特点：
+- 支持严格的消息顺序
+- 支持 Topic 与 Queue 两种模式
+- 亿级消息堆积能力
+- 比较友好的分布式特性
+- 同时支持 Push 与 Pull 方式消费消息
+- 历经多次天猫双十一海量消息考验
+
+目前主流的 MQ 主要是 RocketMQ、kafka、RabbitMQ，对比其主要优势有：
+- 支持事务型消息（消息发送和 DB 操作保持两方的最终一致性，RabbitMQ 和 Kafka 不支持）
+- 支持结合 RocketMQ 的多个系统之间数据最终一致性（多方事务，二方事务是前提）
+- 支持 18 个级别的延迟消息（RabbitMQ 和 Kafka 不支持）
+- 支持指定次数和时间间隔的失败消息重发（Kafka 不支持，RabbitMQ 需要手动确认）
+- 支持 Consumer 端 Tag 过滤，减少不必要的网络传输（RabbitMQ 和 Kafka 不支持）
+- 支持重复消费（RabbitMQ 不支持，Kafka 支持）
+
+### 2.7 分布式事务
+
+#### 2.7.1 基础理论
+
+一、事物特性(ACID)
+这种特性简称刚性事物
+
+- 原子性（A）
+
+    所谓的原子性就是说，在整个事务中的所有操作，要么全部完成，要么全部不做，没有中间状态。对于事务在执行中发生错误，所有的操作都会被回滚，整个事务就像从没被执行过一样。
+- 一致性（C）
+
+    事务的执行必须保证系统的一致性，就拿转账为例，A有500元，B有300元，如果在一个事务里A成功转给B50元，那么不管并发多少，不管发生什么，只要事务执行成功了，那么最后A账户一定是450元，B账户一定是350元。
+- 隔离性（I）
+
+    所谓的隔离性就是说，事务与事务之间不会互相影响，一个事务的中间状态不会被其他事务感知。
+- 持久性（D）
+
+    所谓的持久性，就是说一单事务完成了，那么事务对数据所做的变更就完全保存在了数据库中，即使发生停电，系统宕机也是如此。
+
+二、CPA理论
+
+三、Base理论
+
+四、什么是XA接口
+
+XA是一个分布式事务协议，由Tuxedo提出。XA中大致分为两部分：事务管理器和本地资源管理器。其中本地资源管理器往往由数据库实现，比如Oracle、DB2这些商业数据库都实现了XA接口，而事务管理器作为全局的调度者，负责各个本地资源的提交和回滚。
+
+五、什么是JTA
+
+作为java平台上事务规范JTA（Java Transaction API）也定义了对XA事务的支持，实际上，JTA是基于XA架构上建模的，在JTA 中，事务管理器抽象为javax.transaction.TransactionManager接口，并通过底层事务服务（即JTS）实现。像很多其他的java规范一样，JTA仅仅定义了接口，具体的实现则是由供应商(如J2EE厂商)负责提供，目前JTA的实现主要由以下几种：
+- J2EE容器所提供的JTA实现(JBoss)
+- 独立的JTA实现:如JOTM，Atomikos.这些实现可以应用在那些不使用J2EE应用服务器的环境里用以提供分布事事务保证。如Tomcat,Jetty以及普通的java应用。
+
+六、二阶段提交协议（2PC）
+
+七、三阶段提交协议（3PC）
+
+
+#### 2.7.2 TX-LCN(同步场景)
+
+LCN通讯是基于TCP长连接的socket通讯，TxManager与事务控制方是基于netty框架完成的。该协议只描述参与Socket通讯的协议。
+
+LCN分布式事务框架其本身并不创建事务，而是基于对本地事务的协调从而达到事务一致性的效果。
+
+LCN 核心采用3PC机制，采用强一致性方案，保证了事务的一致性。
+
+框架特点：
+  - 兼容SpringCloud、Dubbo；
+  - 兼容rpc降级熔断
+  - 使用简单，低依赖，代码完全开源；
+  - 基于切面的强一致性事务框架；
+  - 高可用，模块可以依赖Dubbo或SpringCloud的集群方式做集群化，TxManager也可以做集群化；
+  - 支持本地事务和分布式事务共存；
+
+缺点：代理的连接需要随事务发起方一共释放连接，增加了连接占用的时间；不适用于热点数据和异步场景。
+
+
+#### 2.7.3 SEATA(同步场景)
+
+Seata是 阿里巴巴 开源的 一站式分布式事务解决方案 中间件，以 高效 并且对业务 0 侵入 的方式，解决 微服务 场景下面临的分布式事务问题
+
+整体事务逻辑是基于 两阶段提交 的模型，核心概念包括以下3个角色：
+- TM：事务的发起者。用来告诉 TC，全局事务的开始，提交，回滚。
+- RM：具体的事务资源，每一个 RM 都会作为一个分支事务注册在 TC。
+- TC：事务的协调者seata-server，用于接收我们的事务的注册，提交和回滚
+
+1. AT模式
+
+该模式适合的场景：
+- 基于支持本地 ACID 事务的关系型数据库。
+- Java 应用，通过 JDBC 访问数据库。
+
+2. MT模式
+
+该模式逻辑类似TCC，需要 自定义实现prepare、commit和rollback的逻辑，适合非关系型数据库的场景
+
+
+#### 2.7.4 RocketMQ(异步场景)
+
+RocketMQ 是阿里巴巴开源的分布式消息中间件，目前已成为 Apache 的顶级项目。历经多次天猫双十一海量消息考验，具有高性能、低延时和高可靠等特性
+
+#### 2.7.5 异步架构一致性实现思路
+
+从原理可以发现事务消息仅仅只是保证本地事务和MQ消息发送形成整体的原子性，而投递到MQ服务器后，并无法保证消费者一定能消费成功
+
+如果消费端消费失败后的处理方式，建议是记录异常信息然后 人工处理，并不建议回滚上游服务的数据(因为两者是 解耦 的，而且 复杂度 太高)
+
+我们可以利用 MQ 的两个特性`重试`和`死信队列`来协助消费端处理
+- 消费失败后进行一定次数的 重试
+- 重试后也失败的话该消息丢进 死信队列 里
+- 另外起一个线程监听消费 死信队列 里的消息，记录日志并且预警！
+
+因为有重试所以消费者需要实现幂等性
+
+
+### 2.8 分布式日志链路跟踪
+
+开发排查系统问题用得最多的手段就是查看系统日志，在分布式环境中一般使用ELK来统一收集日志，但是在并发大时使用日志定位问题还是比较麻烦，由于大量的其他用户/其他线程的日志也一起输出穿行其中导致很难筛选出指定请求的全部相关日志，以及下游线程/服务对应的日志。
+
+解决思路:
+- 每个请求都使用一个唯一标识来追踪全部的链路显示在日志中，并且不修改原有的打印方式(代码无入侵)
+- 使用Logback的MDC机制日志模板中加入traceId标识，取值方式为%X{traceId}
+
+实现方案
+
+由于MDC内部使用的是ThreadLocal所以只有本线程才有效，子线程和下游的服务MDC里的值会丢失；所以方案主要的难点是解决值的传递问题，主要包括以几下部分：
+- API网关中的MDC数据如何传递给下游服务
+- 服务如何接收数据，并且调用其他远程服务时如何继续传递
+- 异步的情况下(线程池)如何传给子线程
+
+
+
+### 2.9 数据库之分库分表
+
+### 2.10 分布式文件系统
+
+#### 2.10.1 FastDFS
+
+FastDFS是一个开源的轻量级分布式文件系统。它解决了大数据量存储和负载均衡等问题。特别适合以中小文件（建议范围：4KB < file_size <500MB）为载体的在线服务，如相册网站、视频网站等等。在UC基于FastDFS开发向用户提供了：网盘，社区，广告和应用下载等业务的存储服务。
+
+FastDFS为互联网量身定制，充分考虑了冗余备份、负载均衡、线性扩容等机制，并注重高可用、高性能等指标，使用FastDFS很容易搭建一套高性能的文件服务器集群提供文件上传、下载等服务。
+
+#### 2.10.2 MinIO
+
+MinIO 是一个基于Apache License v2.0开源协议的对象存储服务。它兼容亚马逊S3云存储服务接口，非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。
+
+MinIO是一个非常轻量的服务,可以很简单的和其他应用的结合，类似 NodeJS, Redis 或者 MySQL。
+
+
+### 2.11 统一日志中心详解
+
+### 2.12 慢查询sql
+
+### 2.13 审计日志
+
+### 2.14 JWT的RSA非对称密钥生成
+
+### 2.15 Canal数据库日志解析消费
+
+### 2.16 Zookeeper集群搭建
+
+### 2.17 Redis
+
+### 2.18 MySQL
+
+### 2.19 容器管理平台
+
+Rancher是业界唯一完全开源的企业级容器管理平台，为企业用户提供在生产环境中落地使用容器所需的一切功能与组件。Rancher2.0基于Kubernetes构建。使用Rancher，DevOps团队可以轻松测试、部署和管理应用程序，运维团队可以部署、管理和维护一切Kubernetes集群，无论集群运行在何基础设施之上。
+
+
+## 3. 核心功能
+
+- 统一认证功能
+  - 网关统一认证
+  - url级权限控制
+  - 支持oauth2的四种模式登录
+  - 支持用户名、密码加图形验证码登录
+  - 支持手机号加密码登录
+  - 支持openId登录
+  - 支持第三方系统单点登录
+- 分布式系统基础支撑
+  - 服务注册发现、路由与负载均衡
+  - 服务降级与熔断
+  - 服务限流(url/方法级别)
+  - 统一配置中心
+  - 统一日志中心
+  - 统一搜索中心
+  - 统一分布式缓存操作类、cacheManager配置扩展
+  - 分布式锁
+  - 分布式任务调度器
+  - 支持CI/CD持续集成(包括前端和后端)
+  - 分布式Id生成器
+  - 分布式事务(强一致性/最终一致性)
+  - 日志链路追踪
+- 系统监控功能
+  - 服务调用链监控
+  - 应用拓扑图
+  - 应用统一日志查询
+  - 慢查询SQL监控
+  - 应用吞吐量监控(qps、rt)
+  - 服务降级、熔断监控
+  - 服务限流监控
+  - 微服务服务监控
+  - 服务器监控
+  - redis监控
+  - mysql监控
+  - elasticSearch监控
+  - nacos监控
+  - prometheus监控
+- 业务基础功能支撑
+  - 多租户(应用隔离)
+  - 高性能方法级幂等性支持
+  - RBAC权限管理，实现细粒度控制(方法、url级别)
+  - 快速实现导入、导出功能
+  - 数据库访问层自动实现crud操作
+  - 代码生成器
+  - 基于Hutool的各种便利开发工具
+  - 网关聚合所有Swagger接口文档
+  - 统一跨域处理
+  - 统一异常处理
