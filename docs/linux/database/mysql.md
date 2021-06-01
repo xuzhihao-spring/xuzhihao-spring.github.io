@@ -17,14 +17,14 @@ lower_case_table_names=2    --表名存储为给定的大小写但是比较的�
 docker ps -a
 docker exec -it  [containerid]  /bin/bash
 vi /etc/mysql/mysql.conf.d/mysqld.cnf 
-#在配置文件中添加lower_case_table_names=1
+# 在配置文件中添加lower_case_table_names=1
 apt-get update
 apt-get install -y vim
 
-find / -name my.cnf rpm安装时配置文件位置
-/usr/my.cnf
+find / -name my.cnf # rpm安装时配置文件位置
+/etc/mysql/mysql.conf.d/mysqld.cnf
 lower_case_table_names=1
-
+service mysql restart
 ```
 
 ### 1.2 慢查询日志
