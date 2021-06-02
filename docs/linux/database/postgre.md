@@ -464,3 +464,62 @@ psql -h 192.168.3.200 -p 5432 -U postgres -W #使用指定用户和IP端口登�
 \d              #查看当前schema中所有的表
 \d [schema.]table   #查看表的结构
 ```
+
+## 5. Debezium数据实时同步ES
+
+```bash
+# zk
+docker run -itd --name zookeeper -p 2181:2181 -p 2888:2888 -p 3888:3888 debezium/zookeeper
+# kafka
+docker run -itd  --name kafka -p 9092:9092 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.137:9092  \
+-e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 --link zookeeper:zookeeper debezium/kafka
+# kafka监控主题
+docker run -itd --rm --name watcher --link zookeeper:zookeeper --link kafka:kafka debezium/kafka watch-topic -a -k postgres.inventory.products
+# kafka创建主题
+docker exec -it kafka /bin/bash
+cd bin
+sh ./kafka-topics.sh --create --zookeeper 172.18.0.4:2181 --replication-factor 1 --partitions 1 --topic postgres.inventory.products   
+# postgres
+docker run -itd  --name database -p 5433:5432 -e POSTGRES_PASSWORD=debezium  -d debezium/example-postgres
+# connect
+docker run -itd --rm --name connect -p 8083:8083 -e GROUP_ID=1 
+-e CONFIG_STORAGE_TOPIC=my_connect_configs 
+-e OFFSET_STORAGE_TOPIC=my_connect_offsets 
+-e STATUS_STORAGE_TOPIC=my_connect_statuses 
+--link zookeeper:zookeeper --link kafka:kafka --link database:database debezium/connect
+# kafka-manager
+docker run -itd --name kafka-manager \
+--link zookeeper:zookeeper \
+--link kafka:kafka -p 9001:9000 \
+--restart=always \
+--env ZK_HOSTS=zookeeper:2181 \
+sheepkiller/kafka-manager
+```
+
+```sql
+SELECT * FROM pg_replication_slots;
+```
+
+1. postman测试get: ip:8083
+2. 创建连接器
+```bash
+post ip:8083/connectors 
+{
+    "name": "test-connector",      
+    "config": {
+        "name": "test-connector",    
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "172.17.17.137",   
+        "database.port": "5433",
+        "database.dbname": "postgres",
+        "database.user": "postgres",
+        "database.password": "debezium",
+        "database.server.name": "postgres",  
+        "table.whitelist": "inventory.products",  
+        "plugin.name": "pgoutput"
+    }
+}
+```
+3. 查看所有连接器get ip:8083/connectors/ 

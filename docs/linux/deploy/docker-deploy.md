@@ -460,6 +460,15 @@ docker run -d -p 8086:8086 \
       influxdb:2.0.6
 ```
 
+### couchdb
+
+```bash
+docker run -p 5984:5984 --name my-couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=admin -v /home/mydata/couchdb/data:/opt/couchdb/data -d couchdb
+docker run -d -p 8800:8000 --link=my-couchdb --name fauxton 3apaxicom/fauxton sh -c 'fauxton -c http://172.17.17.137:5984'
+
+```
+
+
 ## 3. 存储
 
 ### fastdfs
