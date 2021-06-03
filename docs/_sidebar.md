@@ -31,10 +31,9 @@
   * [Hutool常用的工具类和方法](tools/hutool.md)
   * [服务端高并发分布式架构演进之路](tools/style.md)
   * [开源协议](tools/opensource.md)
-  * [参考](tools/node.md)
 
 * 学习笔记
-   * [算法函数](share/function.md)
+   * [算法函数](share/jvm/function.md)
    * [JVM底层原理](share/jvm/index.md)
    * [Map源码](share/j2se/map)
    * [List源码](share/j2se/list)

@@ -1,10 +1,18 @@
-* 源码学习
+* 源码
   * [tomcat-7.0.42](https://github.com/xuzhihao-java/tomcat-7.0.42)
   * [tomcat-8.5.61](https://github.com/xuzhihao-java/tomcat-8.5.61)
   * [zookeeper-3.6.2](https://github.com/xuzhihao-java/zookeeper-3.6.2)
   * [Openfire-4.6.2](https://github.com/xuzhihao-java/Openfire-4.6.2)
-* 开发框架
+* 模板
+  * [AdminLTE](https://github.com/xuzhihao-java/AdminLTE)
+  * [AdminLTE-2.4汉化](https://github.com/xuzhihao-java/AdminLTE_CN)
+  * [小米商城首页](https://github.com/xuzhihao-java/xiaomi-index-page)
+  * [迅雷商城首页](https://github.com/xuzhihao-java/xunlei-index-page)
+  * [layim](https://github.com/xuzhihao-java/layim)
+  * [layuiAdmin](https://github.com/xuzhihao-java/layuiAdmin)
+  * [wmsAdmin](https://github.com/xuzhihao-java/wmsAdmin)  
+* 框架
   * [开发脚手架](https://github.com/xuzhihao-java/framework)
   * [微服务平台](https://github.com/xuzhihao-java/microservices-platform)
   * [静态调试](https://github.com/xuzhihao-java/html)
-
+  * [WebIM调试](https://github.com/xuzhihao-java/openfire-strophe)
