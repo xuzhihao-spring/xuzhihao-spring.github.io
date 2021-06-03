@@ -1,6 +1,6 @@
 
 JVM底层原理
- * [算法函数](share/function.md)
+ * [算法函数](share/jvm/function.md)
  * [JVM内存模型](/share/jvm/index.md?id=_1-jvm内存模型)
  * [M垃圾收集机制](/share/jvm/index.md?id=_2-垃圾收集机制详解)
  * [垃圾收集算法](/share/jvm/index.md?id=_3-垃圾收集算法详解)
