@@ -680,11 +680,40 @@ docker run -d --name rmqconsole -p 9800:8080 --link rmqnamesrv:namesrv -e "JAVA_
 ### kafka
 
 ```bash
-docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 --link zookeeper -e     KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -t wurstmeister/kafka
-
-docker run -d --name kafka-manager \--link zookeeper:zookeeper \--link kafka:kafka -p 9001:9000 \--restart=always \--env ZK_HOSTS=zookeeper:2181 \sheepkiller/kafka-manager
-
+docker run -itd --name kafka -p 9092:9092 \
+-e KAFKA_BROKER_ID=0 \
+-e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 \
+-e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.80:9092 \
+-e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
+--link zookeeper \
+-t wurstmeister/kafka
 ```
+
+kafka-manager
+```bash
+docker run -itd --name kafka-manager \
+--link zookeeper:zookeeper \
+--link kafka:kafka -p 9001:9000 \
+--restart=always \
+--env ZK_HOSTS=zookeeper:2181 \
+sheepkiller/kafka-manager
+```
+
+
+kafka-eagle
+
+下载：https://codeload.github.com/smartloli/kafka-eagle-bin/tar.gz/v2.0.5
+```bash
+cat >> /etc/profile  <<EOF
+export KE_HOME=/root/soft/kafka-eagle-web-2.0.5
+export PATH=$PATH:$KE_HOME/bin
+EOF
+source /etc/profile
+chmod +x /root/soft/kafka-eagle-web-2.0.5/bin/ke.sh
+cd /root/soft/kafka-eagle-web-2.0.5/bin
+./ke start
+```
+
 
 ### emqx
 

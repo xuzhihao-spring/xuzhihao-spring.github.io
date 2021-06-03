@@ -247,9 +247,9 @@ docker-compose -f docker-compose-env.yml up -d
 docker-compose -f docker-compose-env.yml down
 ```
 
-### 5.1 docker-compose-env.yaml
+### 5.1 docker-compose-env.yml
 
-```yaml
+```yml
 version: '3'
 services:
   mysql:
@@ -307,9 +307,9 @@ services:
       - 8848:8848
 ```
 
-### 5.2 docker-compose-elk762.yaml
+### 5.2 docker-compose-elk762.yml
 
-```yaml
+```yml
 version: '3'
 services:
   elasticsearch:
