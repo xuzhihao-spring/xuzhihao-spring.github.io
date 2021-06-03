@@ -3,6 +3,7 @@
   * [tomcat-8.5.61](https://github.com/xuzhihao-java/tomcat-8.5.61)
   * [zookeeper-3.6.2](https://github.com/xuzhihao-java/zookeeper-3.6.2)
   * [Openfire-4.6.2](https://github.com/xuzhihao-java/Openfire-4.6.2)
+  * [canal](https://github.com/xuzhihao-java/canal)
 * 模板
   * [AdminLTE](https://github.com/xuzhihao-java/AdminLTE)
   * [AdminLTE-2.4汉化](https://github.com/xuzhihao-java/AdminLTE_CN)
