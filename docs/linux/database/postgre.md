@@ -319,7 +319,7 @@ $BODY$
 ALTER FUNCTION "public"."Untitled"("""formno""" "pg_catalog"."text") OWNER TO "postgres";
 ```
 
-### 3.4 过程
+### 3.5 过程
 
 ```sql
 CREATE OR REPLACE FUNCTION "public"."proc_init_flow_cando"(IN "v_partnerid" text, IN "v_flowcid" text, IN "v_pathid" text, OUT "v_out" refcursor)
@@ -451,6 +451,70 @@ END;
   COST 100
 ```
 
+### 3.6 查询表结构信息
+
+获取表名及备注sql
+```sql
+select
+	c.relname as table_name,
+	d.description as comment
+from
+	pg_catalog.pg_class c
+join pg_catalog.pg_description d on
+	c.oid = d.objoid
+where
+	c.relname = 'tableName'
+	and d.objsubid = 0
+```
+
+获取指定表的字段名称、长度、是否为空、是否主键等信息
+```sql
+select
+	c.relname as 表名,
+	a.attname as 列名,
+	(case
+		when a.attnotnull = true then true
+		else false end) as 是否非空,
+	(case
+		when (
+		select
+			count(pg_constraint.*)
+		from
+			pg_constraint
+		inner join pg_class on
+			pg_constraint.conrelid = pg_class.oid
+		inner join pg_attribute on
+			pg_attribute.attrelid = pg_class.oid
+			and pg_attribute.attnum = any(pg_constraint.conkey)
+		inner join pg_type on
+			pg_type.oid = pg_attribute.atttypid
+		where
+			pg_class.relname = c.relname
+			and pg_constraint.contype = 'p'
+			and pg_attribute.attname = a.attname) > 0 then true
+		else false end) as 是否是主键,
+	concat_ws('', t.typname) as 字段类型,
+	(case
+		when a.attlen > 0 then a.attlen
+		else a.atttypmod - 4 end) as 长度,
+	d.description as 备注
+from
+	pg_class c,
+	pg_attribute a ,
+	pg_type t,
+	pg_description d
+where
+	c.relname = 'your_table_name'
+	and a.attnum>0
+	and a.attrelid = c.oid
+	and a.atttypid = t.oid
+	and d.objoid = a.attrelid
+	and d.objsubid = a.attnum
+order by
+	c.relname desc,
+	a.attnum asc
+```
+
 
 ## 4. 常用命令
 
@@ -463,6 +527,32 @@ psql -h 192.168.3.200 -p 5432 -U postgres -W #使用指定用户和IP端口登�
 \c test         #切换到test数据库
 \d              #查看当前schema中所有的表
 \d [schema.]table   #查看表的结构
+```
+
+```sql
+set timezone = 'Etc/UTC';
+set timezone = 'Asia/Shanghai';
+show timezone;
+
+
+CREATE TABLE order(
+    id INT8 NOT NULL,
+    create_user_id INT8 NOT NULL,
+    create_time timestamptz NOT NULL,
+    update_user_id INT8 NOT NULL,
+    update_time timestamptz NOT NULL,
+    revision INT4 DEFAULT 1 NOT NULL,
+    deleted INT4 DEFAULT 0 NOT NULL,
+    PRIMARY KEY (id)
+);
+
+COMMENT ON COLUMN order.id IS '主键';
+COMMENT ON COLUMN order.create_user_id IS '创建人';
+COMMENT ON COLUMN order.create_time IS '创建时间';
+COMMENT ON COLUMN order.update_user_id IS '更新人';
+COMMENT ON COLUMN order.update_time IS '更新时间';
+COMMENT ON COLUMN order.revision IS '乐观锁';
+COMMENT ON COLUMN order.deleted IS '删除标志';
 ```
 
 ## 5. Debezium数据实时同步ES
