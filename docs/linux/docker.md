@@ -6,6 +6,7 @@
 yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 yum makecache fast
 yum list docker-ce --showduplicates | sort -r
+yum install docker-ce
 yum install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7 -y
 systemctl start docker
 chkconfig docker on
