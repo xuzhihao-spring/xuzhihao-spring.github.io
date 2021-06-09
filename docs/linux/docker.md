@@ -120,9 +120,8 @@ VOLUME      #设置可被挂载的数据卷（目录映射）
 ONBUILD     #设置在构建时需要自动执行的命令
 ```
 
-### 4.1 构建镜像
 
-- 本地构建
+### 4.1 本地构建
 
 在jar包所在的目录下创建一个名为 Dockerfile 的文件，文件内容如下：
 
@@ -191,7 +190,7 @@ time docker build --no-cache -t docker-class .
 ```
 
 
-- 远程下载构建镜像
+### 4.2 远程下载构建镜像
 
 注意：Dockerfile 的指令每执行一次都会在 docker 上新建一层。所以过多无意义的层，会造成镜像膨胀过大
 
@@ -206,7 +205,7 @@ RUN yum install wget \
 docker build -t xxx:v0.1 .
 ```
 
-- 仓库下载构建镜像
+### 4.3 仓库下载构建镜像
 
 ```bash
 FROM openjdk:9-jdk
@@ -219,7 +218,7 @@ RUN wget https://github.com/eclipse/eclipse.jdt.ls/archive/v0.48.0.tar.gz \
     && ./mvnw build
 ```
 
--  从容器构建镜像
+### 4.4 从容器构建镜像
 
 ```bash
 # 基于当前redis容器创建一个新的镜像；
@@ -228,6 +227,61 @@ RUN wget https://github.com/eclipse/eclipse.jdt.ls/archive/v0.48.0.tar.gz \
 # -m :提交时的说明文字；
 # -p :在commit时，将容器暂停
 docker commit -a="xzh" -m="my redis" [redis容器ID]  myredis:v1.1
+```
+
+### 4.5  docker-maven-plugin插件构建
+```xml
+<build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <executions>
+					<execution>
+						<id>build-image</id>
+						<phase>package</phase>
+						<goals>
+							<goal>build</goal>
+						</goals>
+					</execution>
+				</executions>
+                <configuration>
+                	<serverId>docker148-harbor88</serverId>
+                	<dockerHost>${docker.host}</dockerHost>
+                    <imageName>${docker.image.prefix}/${project.artifactId}:${project.version}</imageName>
+                    <pushImage>false</pushImage>
+                    <baseImage>${docker.baseImage}</baseImage>
+                    <volumes>${docker.volumes}</volumes>
+                    <env>
+                        <JAVA_OPTS>${docker.java.opts}</JAVA_OPTS>
+                    </env>
+                    <runs>
+                    	<run>apk add --update ttf-dejavu fontconfig</run>
+                    </runs>
+                    <entryPoint>["sh","-c","java $JAVA_OPTS ${docker.java.security.egd} -jar /${project.build.finalName}.jar"]</entryPoint>
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
+        </plugins>
+        <finalName>${project.artifactId}</finalName>
+    </build>
 ```
 
 ## 5. Docker Compose
