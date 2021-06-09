@@ -2,20 +2,12 @@
 
 ## 1. 常用命令
 ```bash
-ntpdate time.nist.gov
-ntpdate pool.ntp.org                           # 同步时间
 cat /etc/redhat-release                        # 版本查看
 vi /etc/hosts                                  # host修改
 vi /etc/resolv.conf  nameserver 192.168.0.1    # 配置DNS
 vi /etc/sysconfig/network-scripts/ifcfg-enp0s3 # 修改ip
 hostnamectl set-hostname k8s-master            # 设置hostname
 service network restart
-
-apt-get update                # 容器内安装
-apt-get install yum
-apt-get install -y vim
-apt-get --reinstall install python-minimal
-
 lsof -i:80
 iostat -mx 5 -t >>vmdisk.log  # 监控磁盘读写
 echo -n 'admin' | base64      # 生成base64编码
@@ -70,13 +62,22 @@ df -h
 
 sudo vim /etc/fstab        # 自动挂载
 /dev/sdb1 /data ext4 errors=remount-ro 0 1
+
+# Debian容器内安装
+apt-get update                
+apt-get install yum
+apt-get install -y vim
+apt-get --reinstall install python-minimal
+
+
 ```
 
 
+## 2. shell脚本
 
-## 2. 自动脚本
+### 2.1 重启
 
-重启脚本restart_3001.sh
+restart_3001.sh
 ```bash
 sh /data/tomcat_webapp_3001/bin/shutdown.sh
 sleep 2s
@@ -85,8 +86,10 @@ sleep 1s
 sh /data/tomcat_webapp_3001/bin/startup.sh;tail -f /data/tomcat_webapp_3001/logs/catalina.out
 ```
 
-自动部署
-```
+### 2.2 部署
+
+deploy.sh
+```bash
 sh /opt/tomcat/bin/shutdown.sh
 sleep 2s
 ps -ef | grep /opt/tomcat/ | grep -v grep | awk '{print $2}'| xargs kill -9
@@ -94,6 +97,38 @@ sleep 1s
 rm -rf /opt/tomcat/webapps/servlet*
 cp -r /opt/tomcat/code/servlet-2.war /opt/tomcat/webapps/servlet.war
 sh /opt/tomcat/bin/startup.sh;tail -f /opt/tomcat/logs/catalina.out
+```
+
+### 2.3 一键安装jdk
+
+```bash
+vim /etc/hosts
+192.168.3.200 node01 node01.hadoop.com
+192.168.3.201 node02 node02.hadoop.com
+192.168.3.202 node03 node03.hadoop.com
+```
+install_jdk.sh
+```bash
+#!/bin/bash
+
+tar -zxvf /export/softwares/jdk-8u141-linux-x64.tar.gz -C /export/servers/
+
+cd /export/servers/jdk1.8.0_141
+home=`pwd`
+
+echo $home
+
+echo "export JAVA_HOME=${home}"  >> /etc/profile
+echo "export PATH=:\$PATH:\$JAVA_HOME/bin" >> /etc/profile
+
+source /etc/profile
+
+for m in  2 3
+do
+scp -r /export/servers/jdk1.8.0_141 node0$m:/export/servers/
+ssh node0$m "echo 'export JAVA_HOME=/export/servers/jdk1.8.0_141' >> /etc/profile; echo 'export PATH=:\$PATH:\$JAVA_HOME/bin' >> /etc/profile;source /etc/profile"
+
+done
 ```
 
 ## 3. JDK、MAVEN配置
@@ -488,4 +523,39 @@ tsc --init                      # 生成tsconfig.json配置文件
 npm install rollup typescript rollup-plugin-typescript2 "@rollup/plugin-node-resolve" rollup-plugin-serve -D  # 安装rollup环境依赖
 tsc -w                          # 手动编译
 npm install ts-node -g --force  # 配合插件Code Runner
+```
+
+## 14. ssh免密登录
+
+```bash
+vim /etc/hosts
+192.168.3.200 node01 node01.hadoop.com
+192.168.3.201 node02 node02.hadoop.com
+192.168.3.202 node03 node03.hadoop.com
+```
+
+```bash
+ssh-keygen -t rsa   # 三台机器执行，生成公钥与私钥
+ssh-copy-id node01  # 三台机器将拷贝公钥到第一台机器
+scp /root/.ssh/authorized_keys node02:/root/.ssh  # 在node01机器将公钥拷贝到2号机器
+scp /root/.ssh/authorized_keys node03:/root/.ssh  # 在node01机器将公钥拷贝到3号机器
+```
+
+## 15. 时钟同步
+
+```bash
+yum install -y ntp
+crontab -e
+*/1 * * * * /usr/sbin/ntpdate ntp4.aliyun.com;
+```
+
+## 16. mysql安装
+
+```bash
+yum  install  mysql  mysql-server  mysql-devel
+/etc/init.d/mysqld start
+/usr/bin/mysql_secure_installation
+mysql -u root -p
+grant all privileges on *.* to 'root'@'%' identified by '123456' with grant option;
+flush privileges;
 ```
