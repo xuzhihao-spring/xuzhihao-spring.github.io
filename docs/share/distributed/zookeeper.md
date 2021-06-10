@@ -2,7 +2,46 @@
 
 Zookeeper 是一个开源的分布式协调服务框架 ，主要用来解决分布式集群中应用系统的一致性问题和数据管理问题
 
-## 1. 选举机制
+## 1. 配置文件zoo.cfg
+
+```conf
+# 快照文件snapshot的目录
+dataDir=/data/zookeeper/data
+# 事务日志的目录
+dataLogDir=/data/zookeeper/datalogs
+# 可以开启自动清理机制,自动清理tx log日志 频率是小时
+autopurge.purgeInterval=48
+# 需要保留的文件数目。默认是保留3个
+autopurge.snapRetainCount=3 
+
+
+# 客户端连接Zookeeper服务器的端口
+clientPort=2181
+# 客户端的并发连接数限制，默认值是60，将它设置为0表示取消对并发连接的限制
+maxClientCnxns=60
+
+
+# 服务器之间或客户端与服务器之间维持心跳的时间间隔，每个tickTime就会发送一个心跳。一个标准时间单元。所有时间都是以这个时间单元为基础，进行整数倍配置的。例如，session的最小超时时间是2*tickTime。
+tickTime=2000
+# LF初始通信时限
+initLimit=10
+# LF同步通信时限
+syncLimit=5
+
+
+server.1=node01:2888:3888
+server.2=node02:2888:3888
+
+## Metrics Providers
+# https://prometheus.io Metrics Exporter
+#metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider
+#metricsProvider.httpPort=7000
+#metricsProvider.exportJvmInfo=true
+
+```
+
+
+## 2. 选举机制
 
 `服务器启动时期的Leader选举`
 1. [每个Server发出一个投票]()。由于是初始情况，Server1和Server2都会将自己作为Leader服务器来进行投票，每次投票会包含所推举的服务器的myid和ZXID，使用(myid, ZXID)来表示，此时Server1的投票为(1, 0)，Server2的投票为(2, 0)，然后各自将这个投票发给集群中其他机器。
