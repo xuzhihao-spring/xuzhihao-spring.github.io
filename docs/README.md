@@ -15,7 +15,8 @@
 7. 微服务平台文档 https://www.kancloud.cn/zlt2000/microservices-platform/919412
 8. Kubernetes资源 https://github.com/fungitive/kubernetes
 9. 分布式任务调度 https://github.com/xuxueli/xxl-job
-
+10. macrozheng部署 http://www.macrozheng.com/
+11. 架构师线路 https://www.processon.com/view/link/5ee0e20507912929cb3914b2#map
 
 ## activiti
 1. 在线设计器 https://www.cnblogs.com/rmxd/p/11715016.html
@@ -27,8 +28,23 @@
 7. activiti-5.22安装配置 https://github.com/Activiti/Activiti/releases/tag/activiti-5.22.0
 8. activiti-5.22源码 https://github.com/Activiti/Activiti/tree/5.x
 
+## 即时通讯
+1. mediasoup https://blog.csdn.net/sun007700/article/details/107695481
+2. openfire https://blog.csdn.net/zlvszsl/article/details/104909825
+3. cim https://www.cnblogs.com/HEYA123/p/13728369.html
+
+## api
+1. Node.js http://nodejs.cn/api/modules.html
+2. openjdk http://openjdk.java.net/projects/jdk8/
+3. vue https://router.vuejs.org/zh/installation.html
+
+
 ## 工具
-1. mvn仓库 https://mvnrepository.com/
-2. 数据结构可视化网 https://www.cs.usfca.edu/~galles/visualization/Algorithms.html
-3. 次元连接 https://cylink.me/
-4. BEJSON https://www.bejson.com/
+1. mvn中央仓库 https://mvnrepository.com/
+2. 阿里云mvn仓库 https://maven.aliyun.com/mvn/search
+3. 数据结构可视化网 https://www.cs.usfca.edu/~galles/visualization/Algorithms.html
+4. 次元连接 https://cylink.me/
+5. 在线工具类 https://www.bejson.com/
+6. apache http://archive.apache.org/dist/
+7. 百度坐标拾取 http://api.map.baidu.com/lbsapi/getpoint/index.html
+8. Kettle https://blog.csdn.net/u013468915/article/details/82629260
