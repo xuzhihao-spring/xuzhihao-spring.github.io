@@ -57,3 +57,5 @@ server.2=node02:2888:3888
 `服务器运行时期的Leader选举`
 
 在Zookeeper运行期间，Leader与非Leader服务器各司其职，即便当有非Leader服务器宕机或新加入，此时也不会影响Leader，但是一旦Leader服务器挂了，那么整个集群将暂停对外服务，进入新一轮Leader选举，其过程和启动时期的Leader选举过程基本一致过程相同
+
+## 3. Curator操作Zookeeper
