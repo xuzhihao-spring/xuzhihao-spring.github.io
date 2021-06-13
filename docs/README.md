@@ -4,7 +4,7 @@
 3. 有同理心的人-大局观念强，善于从全局上考虑问题，换位思考，从来不拘泥做法
 4. 终身学习的人-天外有天，人外有人
 
-## java
+## Java
 1. 商城前台Vue https://github.com/macrozheng/mall-admin-web
 2. 微服务商城 https://github.com/macrozheng/mall-swarm
 3. 电商技术实现 https://github.com/macrozheng/mall-learning
@@ -17,7 +17,7 @@
 9. 分布式任务调度 https://github.com/xuxueli/xxl-job
 10. macrozheng部署 http://www.macrozheng.com/
 
-## activiti
+## 工作流
 1. 在线设计器 https://www.cnblogs.com/rmxd/p/11715016.html
 2. 在线设计器代码 https://github.com/Simple-Coder/springboot-activiti
 3. Springboot整合Activiti流程设计器 https://www.cnblogs.com/ChromeT/p/11261101.html
@@ -32,7 +32,7 @@
 2. openfire https://blog.csdn.net/zlvszsl/article/details/104909825
 3. cim https://www.cnblogs.com/HEYA123/p/13728369.html
 
-## api
+## 文档
 1. Node.js http://nodejs.cn/api/modules.html
 2. openjdk http://openjdk.java.net/projects/jdk8/
 3. vue https://router.vuejs.org/zh/installation.html
@@ -50,7 +50,6 @@
 
 
 ## 学习路线
-
 架构师线路 https://www.processon.com/view/link/5ee0e20507912929cb3914b2#map
 
 JVM底层原理
