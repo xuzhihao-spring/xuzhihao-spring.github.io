@@ -59,3 +59,432 @@ server.2=node02:2888:3888
 在Zookeeper运行期间，Leader与非Leader服务器各司其职，即便当有非Leader服务器宕机或新加入，此时也不会影响Leader，但是一旦Leader服务器挂了，那么整个集群将暂停对外服务，进入新一轮Leader选举，其过程和启动时期的Leader选举过程基本一致过程相同
 
 ## 3. Curator操作Zookeeper
+
+基于springboot starter机制注入
+
+spring.factories
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.central.common.zookeeper.ZookeeperAutoConfiguration
+```
+
+```java
+package com.central.common.zookeeper;
+
+import com.central.common.zookeeper.properties.ZookeeperProperty;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+
+/**
+ * zookeeper 配置类
+ *
+ * @author zlt
+ * @version 1.0
+ * @date 2021/4/3
+ * <p>
+ * Blog: https://zlt2000.gitee.io
+ * Github: https://github.com/zlt2000
+ */
+@EnableConfigurationProperties(ZookeeperProperty.class)
+@ComponentScan
+public class ZookeeperAutoConfiguration {
+    /**
+     * 初始化连接
+     */
+    @Bean(initMethod = "start", destroyMethod = "close")
+    @ConditionalOnMissingBean
+    public CuratorFramework curatorFramework(ZookeeperProperty property) {
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(property.getBaseSleepTime(), property.getMaxRetries());
+        return CuratorFrameworkFactory.builder()
+                .connectString(property.getConnectString())
+                .connectionTimeoutMs(property.getConnectionTimeout())
+                .sessionTimeoutMs(property.getSessionTimeout())
+                .retryPolicy(retryPolicy)
+                .build();
+    }
+}
+```
+
+自定义属性注入
+```java
+package com.central.common.zookeeper.properties;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/**
+ * zookeeper配置
+ *
+ * @author zlt
+ * @version 1.0
+ * @date 2021/4/3
+ * <p>
+ * Blog: https://zlt2000.gitee.io
+ * Github: https://github.com/zlt2000
+ */
+@Setter
+@Getter
+@ConfigurationProperties(prefix = "zlt.zookeeper")
+public class ZookeeperProperty {
+    /**
+     * zk连接集群，多个用逗号隔开
+     */
+    private String connectString;
+
+    /**
+     * 会话超时时间(毫秒)
+     */
+    private int sessionTimeout = 15000;
+
+    /**
+     * 连接超时时间(毫秒)
+     */
+    private int connectionTimeout = 15000;
+
+    /**
+     * 初始重试等待时间(毫秒)
+     */
+    private int baseSleepTime = 2000;
+
+    /**
+     * 重试最大次数
+     */
+    private int maxRetries = 10;
+}
+```
+
+分布式锁实现类注入
+```java
+package com.central.common.zookeeper.lock;
+
+import com.central.common.constant.CommonConstant;
+import com.central.common.exception.LockException;
+import com.central.common.lock.DistributedLock;
+import com.central.common.lock.ZLock;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * zookeeper分布式锁实现
+ *
+ * @author zlt
+ * @version 1.0
+ * @date 2021/4/3
+ * <p>
+ * Blog: https://zlt2000.gitee.io
+ * Github: https://github.com/zlt2000
+ */
+@Component
+@ConditionalOnProperty(prefix = "zlt.lock", name = "lockerType", havingValue = "ZK")
+public class ZookeeperDistributedLock implements DistributedLock {
+    @Resource
+    private CuratorFramework client;
+
+    private ZLock getLock(String key) {
+        InterProcessMutex lock = new InterProcessMutex(client, getPath(key));
+        return new ZLock(lock, this);
+    }
+
+    @Override
+    public ZLock lock(String key, long leaseTime, TimeUnit unit, boolean isFair) throws Exception {
+        ZLock zLock = this.getLock(key);
+        InterProcessMutex ipm = (InterProcessMutex)zLock.getLock();
+        ipm.acquire();
+        return zLock;
+    }
+
+    @Override
+    public ZLock tryLock(String key, long waitTime, long leaseTime, TimeUnit unit, boolean isFair) throws Exception {
+        ZLock zLock = this.getLock(key);
+        InterProcessMutex ipm = (InterProcessMutex)zLock.getLock();
+        if (ipm.acquire(waitTime, unit)) {
+            return zLock;
+        }
+        return null;
+    }
+
+    @Override
+    public void unlock(Object lock) throws Exception {
+        if (lock != null) {
+            if (lock instanceof InterProcessMutex) {
+                InterProcessMutex ipm = (InterProcessMutex)lock;
+                if (ipm.isAcquiredInThisProcess()) {
+                    ipm.release();
+                }
+            } else {
+                throw new LockException("requires InterProcessMutex type");
+            }
+        }
+    }
+
+    private String getPath(String key) {
+        return CommonConstant.PATH_SPLIT + CommonConstant.LOCK_KEY_PREFIX + CommonConstant.PATH_SPLIT + key;
+    }
+}
+```
+
+curator客户端api封装
+```java
+package com.central.common.zookeeper.template;
+
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
+import com.central.common.constant.CommonConstant;
+import lombok.SneakyThrows;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.*;
+import org.apache.zookeeper.CreateMode;
+import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+
+import java.util.List;
+
+/**
+ * zookeeper模板类
+ *
+ * @author zlt
+ * @version 1.0
+ * @date 2021/4/10
+ * <p>
+ * Blog: https://zlt2000.gitee.io
+ * Github: https://github.com/zlt2000
+ */
+@Component
+public class ZookeeperTemplate {
+    private final CuratorFramework client;
+
+    public ZookeeperTemplate(CuratorFramework client) {
+        this.client = client;
+    }
+
+    /**
+     * 创建空节点，默认持久节点
+     *
+     * @param path 节点路径
+     * @param node 节点名称
+     * @return 完整路径
+     */
+    @SneakyThrows
+    public String createNode(String path, String node) {
+        return createNode(path, node, CreateMode.PERSISTENT);
+    }
+
+    /**
+     * 创建带类型的空节点
+     * @param path 节点路径
+     * @param node 节点名称
+     * @param createMode 类型
+     * @return 完整路径
+     */
+    @SneakyThrows
+    public String createNode(String path, String node, CreateMode createMode) {
+        path = buildPath(path, node);
+        client.create()
+                .orSetData()
+                .creatingParentsIfNeeded()
+                .withMode(createMode)
+                .forPath(path);
+        return path;
+    }
+
+
+    /**
+     * 创建节点，默认持久节点
+     * @param path 节点路径
+     * @param node 节点名称
+     * @param value 节点值
+     * @return 完整路径
+     */
+    @SneakyThrows
+    public String createNode(String path, String node, String value) {
+        return createNode(path, node, value, CreateMode.PERSISTENT);
+    }
+
+    /**
+     * 创建节点，默认持久节点
+     * @param path 节点路径
+     * @param node 节点名称
+     * @param value 节点值
+     * @param createMode 节点类型
+     * @return 完整路径
+     */
+    @SneakyThrows
+    public String createNode(String path, String node, String value, CreateMode createMode) {
+        Assert.isTrue(StrUtil.isNotEmpty(value), "zookeeper节点值不能为空!");
+
+        path = buildPath(path, node);
+        client.create()
+                .orSetData()
+                .creatingParentsIfNeeded()
+                .withMode(createMode)
+                .forPath(path, value.getBytes());
+        return path;
+    }
+
+    /**
+     * 获取节点数据
+     * @param path 路径
+     * @param node 节点名称
+     * @return 节点值
+     */
+    @SneakyThrows
+    public String get(String path, String node) {
+        path = buildPath(path, node);
+        byte[] bytes = client.getData().forPath(path);
+        if (bytes.length > 0) {
+            return new String(bytes);
+        }
+        return null;
+    }
+
+    /**
+     * 更新节点数据
+     * @param path 节点路径
+     * @param node 节点名称
+     * @param value 更新值
+     * @return 完整路径
+     */
+    @SneakyThrows
+    public String update(String path, String node, String value) {
+        Assert.isTrue(StrUtil.isNotEmpty(value), "zookeeper节点值不能为空!");
+
+        path = buildPath(path, node);
+        client.setData().forPath(path, value.getBytes());
+        return path;
+    }
+
+    /**
+     * 删除节点，并且递归删除子节点
+     * @param path 路径
+     * @param node 节点名称
+     */
+    @SneakyThrows
+    public void delete(String path, String node) {
+        path = buildPath(path, node);
+        client.delete().quietly().deletingChildrenIfNeeded().forPath(path);
+    }
+
+    /**
+     * 获取子节点
+     * @param path 节点路径
+     * @return 子节点集合
+     */
+    @SneakyThrows
+    public List<String> getChildren(String path) {
+        if(StrUtil.isEmpty(path)) {
+            return null;
+        }
+
+        if (!path.startsWith(CommonConstant.PATH_SPLIT)) {
+            path = CommonConstant.PATH_SPLIT + path;
+        }
+        return client.getChildren().forPath(path);
+    }
+
+    /**
+     * 判断节点是否存在
+     * @param path 路径
+     * @param node 节点名称
+     * @return 结果
+     */
+    public boolean exists(String path, String node) {
+        List<String> list = getChildren(path);
+        return CollUtil.isNotEmpty(list) && list.contains(node);
+    }
+
+    /**
+     * 对一个节点进行监听，监听事件包括指定的路径节点的增、删、改的操作
+     * @param path 节点路径
+     * @param listener 回调方法
+     */
+    public void watchNode(String path, NodeCacheListener listener) {
+        CuratorCacheListener curatorCacheListener = CuratorCacheListener.builder()
+                .forNodeCache(listener)
+                .build();
+        CuratorCache curatorCache = CuratorCache.builder(client, path).build();
+        curatorCache.listenable().addListener(curatorCacheListener);
+        curatorCache.start();
+    }
+
+
+    /**
+     * 对指定的路径节点的一级子目录进行监听，不对该节点的操作进行监听，对其子目录的节点进行增、删、改的操作监听
+     * @param path 节点路径
+     * @param listener 回调方法
+     */
+    public void watchChildren(String path, PathChildrenCacheListener listener) {
+        CuratorCacheListener curatorCacheListener = CuratorCacheListener.builder()
+                .forPathChildrenCache(path, client, listener)
+                .build();
+        CuratorCache curatorCache = CuratorCache.builder(client, path).build();
+        curatorCache.listenable().addListener(curatorCacheListener);
+        curatorCache.start();
+    }
+
+    /**
+     * 将指定的路径节点作为根节点（祖先节点），对其所有的子节点操作进行监听，呈现树形目录的监听
+     * @param path 节点路径
+     * @param maxDepth 回调方法
+     * @param listener 监听
+     */
+    public void watchTree(String path, int maxDepth, TreeCacheListener listener) {
+        CuratorCacheListener curatorCacheListener = CuratorCacheListener.builder()
+                .forTreeCache(client, listener)
+                .build();
+        CuratorCache curatorCache = CuratorCache.builder(client, path).build();
+        curatorCache.listenable().addListener(curatorCacheListener);
+        curatorCache.start();
+    }
+
+    /**
+     * 转换路径
+     * @param path 路径
+     * @param node 节点名
+     */
+    private String buildPath(String path, String node) {
+        Assert.isTrue(StrUtil.isNotEmpty(path) && StrUtil.isNotEmpty(node)
+                , "zookeeper路径或者节点名称不能为空！");
+
+        if (!path.startsWith(CommonConstant.PATH_SPLIT)) {
+            path = CommonConstant.PATH_SPLIT + path;
+        }
+
+        if (CommonConstant.PATH_SPLIT.equals(path)) {
+            return path + node;
+        } else {
+            return path + CommonConstant.PATH_SPLIT + node;
+        }
+    }
+}
+```
+
+依赖
+```xml
+ <dependency>
+    <groupId>com.zlt</groupId>
+    <artifactId>zlt-zookeeper-spring-boot-starter</artifactId>
+    <version>${project.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.curator</groupId>
+    <artifactId>curator-recipes</artifactId>
+    <version>5.1.0</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.curator</groupId>
+    <artifactId>curator-framework</artifactId>
+    <version>5.1.0</version>
+</dependency>
+```
