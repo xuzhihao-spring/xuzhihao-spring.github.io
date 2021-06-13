@@ -1046,7 +1046,7 @@ public class LimitAspect {
 }
 ```
 
-功能使用
+应用
 ```java
 /**
  * 
@@ -1087,3 +1087,5 @@ public class ProductController {
 	}
 }
 ```
+
+## 5. 分布式锁
