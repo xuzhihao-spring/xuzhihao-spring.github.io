@@ -510,7 +510,7 @@ docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2
 
 ```bash
 docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
-docker run -d --name zkui -p 9090:9090 -e ZKUI_ZK_SERVER=192.168.3.200:2181 qnib/zkui  #可视化ui
+docker run -d --net="host" --name zkui -p 9090:9090 -e ZKUI_ZK_SERVER=192.168.3.200:2181 qnib/zkui  #可视化ui
 ```
 
 
