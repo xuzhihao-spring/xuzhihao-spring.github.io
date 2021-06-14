@@ -8,6 +8,7 @@ vi /etc/resolv.conf  nameserver 192.168.0.1    # 配置DNS
 vi /etc/sysconfig/network-scripts/ifcfg-enp0s3 # 修改ip
 hostnamectl set-hostname k8s-master            # 设置hostname
 service network restart
+unset MAILCHECK
 lsof -i:80
 iostat -mx 5 -t >>vmdisk.log  # 监控磁盘读写
 echo -n 'admin' | base64      # 生成base64编码
