@@ -497,7 +497,18 @@ docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard:1.7.2
 ### nacos-server
 
 ```bash
-docker run --name nacos -d -p 8848:8848 -e MODE=standalone nacos/nacos-server
+docker run --name nacos -d --network=host -p 8848:8848 -e MODE=standalone nacos/nacos-server:2.0.1
+
+docker run --name nacos -d --network=host -p 8848:8848 -e MODE=standalone \
+-e JVM_XMS=256m -e JVM_XMX=256m \
+-e SPRING_DATASOURCE_PLATFORM=mysql \
+-e MYSQL_SERVICE_HOST=172.17.17.137 \
+-e MYSQL_SERVICE_PORT=3306 \
+-e MYSQL_SERVICE_USER=root \
+-e MYSQL_SERVICE_PASSWORD=root \
+-e MYSQL_SERVICE_DB_NAME=nacos_config \
+-e TIME_ZONE='Asia/Shanghai' \
+--restart=always nacos/nacos-server:2.0.1
 ```
 
 ### dubbo-admin
