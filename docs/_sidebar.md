@@ -21,7 +21,8 @@
   * [Prometheus+Grafana](share/monitor/prometheus)
   * [Nginx配置HTTPS](linux/deploy/nginx_https.md)
   * [Gitlab搭建](linux/deploy/gitlab.md)
-  * [Zabbix安装](linux/deploy/zabbix5.0.md)
+  * [Zabbix安装](linux/deploy/zabbix.md)
+  * [HBase集群搭建](linux/deploy/hbase.md)
   
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
