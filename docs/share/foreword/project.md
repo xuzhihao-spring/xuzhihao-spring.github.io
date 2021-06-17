@@ -201,7 +201,7 @@ zlt.security.auth.urlPermission.exclusiveClientIds
 
 该架构在第二种架构的基础上引入了Kafka消息队列（还可以是其他消息队列），将Filebeat收集到的数据发送至Kafka，然后在通过Logstasth读取Kafka中的数据，这种架构主要是解决大数据量下的日志收集方案，使用缓存队列主要是解决数据安全与均衡Logstash与Elasticsearch负载压力
 
-![](../../images/share/foreword/Kafka.png)
+![](../../images/share/foreword/kafka.png)
 
 4. 以上三种架构的总结
 
@@ -745,7 +745,7 @@ MinIO是一个非常轻量的服务,可以很简单的和其他应用的结合�
 二、数据隔离方案
 
 1. 独立数据库
- 
+
     即一个租户一个数据库，这种方案的用户数据隔离级别最高，安全性最好，但成本较高
 - 优点：为不同的租户提供独立的数据库，有助于简化数据模型的扩展设计，满足不同租户的独特需求；如果出现故障，恢复数据比较简单。
 - 缺点：增多了数据库的安装数量，随之带来维护成本和购置成本的增加。
