@@ -1,10 +1,10 @@
-* 源码学习
+* 源码
   * [tomcat-7.0.42](https://github.com/xzh-net/tomcat-7.0.42)
   * [tomcat-8.5.61](https://github.com/xzh-net/tomcat-8.5.61)
   * [zookeeper-3.6.2](https://github.com/xzh-net/zookeeper-3.6.2)
   * [Openfire-4.6.2](https://github.com/xzh-net/Openfire-4.6.2)
   * [canal](https://github.com/xzh-net/canal)
-  * ----
+  * [学习]
   * [dubbo-2.7.7](https://github.com/xzh-net/dubbo-2.7.7)
   * [spring-5.3.1](https://github.com/xzh-net/spring-5.3.1)  
   * [mybatis-3.4.6](https://github.com/xzh-net/mybatis-3.4.6) 
