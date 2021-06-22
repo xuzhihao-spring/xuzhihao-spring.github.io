@@ -841,3 +841,62 @@ Rancher是业界唯一完全开源的企业级容器管理平台，为企业用�
   - 网关聚合所有Swagger接口文档
   - 统一跨域处理
   - 统一异常处理
+
+## 4. 技术参数
+
+```xml
+<properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>8</java.version>
+        <spring-cloud-alibaba-dependencies.version>2.2.5.RELEASE</spring-cloud-alibaba-dependencies.version>
+        <spring-boot-dependencies.version>2.3.11.RELEASE</spring-boot-dependencies.version>
+        <spring-cloud-dependencies.version>Hoxton.SR9</spring-cloud-dependencies.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
+        <swagger.version>2.9.2</swagger.version>
+        <swagger.ui.version>1.8.7</swagger.ui.version>
+        <swagger.mg.ui.version>1.0.6</swagger.mg.ui.version>
+        <swagger.butler.version>2.0.1</swagger.butler.version>
+        <jjwt.version>0.9.1</jjwt.version>
+        <druid-starter>1.1.22</druid-starter>
+        <jasypt.version>1.14</jasypt.version>
+        <sharding-sphere.version>3.1.0</sharding-sphere.version>
+        <security-oauth2.version>2.3.8.RELEASE</security-oauth2.version>
+        <security-jwt.version>1.1.0.RELEASE</security-jwt.version>
+        <redisson-starter.version>3.14.1</redisson-starter.version>
+        <easyCaptcha.version>1.6.2</easyCaptcha.version>
+        <hutool.version>5.1.4</hutool.version>
+        <mybatis-plus-boot-starter.version>3.4.0</mybatis-plus-boot-starter.version>
+        <aliyun-sdk-oss>3.8.1</aliyun-sdk-oss>
+        <qiniu-java-sdk>7.2.28</qiniu-java-sdk>
+        <easypoi.version>4.1.3</easypoi.version>
+        <poi.version>4.1.1</poi.version>
+        <spring-boot-admin.version>2.3.1</spring-boot-admin.version>
+        <velocity.version>1.7</velocity.version>
+        <commons-configuration2.version>2.7</commons-configuration2.version>
+        <txlcn.version>5.0.2.RELEASE</txlcn.version>
+        <fastdfs-client.version>1.27.2</fastdfs-client.version>
+        <userAgent.version>1.21</userAgent.version>
+        <transmittable.version>2.12.0</transmittable.version>
+        <banner.version>1.0.2</banner.version>
+        <commons-beanutils.version>1.9.4</commons-beanutils.version>
+        <spring-social-security.version>1.1.6.RELEASE</spring-social-security.version>
+        <commons-io.version>2.7</commons-io.version>
+        <servlet-api.version>4.0.1</servlet-api.version>
+        <spring-data-elasticsearch.version>4.1.3</spring-data-elasticsearch.version>
+        <elasticsearch.version>7.11.2</elasticsearch.version>
+        <knife4j.version>2.0.5</knife4j.version>
+        <hibernate-validator.version>6.2.0.Final</hibernate-validator.version>
+        <dubbo.version>2.7.8</dubbo.version>
+        <curator.version>5.1.0</curator.version>
+        <docker-maven-plugin.version>1.2.2</docker-maven-plugin.version>
+        <sonar.exclusions>zlt-job/**/*, zlt-register/**/*, zlt-web/**/*</sonar.exclusions>
+        <docker.baseImage>openjdk:8-jre-alpine</docker.baseImage>
+        <docker.volumes>/tmp</docker.volumes>
+        <docker.host>http://172.17.17.148:2375</docker.host>
+        <docker.image.prefix>172.17.17.148:88/ec_platform</docker.image.prefix>
+        <docker.java.security.egd>-Djava.security.egd=file:/dev/./urandom</docker.java.security.egd>
+        <docker.java.opts>-Xms128m -Xmx128m</docker.java.opts>
+    </properties>
+```
