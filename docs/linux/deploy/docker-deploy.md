@@ -1,6 +1,6 @@
-# Docker
+# Docker version 19.03.8
 
-## 1. 容器
+## 容器
 
 ### portainer
 
@@ -18,7 +18,6 @@ ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock #
 systemctl daemon-reload #加载docker守护线程
 systemctl restart docker #重启docker
 ```
-
 
 ### nginx
 
@@ -80,7 +79,7 @@ docker run --privileged -d --restart=unless-stopped -p 80:80 -p 443:443 \
 
 ```
 
-## 2. 数据库
+## 关系型数据库(RDBMS)
 
 ### mysql
 
@@ -109,6 +108,127 @@ mysql -uroot -proot --default-character-set=utf8
 grant all privileges on *.* to 'root' @'%' identified by '123456';
 ```
 
+### postgres
+
+```bash
+docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
+docker run --name postgres -e POSTGRES_PASSWORD=123456 -d -p 54321:5432 -v /etc/data/pgdata:/var/lib/postgresql/data-d postgres
+默认用户：postgres 密码：POSTGRES_PASSWORD
+
+/var/lib/postgresql/data   #镜像的data目录
+/usr/lib/postgresql/??/bin #进入postgresql的工具目录
+psql -Upostgres # 连接数据库
+
+-it -d 这两个参数一般同时使用，保证 container 以交互的方式在后台运行。
+--rm 这个参数是指在 container 停止时自动将 container 删除。
+--name 你在使用 docker ps 命令时看到的 container 的名字。
+-e POSTGRES_USER=dbuser 这个是设置 container 中的环境变量用的参数，指的是设计数据库用户为 dbuser 。之后登录数据库时就是使用这个用户名。
+-e POSTGRES_PASSWORD=password 同上，也是设置 container 中的环境变量，这个是设置你登录数据库的密码，这里设置的密码为"password"。
+-e POSTGRES_DB=testdb 同上，初始化一个新的数据库，其名字为 testdb。
+-p 5432:5432 这个是将主机的端口与 container 暴露的端口进行映射。其格式为 -p 主机端口: container 端口。即 : 前为主机端口，后为 container 端口。
+-v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
+```
+
+### oracle-xe
+
+```bash
+docker pull wnameless/oracle-xe-11g
+docker pull wnameless/oracle-xe-11g-r2
+
+docker run --name oracle-xe-11g -d -v /mydata/oracle_data:/data/oracle_data -p 49160:22 -p 49161:1521 -e ORACLE_ALLOW_REMOTE=true wnameless/oracle-xe-11g
+
+port: 49161
+sid: xe
+username: system
+password: oracle
+
+docker exec -it [容器id] /bin/bash
+su oracle
+cd $ORACLE_HOME
+bin/sqlplus / as sysdba
+
+cd /u01/app/oracle
+mkdir test
+chmod 777 test
+create tablespace TEST datafile '/u01/app/oracle/test/test.dbf' size 100M;
+create user TEST identified by TEST123 default tablespace TEST;
+grant connect,resource to TEST;
+grant dba to TEST;  #  授予dba权限后，这个用户能操作所有用户的表
+drop user TEST cascade;
+```
+
+## 非关系型数据库(NoSQL)
+
+### redis
+
+```bash
+docker pull redis:5
+
+docker run -p 6379:6379 --name redis \
+-v /mydata/redis/data:/data \
+-d redis:5 redis-server --appendonly yes
+```
+
+监控工具redis-stat
+
+```bash
+docker run --name redis-stat --link redis6380:redis -p 8080:63790 -d insready/redis-stat --server redis          # 容器内部自连接
+docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.168.3.200:6379 192.168.3.201:6379 # 远程集群或单机
+```
+
+### mongo
+
+```bash
+docker pull mongo:4.2.5
+
+docker run -p 27017:27017 --name mongo \
+-v /mydata/mongo/db:/data/db \
+-d mongo:4.2.5
+```
+
+### couchdb
+
+```bash
+docker run -p 5984:5984 --name my-couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=admin -v /home/mydata/couchdb/data:/opt/couchdb/data -d couchdb
+docker run -d -p 8800:8000 --link=my-couchdb --name fauxton 3apaxicom/fauxton sh -c 'fauxton -c http://172.17.17.137:5984'
+
+```
+
+### influxdb
+
+1.x
+```bash
+docker run -d -p 8086:8086 \
+      -v /mydata/influxdb1:/var/lib/influxdb \
+      --name influxdb1 \
+      influxdb:1.8
+```
+
+2.x
+```bash
+docker run -d -p 8086:8086 \
+      -v /mydata/influxdb2/data:/var/lib/influxdb2 \
+      -v /mydata/influxdb2/config:/etc/influxdb2 \
+      -e DOCKER_INFLUXDB_INIT_MODE=setup \
+	    -e DOCKER_INFLUXDB_INIT_USERNAME=my-user \
+      -e DOCKER_INFLUXDB_INIT_PASSWORD=my-password \
+      -e DOCKER_INFLUXDB_INIT_ORG=org \
+      -e DOCKER_INFLUXDB_INIT_BUCKET=bucket \
+	    --name influxdb2 \
+      influxdb:2.0.6
+```
+
+### hbase
+
+```bash
+docker pull harisekhon/hbase:2.1
+docker run -dti --name hbase -p 16010:16010 harisekhon/hbase:2.1
+docker exec -it hbase /bin/bash
+hbase shell
+```
+
+
+## 数据库中间件
 
 ### mycat
 
@@ -352,110 +472,16 @@ docker run -p 13308:3308 -d \
   apache/sharding-proxy:latest
 ```
 
-### redis
 
-
-```bash
-docker pull redis:5
-
-docker run -p 6379:6379 --name redis \
--v /mydata/redis/data:/data \
--d redis:5 redis-server --appendonly yes
-```
-
-监控工具redis-stat
-
-```bash
-docker run --name redis-stat --link redis6380:redis -p 8080:63790 -d insready/redis-stat --server redis          # 容器内部自连接
-docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.168.3.200:6379 192.168.3.201:6379 # 远程集群或单机
-```
-
-### mongo
-
-```bash
-docker pull mongo:4.2.5
-
-docker run -p 27017:27017 --name mongo \
--v /mydata/mongo/db:/data/db \
--d mongo:4.2.5
-```
-
-### postgres
-
-```bash
-docker run --name postgres2 -v /mydata/postgres/data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=123456 -d -p 5432:5432 postgres:10.12
-docker run --name postgres -e POSTGRES_PASSWORD=123456 -d -p 54321:5432 -v /etc/data/pgdata:/var/lib/postgresql/data-d postgres
-默认用户：postgres 密码：POSTGRES_PASSWORD
-
-/var/lib/postgresql/data   #镜像的data目录
-/usr/lib/postgresql/??/bin #进入postgresql的工具目录
-psql -Upostgres # 连接数据库
-
--it -d 这两个参数一般同时使用，保证 container 以交互的方式在后台运行。
---rm 这个参数是指在 container 停止时自动将 container 删除。
---name 你在使用 docker ps 命令时看到的 container 的名字。
--e POSTGRES_USER=dbuser 这个是设置 container 中的环境变量用的参数，指的是设计数据库用户为 dbuser 。之后登录数据库时就是使用这个用户名。
--e POSTGRES_PASSWORD=password 同上，也是设置 container 中的环境变量，这个是设置你登录数据库的密码，这里设置的密码为"password"。
--e POSTGRES_DB=testdb 同上，初始化一个新的数据库，其名字为 testdb。
--p 5432:5432 这个是将主机的端口与 container 暴露的端口进行映射。其格式为 -p 主机端口: container 端口。即 : 前为主机端口，后为 container 端口。
--v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
-```
-
-### tdengine
-
-```bash
-docker run -d -p 6041:6041 \
-	-v /mydata/taos/conf:/etc/taos \
-	-v /mydata/taos/data:/var/lib/taos \
-	-v /mydata/taos/logs:/var/log/taos \
-	--name tdengine 
-	tdengine:2.0.19.1
-```
-
-### influxdb
-
-1.x
-```bash
-docker run -d -p 8086:8086 \
-      -v /mydata/influxdb1:/var/lib/influxdb \
-      --name influxdb1 \
-      influxdb:1.8
-```
-
-2.x
-```bash
-docker run -d -p 8086:8086 \
-      -v /mydata/influxdb2/data:/var/lib/influxdb2 \
-      -v /mydata/influxdb2/config:/etc/influxdb2 \
-      -e DOCKER_INFLUXDB_INIT_MODE=setup \
-	    -e DOCKER_INFLUXDB_INIT_USERNAME=my-user \
-      -e DOCKER_INFLUXDB_INIT_PASSWORD=my-password \
-      -e DOCKER_INFLUXDB_INIT_ORG=org \
-      -e DOCKER_INFLUXDB_INIT_BUCKET=bucket \
-	    --name influxdb2 \
-      influxdb:2.0.6
-```
-
-### couchdb
-
-```bash
-docker run -p 5984:5984 --name my-couchdb -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=admin -v /home/mydata/couchdb/data:/opt/couchdb/data -d couchdb
-docker run -d -p 8800:8000 --link=my-couchdb --name fauxton 3apaxicom/fauxton sh -c 'fauxton -c http://172.17.17.137:5984'
-
-```
-
-
-## 3. 存储
+## 存储
 
 ### fastdfs
 
 ```bash
-docker run -ti -d --name trakcer -v /mydata/tracker_data:/fastdfs/tracker/data --net=host season/fastdfs tracker
-docker run -ti --name storage  \
+docker run -dti --name trakcer -v /mydata/tracker_data:/fastdfs/tracker/data --net=host season/fastdfs tracker
+docker run -dti --name storage -e TRACKER_SERVER:192.168.3.200:22122  --net=host  \
   -v /mydata/storage_data:/fastdfs/storage/data  \
   -v /mydata/store_path:/fastdfs/store_path  \
-  --net=host  \
-  -e TRACKER_SERVER:192.168.3.200:22122  \
   season/fastdfs storage
 ```
 
@@ -466,12 +492,7 @@ docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22
 
 一体安装
 ```bash
-docker run \
-	--net=host \
-	--name=fastdfs \
-	-e IP=192.168.3.200 \
-	-e WEB_PORT=80 \
-	-v /mydata/fdfs:/var/local/fdfs \
+docker run --net=host --name=fastdfs -e IP=192.168.3.200 -e WEB_PORT=80 -v /mydata/fdfs:/var/local/fdfs \
 	-d registry.cn-beijing.aliyuncs.com/tianzuo/fastdfs
 ```
 
@@ -486,7 +507,7 @@ docker run -p 9090:9000 --name minio \
 ```
 
 
-## 4. 分布式
+## 分布式
 
 ### sentinel-dashboard
 
@@ -514,7 +535,10 @@ docker run --name nacos -d --network=host -p 8848:8848 -e MODE=standalone \
 ### dubbo-admin
 
 ```bash
-docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 -e dubbo.admin.root.password=root -e dubbo.admin.guest.password=guest chenchuxin/dubbo-admin 
+docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 \
+-e dubbo.admin.root.password=root \
+-e dubbo.admin.guest.password=guest \
+chenchuxin/dubbo-admin 
 ```
 
 ### zookeeper
@@ -568,7 +592,7 @@ apache/skywalking-ui:6.6.0
 java -jar skywalking_springboot.jar # 原启动方式
 java -javaagent:/home/mydata/app_skywalking/apache-skywalking-apm-bin/agent/skywalking-agent.jar -Dskywalking.agent.service_name=springboot -Dskywalking.collector.backend_service=127.0.0.1:11800 -jar /home/mydata/app_skywalking/skywalking_springboot.jar
 ```
-## 5. MQ
+## 消息队列
 
 ### activemq
 
@@ -887,9 +911,26 @@ firewall-cmd --reload
 
 ```bash
 docker run -dit --name hadoop-docker \
- -p 9000:9000 -p 8088:8088 -p 8040:8040 -p 8042:8042 \
+ -p 8020:8020 -p 8088:8088 -p 8040:8040 -p 8042:8042 \
  -p 50070:50070 -p 49707:49707 -p 50010:50010 -p 50075:50075 \
  -p 50090:50090 sequenceiq/hadoop-docker:2.7.0 /etc/bootstrap.sh -bash
+```
+
+```bash
+docker exec -it [容器id] /bin/bash
+cd /usr/local/hadoop-2.7.0/
+bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar grep input output 'dfs[a-z.]+'
+
+vi /etc/profile
+export HADOOP_HOME="/usr/local/hadoop-2.7.0"
+export PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+source /etc/profile
+
+docker cp /root/hadoop-mapreduce-examples-2.7.0.jar [容器id]:/usr/local/hadoop-2.7.0
+hadoop fs -mkdir -p /wordcount/input
+hadoop fs -put a.txt /wordcount/input
+hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar wordcount /wordcount/input /wordcount/output
+hadoop fs -cat /wordcount/output/part-r-00000
 ```
 
 ```lua
@@ -926,6 +967,17 @@ Hive	HiveServer	10000	/etc/hive/conf/hive-env.sh中export HIVE_SERVER2_THRIFT_PO
 ZooKeeper	Server	2181	/etc/zookeeper/conf/zoo.cfg中clientPort=<port>	对客户端提供服务的端口
 ZooKeeper	Server	2888	/etc/zookeeper/conf/zoo.cfg中server.x=[hostname]:nnnnn[:nnnnn]，标蓝部分	follower用来连接到leader，只在leader上监听该端口。
 ZooKeeper	Server	3888	/etc/zookeeper/conf/zoo.cfg中server.x=[hostname]:nnnnn[:nnnnn]，标蓝部分	用于leader选举的。只在electionAlg是1,2或3(默认)时需要。
+```
+
+### tdengine
+
+```bash
+docker run -d -p 6041:6041 \
+	-v /mydata/taos/conf:/etc/taos \
+	-v /mydata/taos/data:/var/lib/taos \
+	-v /mydata/taos/logs:/var/log/taos \
+	--name tdengine 
+	tdengine:2.0.19.1
 ```
 
 ## 7. 持续集成
