@@ -5,7 +5,8 @@
 ### 1.1 上传解压HBase安装包
 
 ```bash
-cd /export/software
+mkdir -p /export/software /export/server
+cd /export/software 
 tar -xvzf hbase-2.1.0.tar.gz -C ../server/
 ```
 
