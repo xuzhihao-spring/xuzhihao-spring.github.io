@@ -166,7 +166,6 @@ put "ORDER_INFO", "000001", "C1:USER_ID", "4944191"
 put "ORDER_INFO", "000001", "C1:OPERATION_DATE", "2020-04-25 12:09:16"
 put "ORDER_INFO", "000001", "C1:CATEGORY", "手机;"
 
-
 # 要求将rowkey为：000001对应的数据查询出来。
 get "ORDER_INFO", "000001"
 
@@ -221,4 +220,31 @@ create 'USER_INFO', 'C1', 'C2'
 alter 'USER_INFO', 'C3'
 # 删除列蔟C3
 alter 'USER_INFO', 'delete' => 'C3'
+
+# 创建一个命名空间
+create_namespace 'MOMO_CHAT'
+
+# 查看命名空间
+list_namespace
+
+# 删除之前的命名空间
+drop_namespace 'MOMO_CHAT'
+
+# 查看某个具体的命名空间
+describe_namespace 'MOMO_CHAT'
+describe_namespace 'default'
+
+# 在命令MOMO_CHAT命名空间下创建名为：MSG的表，该表包含一个名为C1的列蔟。
+# 注意：带有命名空间的表，使用冒号将命名空间和表名连接到一起
+create "MOMO_CHAT:MSG", "C1"
+
+# 指定修改某个表的列蔟，它的压缩方式
+alter "MOMO_CHAT:MSG", {NAME => "C1", COMPRESSION => "GZ"}
+
+# 删除之前创建的表
+disable "MOMO_CHAT:MSG"
+drop "MOMO_CHAT:MSG"
+
+# 在创建表时需要指定预分区
+create 'MOMO_CHAT:MSG', {NAME => "C1", COMPRESSION => "GZ"}, { NUMREGIONS => 6, SPLITALGO => 'HexStringSplit'}
 ```
