@@ -179,11 +179,11 @@ docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.1
 ### mongo
 
 ```bash
-docker pull mongo:4.2.5
+docker pull mongo:4.4.6
 
 docker run -p 27017:27017 --name mongo \
 -v /mydata/mongo/db:/data/db \
--d mongo:4.2.5
+-d mongo:4.4.6
 ```
 
 ### couchdb
