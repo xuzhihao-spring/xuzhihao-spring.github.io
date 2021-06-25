@@ -2,17 +2,17 @@
 
 ## 1. 设计规范
 
-- key的规范要点
+1. key的规范要点
   - 以业务名为key前缀，用冒号隔开，以防止key冲突覆盖。如，`live:rank:1`
   - 确保key的语义清晰的情况下，key的长度尽量小于30个字符。拒绝bigkey
   - key禁止包含特殊字符，如空格、换行、单双引号以及其他转义字符。
 
-- value的规范要点
+2. value的规范要点
   - string类型控制在10KB以内，hash、list、set、zset元素个数不要超过5000
   - 要选择适合的数据类型
   - 使用expire设置过期时间(条件允许可以打散过期时间，防止集中过期)，不过期的数据重点关注idletime
 
-- 命令使用
+3. 命令使用
   - [推荐]禁止线上使用keys、flushall、flushdb等，通过redis的rename机制禁掉命令，或者使用scan渐进式处理
   - [推荐]使用pipeline批量操作提高效率
   - [推荐]O(N)命令关注N的数量,hgetall、lrange、smembers、zrange、sinter等并非不能使用，但是需要明确N的值。有遍历的需求可以使用hscan、sscan、zscan代替
@@ -20,11 +20,10 @@
   - [建议]集群版本Lua上有特殊要求:所有key，必须在1个slot上
   - [建议]必要情况下使用monitor命令时，要注意不要长时间使用
 
-- 相关工具
-
-1. 数据同步工具redis-port
-2. big key搜索
-3. [性能分析redis-faina](https://github.com/facebookarchive/redis-faina)
+4. 相关工具
+  - 数据同步工具redis-port
+  - big key搜索
+  - [性能分析redis-faina](https://github.com/facebookarchive/redis-faina)
 
 ```bash
 redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
@@ -33,7 +32,7 @@ redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 
 ## 2. 企业级解决方案
 
-- 缓存穿透(安全问题)
+### 2.1 缓存穿透(安全问题)
 
 指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，这将导致这个不存在的数据每次请求都要到数据库去查询，进而给数据库带来压力
 
@@ -51,14 +50,14 @@ redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 
 `无法确定你是否真的存在，但是可以确定真的不存在。`
 
-- 缓存雪奔
+### 2.2 缓存雪奔
 
 指缓存中数据大批量到过期时间，而查询数据量巨大，请求都直接访问数据库，引起数据库压力过大甚至down机
 
 解决方案：
 1. 均匀设置过期时间解决，即让过期时间相对离散一点。如采用一个较大固定值+一个较小的随机值
 
-- 缓存击穿
+### 2.3 缓存击穿
 
 指热点key在某个时间点过期的时候，而恰好在这个时间点对这个Key有大量的并发请求过来，从而大量的请求打到db
 
@@ -67,7 +66,7 @@ redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 2. 永不过期，是指没有设置过期时间，但是热点数据快要过期时，异步线程去更新和设置过期时间。
 
 
-- 缓存热key
+### 2.4 缓存热key
 
 某一热点key的请求到服务器主机时，由于请求量特别大，可能会导致主机资源不足，甚至宕机，从而影响正常的服务
 
@@ -83,7 +82,7 @@ redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 2. 对热key进行hash散列，比如将一个key备份为key1,key2……keyN，同样的数据N个备份，N个备份分布到不同分片，访问时可随机访问N个备份中的一个，进一步分担读流量；
 3. 使用二级缓存，即JVM本地缓存,减少Redis的读请求
 
-- 数据倾斜
+### 2.5 数据倾斜
 
 即热点 key，指的是在一段时间内，该 key 的访问量远远高于其他的 redis key， 导致大部分的访问流量在经过 proxy 分片之后，都集中访问到某一个 redis 实例上
 
@@ -134,7 +133,7 @@ func main() {
 }
 ```
 
-- 分布不均问题、Hash Tags
+### 2.6 分布不均问题、Hash Tags
 
 1. 问题原理
 
