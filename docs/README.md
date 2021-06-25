@@ -121,7 +121,7 @@ JVM底层原理
 
 数据库原理调优
  * [Redis](/linux/database/redis.md)
- * [MongoDB](/share/database/mongodb)
+ * [MongoDB](/linux/database/mongodb)
  * [Mysql](/share/database/mysql)
  * [Oracle](/share/database/oracle)
  * [Mycat](/share/database/mycat)

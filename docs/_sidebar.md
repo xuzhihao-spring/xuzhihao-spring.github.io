@@ -75,7 +75,7 @@
    * [Spring Cloud Alibaba](share/microservice/springclouda)
    * [服务网格Service Mesh](share/microservice/servicemesh)
    * [Redis](linux/database/redis.md)
-   * [MongoDB](share/database/mongodb)
+   * [MongoDB](linux/database/mongodb)
    * [Mysql](share/database/mysql)
    * [Oracle](/share/database/oracle)
    * [Mycat](/share/database/mycat)
