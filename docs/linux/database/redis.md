@@ -1,28 +1,26 @@
 # Redis
 
-## 1. 介绍
+## 1. 设计规范
 
-### 1.1 设计规范
+- key的规范要点
+  - 以业务名为key前缀，用冒号隔开，以防止key冲突覆盖。如，`live:rank:1`
+  - 确保key的语义清晰的情况下，key的长度尽量小于30个字符。拒绝bigkey
+  - key禁止包含特殊字符，如空格、换行、单双引号以及其他转义字符。
 
-#### 1.1.1 key的规范要点
-- 以业务名为key前缀，用冒号隔开，以防止key冲突覆盖。如，`live:rank:1`
-- 确保key的语义清晰的情况下，key的长度尽量小于30个字符。拒绝bigkey
-- key禁止包含特殊字符，如空格、换行、单双引号以及其他转义字符。
+- value的规范要点
+  - string类型控制在10KB以内，hash、list、set、zset元素个数不要超过5000
+  - 要选择适合的数据类型
+  - 使用expire设置过期时间(条件允许可以打散过期时间，防止集中过期)，不过期的数据重点关注idletime
 
-#### 1.1.2 value的规范要点
-- string类型控制在10KB以内，hash、list、set、zset元素个数不要超过5000
-- 要选择适合的数据类型
-- 使用expire设置过期时间(条件允许可以打散过期时间，防止集中过期)，不过期的数据重点关注idletime
+- 命令使用
+  - [推荐]禁止线上使用keys、flushall、flushdb等，通过redis的rename机制禁掉命令，或者使用scan渐进式处理
+  - [推荐]使用pipeline批量操作提高效率
+  - [推荐]O(N)命令关注N的数量,hgetall、lrange、smembers、zrange、sinter等并非不能使用，但是需要明确N的值。有遍历的需求可以使用hscan、sscan、zscan代替
+  - [建议]Redis的事务功能较弱(不支持回滚)，而且集群版本(自研和官方)要求一次事务操作的key必须在一个slot上(可以使用hashtag功能解决)不建议过多使用
+  - [建议]集群版本Lua上有特殊要求:所有key，必须在1个slot上
+  - [建议]必要情况下使用monitor命令时，要注意不要长时间使用
 
-#### 1.1.3 命令使用
-- [推荐]禁止线上使用keys、flushall、flushdb等，通过redis的rename机制禁掉命令，或者使用scan渐进式处理
-- [推荐]使用pipeline批量操作提高效率
-- [推荐]O(N)命令关注N的数量,hgetall、lrange、smembers、zrange、sinter等并非不能使用，但是需要明确N的值。有遍历的需求可以使用hscan、sscan、zscan代替
-- [建议]Redis的事务功能较弱(不支持回滚)，而且集群版本(自研和官方)要求一次事务操作的key必须在一个slot上(可以使用hashtag功能解决)不建议过多使用
-- [建议]集群版本Lua上有特殊要求:所有key，必须在1个slot上
-- [建议]必要情况下使用monitor命令时，要注意不要长时间使用
-
-#### 1.1.4 相关工具
+- 相关工具
 
 1. 数据同步工具redis-port
 2. big key搜索
@@ -32,109 +30,10 @@
 redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 ```
 
-#### 1.1.5 删除bigkey
 
-##### 1.1.5.1 Hash删除: hscan + hdel
+## 2. 企业级解决方案
 
-```java
-public void delBigHash(String host, int port, String password, String bigHashKey) {
-		Jedis jedis = new Jedis(host, port);
-		if (password != null && !"".equals(password)) {
-			jedis.auth(password);
-		}
-		ScanParams scanParams = new ScanParams().count(100);
-		String cursor = "0";
-		do {
-			ScanResult<Entry<String, String>> scanResult = jedis.hscan(bigHashKey, cursor, scanParams);
-			List<Entry<String, String>> entryList = scanResult.getResult();
-			if (entryList != null && !entryList.isEmpty()) {
-				for (Entry<String, String> entry : entryList) {
-					jedis.hdel(bigHashKey, entry.getKey());
-				}
-			}
-			cursor = scanResult.getStringCursor();
-		} while (!"0".equals(cursor));
-
-		// 删除bigkey
-		jedis.del(bigHashKey);
-	}
-```
-##### 1.1.5.2 List删除: ltrim
-
-```java
-public void delBigList(String host, int port, String password, String bigListKey) {
-		Jedis jedis = new Jedis(host, port);
-		if (password != null && !"".equals(password)) {
-			jedis.auth(password);
-		}
-		long llen = jedis.llen(bigListKey);
-		int counter = 0;
-		int left = 100;
-		while (counter < llen) {
-			// 每次从左侧截掉100个
-			jedis.ltrim(bigListKey, left, llen);
-			counter += left;
-		}
-		// 最终删除key
-		jedis.del(bigListKey);
-	}
-```
-
-##### 1.1.5.3 Set删除: sscan + srem
-
-```java
-public void delBigSet(String host, int port, String password, String bigSetKey) {
-		Jedis jedis = new Jedis(host, port);
-		if (password != null && !"".equals(password)) {
-			jedis.auth(password);
-		}
-		ScanParams scanParams = new ScanParams().count(100);
-		String cursor = "0";
-		do {
-			ScanResult<String> scanResult = jedis.sscan(bigSetKey, cursor, scanParams);
-			List<String> memberList = scanResult.getResult();
-			if (memberList != null && !memberList.isEmpty()) {
-				for (String member : memberList) {
-					jedis.srem(bigSetKey, member);
-				}
-			}
-			cursor = scanResult.getStringCursor();
-		} while (!"0".equals(cursor));
-
-		// 删除bigkey
-		jedis.del(bigSetKey);
-	}
-```
-
-##### 1.1.5.4 SortedSet删除: zscan + zrem
-
-```java
-public void delBigZset(String host, int port, String password, String bigZsetKey) {
-		Jedis jedis = new Jedis(host, port);
-		if (password != null && !"".equals(password)) {
-			jedis.auth(password);
-		}
-		ScanParams scanParams = new ScanParams().count(100);
-		String cursor = "0";
-		do {
-			ScanResult<Tuple> scanResult = jedis.zscan(bigZsetKey, cursor, scanParams);
-			List<Tuple> tupleList = scanResult.getResult();
-			if (tupleList != null && !tupleList.isEmpty()) {
-				for (Tuple tuple : tupleList) {
-					jedis.zrem(bigZsetKey, tuple.getElement());
-				}
-			}
-			cursor = scanResult.getStringCursor();
-		} while (!"0".equals(cursor));
-
-		// 删除bigkey
-		jedis.del(bigZsetKey);
-	}
-```
-
-### 1.2 企业级解决方案
-
-#### 1.2.1 缓存穿透(安全问题)
+- 缓存穿透(安全问题)
 
 指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，这将导致这个不存在的数据每次请求都要到数据库去查询，进而给数据库带来压力
 
@@ -152,14 +51,14 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 
 `无法确定你是否真的存在，但是可以确定真的不存在。`
 
-#### 1.2.2 缓存雪奔
+- 缓存雪奔
 
 指缓存中数据大批量到过期时间，而查询数据量巨大，请求都直接访问数据库，引起数据库压力过大甚至down机
 
 解决方案：
 1. 均匀设置过期时间解决，即让过期时间相对离散一点。如采用一个较大固定值+一个较小的随机值
 
-#### 1.2.3 缓存击穿
+- 缓存击穿
 
 指热点key在某个时间点过期的时候，而恰好在这个时间点对这个Key有大量的并发请求过来，从而大量的请求打到db
 
@@ -168,7 +67,7 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 2. 永不过期，是指没有设置过期时间，但是热点数据快要过期时，异步线程去更新和设置过期时间。
 
 
-#### 1.2.4 缓存热key
+- 缓存热key
 
 某一热点key的请求到服务器主机时，由于请求量特别大，可能会导致主机资源不足，甚至宕机，从而影响正常的服务
 
@@ -184,7 +83,7 @@ public void delBigZset(String host, int port, String password, String bigZsetKey
 2. 对热key进行hash散列，比如将一个key备份为key1,key2……keyN，同样的数据N个备份，N个备份分布到不同分片，访问时可随机访问N个备份中的一个，进一步分担读流量；
 3. 使用二级缓存，即JVM本地缓存,减少Redis的读请求
 
-#### 1.2.5 数据倾斜
+- 数据倾斜
 
 即热点 key，指的是在一段时间内，该 key 的访问量远远高于其他的 redis key， 导致大部分的访问流量在经过 proxy 分片之后，都集中访问到某一个 redis 实例上
 
@@ -235,7 +134,7 @@ func main() {
 }
 ```
 
-#### 1.2.6 分布不均问题、Hash Tags
+- 分布不均问题、Hash Tags
 
 1. 问题原理
 
@@ -262,7 +161,7 @@ HashTag即是用{}包裹key的一个子串，如{user:}1, {user:}2，在设置�
 
 HashTag不支持嵌套，可能会使过多的key分配到同一个slot中，造成数据倾斜影响系统的吞吐量，务必谨慎使用
 
-### 1.3 配置运维
+## 3. 配置运维
 
 - Redis Cluster只支持db0，切换会损耗新能，迁移成本高
 - 开启 lazy-free机制，减少对主线程的阻塞
@@ -280,21 +179,117 @@ HashTag不支持嵌套，可能会使过多的key分配到同一个slot中，造
 8. oeviction：默认策略，当内存不足以容纳新写入数据时，新写入操作会报错。
 
 
-### 1.4 集群
 Redis Cluster 只支持 db0
 
+## 4. 删除bigkey
+
+- Hash删除: hscan + hdel
+
+```java
+public void delBigHash(String host, int port, String password, String bigHashKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		ScanParams scanParams = new ScanParams().count(100);
+		String cursor = "0";
+		do {
+			ScanResult<Entry<String, String>> scanResult = jedis.hscan(bigHashKey, cursor, scanParams);
+			List<Entry<String, String>> entryList = scanResult.getResult();
+			if (entryList != null && !entryList.isEmpty()) {
+				for (Entry<String, String> entry : entryList) {
+					jedis.hdel(bigHashKey, entry.getKey());
+				}
+			}
+			cursor = scanResult.getStringCursor();
+		} while (!"0".equals(cursor));
+
+		// 删除bigkey
+		jedis.del(bigHashKey);
+	}
+```
+
+- List删除: ltrim
+
+```java
+public void delBigList(String host, int port, String password, String bigListKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		long llen = jedis.llen(bigListKey);
+		int counter = 0;
+		int left = 100;
+		while (counter < llen) {
+			// 每次从左侧截掉100个
+			jedis.ltrim(bigListKey, left, llen);
+			counter += left;
+		}
+		// 最终删除key
+		jedis.del(bigListKey);
+	}
+```
+
+- Set删除: sscan + srem
+
+```java
+public void delBigSet(String host, int port, String password, String bigSetKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		ScanParams scanParams = new ScanParams().count(100);
+		String cursor = "0";
+		do {
+			ScanResult<String> scanResult = jedis.sscan(bigSetKey, cursor, scanParams);
+			List<String> memberList = scanResult.getResult();
+			if (memberList != null && !memberList.isEmpty()) {
+				for (String member : memberList) {
+					jedis.srem(bigSetKey, member);
+				}
+			}
+			cursor = scanResult.getStringCursor();
+		} while (!"0".equals(cursor));
+
+		// 删除bigkey
+		jedis.del(bigSetKey);
+	}
+```
+
+- SortedSet删除: zscan + zrem
+
+```java
+public void delBigZset(String host, int port, String password, String bigZsetKey) {
+		Jedis jedis = new Jedis(host, port);
+		if (password != null && !"".equals(password)) {
+			jedis.auth(password);
+		}
+		ScanParams scanParams = new ScanParams().count(100);
+		String cursor = "0";
+		do {
+			ScanResult<Tuple> scanResult = jedis.zscan(bigZsetKey, cursor, scanParams);
+			List<Tuple> tupleList = scanResult.getResult();
+			if (tupleList != null && !tupleList.isEmpty()) {
+				for (Tuple tuple : tupleList) {
+					jedis.zrem(bigZsetKey, tuple.getElement());
+				}
+			}
+			cursor = scanResult.getStringCursor();
+		} while (!"0".equals(cursor));
+
+		// 删除bigkey
+		jedis.del(bigZsetKey);
+	}
+```
 
 
-## 2. 命令
+## 5. 基本命令
 
-### 2.1 数据命令
-
-#### 2.1.1 String命令
-可实现：`缓存，限流，计数器，分布式锁，session共享`
 ```bash
+# String命令可实现：`缓存，限流，计数器，分布式锁，session共享`
+
 SETEX key seconds value          # 将值 value 关联到 key ，并将 key 的过期时间设为 seconds (以秒为单位)。
 MSETNX key value [key value ...] # 同时设置一个或多个 key-value 对，当且仅当所有给定 key 都不存在。
-
 # 非原子
 SETNX key value                 # 只有在 key 不存在时设置 key 的值。
 GETRANGE key start end          # 返回 key 中字符串值的子字符
@@ -314,11 +309,11 @@ PSETEX key milliseconds value   # 这个命令和 SETEX 命令相似，但它以
 APPEND key value                # 如果 key 已经存在并且是一个字符串， APPEND 命令将 value 追加到 key 原来的值的末尾。
 GETSET key value                # 将给定 key 的值设为 value ，并返回 key 的旧值(old value)。
 MGET key [key ...]              # 获取所有(一个或多个)给定 key 的值。
-```
 
-#### 2.1.2 Hash命令
-可实现：`用户信息存储，访问量等组合查询`
-```bash
+
+
+# Hash命令可实现：`用户信息存储，访问量等组合查询`
+
 HMSET key field value [field value ...] # 同时将多个 field-value (域-值)对设置到哈希表 key 中。
 HMGET key field [field ...]             # 获取所有给定字段的值
 HSET key field value                    # 将哈希表 key 中的字段 field 的值设为 value 。
@@ -332,13 +327,12 @@ HDEL key field [field ...]      # 删除一个或多个哈希表字段
 HVALS key                       # 获取哈希表中所有值
 HKEYS key                       # 获取所有哈希表中的字段
 HSETNX key field value          # 只有在字段 field 不存在时，设置哈希表字段的值。
-```
 
-#### 2.1.3 List命令
-可实现：`取最新n个，简单队列`
-```bash
+
+
+# List命令可实现：`取最新n个，简单队列`
+
 RPOPLPUSH source destination            # 移除列表的最后一个元素，并将该元素添加到另一个列表并返回
-
 # 非原子
 LINDEX key index                        # 通过索引获取列表中的元素
 RPUSH key value [value ...]             # 在列表中添加一个或多个值插入到列表 key 的表尾(最右边)
@@ -356,11 +350,11 @@ LSET key index value                # 通过索引设置列表元素的值
 LPUSH key value [value ...]         # 将一个或多个值插入到列表头部
 RPUSHX key value                    # 为已存在的列表添加值
 LINSERT key BEFORE|AFTER pivot value # 在列表的元素前或者后插入元素
-```
 
-#### 2.1.4 Set命令
-可实现：`共同好友，交集差集，踩，赞，标签`
-```bash
+
+
+# Set命令可实现：`共同好友，交集差集，踩，赞，标签`
+
 SUNION key [key ...]            # 返回所有给定集合的并集
 SCARD key                       # 获取集合的成员数
 SRANDMEMBER key [count]         # 返回集合中一个或多个随机数
@@ -376,11 +370,11 @@ SSCAN key cursor [MATCH pattern] [COUNT count] # 迭代集合中的元素
 SDIFFSTORE destination key [key ...]            # 返回给定所有集合的差集并存储在 destination 中
 SINTERSTORE destination key [key ...]           # 返回给定所有集合的交集并存储在 destination 中
 SUNIONSTORE destination key [key ...]           # 所有给定集合的并集存储在 destination 集合中
-```
 
-#### 2.1.5 Sorted Set命令
-可实现：`排行榜`
-```bash
+
+
+# Sorted Set命令可实现：`排行榜`
+
 ZCARD key                           # 获取有序集合的成员数
 ZSCORE key member                   # 返回有序集中，成员的分数值
 ZRANK key member                    # 返回有序集合中指定成员的索引
@@ -400,12 +394,12 @@ ZSCAN key cursor [MATCH pattern] [COUNT count]                  # 迭代有序�
 ZADD key score member [[score member] [score member] ...]       # 向有序集合添加一个或多个成员，或者更新已存在成员的分数
 ```
 
-### 2.2 其他命令
-
-#### 2.2.1 键命令
+## 6. 其他命令
 
 redis-cli -h 127.0.0.1 -p 6379
+
 ```bash
+# 键命令
 DEL key [key ...]       # 该命令用于在 key 存在是删除 key。
 DUMP key                # 序列化给定 key ，并返回被序列化的值。
 EXISTS key              # 检查给定 key 是否存在。
@@ -421,21 +415,17 @@ EXPIREAT key timestamp  # 设置 key 过期时间的时间戳(unix timestamp)
 TTL key                 # 以秒为单位，返回给定 key 的剩余生存时间(TTL, time to live)。
 Pttl key                # 以毫秒为单位返回 key 的剩余的过期时间。
 PEXPIREAT key milliseconds-timestamp # 设置 key 的过期时间亿以毫秒计。
-```
 
-#### 2.2.2 连接命令
 
-```bash
+# 连接命令
 Ping # 查看服务是否运行
 Quit # 关闭当前连接
 ECHO message  # 打印字符串
 SELECT index  # 切换到指定的数据库
 AUTH password # 验证密码是否正确
-```
 
-#### 2.2.3 服务器命令
 
-```bash
+# 服务器命令
 redis-server --version
 redis-server /opt/redis/redis.conf
 redis-cli -h host -p port -a password
@@ -471,11 +461,8 @@ CLIENT SETNAME connection-name  # 设置当前连接的名称
 SLOWLOG subcommand [argument]   # 管理的慢日志
 COMMAND INFO command-name [command-name ...]  # 获取指定 命令描述的数组
 
-```
 
-#### 2.2.4 脚本命令
-
-```bash
+# 脚本命令
 Script kill             # 杀死当前正在运行的 Lua 脚本。
 SCRIPT LOAD script      # 将脚本 script 添加到脚本缓存中，但并不立即执行这个脚本。
 SCRIPT FLUSH            # 从脚本缓存中移除所有脚本。
@@ -483,40 +470,31 @@ EVAL script numkeys key [key ...] arg [arg ...]     # 执行 Lua 脚本。
 EVALSHA sha1 numkeys key [key ...] arg [arg ...]    # 执行 Lua 脚本。
 SCRIPT EXISTS script [script ...]                   # 查看指定的脚本是否已经被保存在缓存当中。
 
-```
 
-#### 2.2.5 事务命令
-
-```bash
+# 事务命令
 Exec                # 执行所有事务块内的命令。
 Unwatch             # 取消 WATCH 命令对所有 key 的监视。
 WATCH key [key ...] # 监视一个(或多个) key ，如果在事务执行之前这个(或这些) key 被其他命令所改动，那么事务将被打断。
 Discard             # 取消事务，放弃执行事务块内的所有命令。
 Multi               # 标记一个事务块的开始。
-```
 
-#### 2.2.6 HyperLogLog命令
 
-```bash
+# HyperLogLog命令
 PFMERGE destkey sourcekey [sourcekey ...] # 将多个 HyperLogLog 合并为一个 HyperLogLog
 PFADD key element [element ...] # 添加指定元素到 HyperLogLog 中。
 PFCOUNT key [key ...] # 返回给定 HyperLogLog 的基数估算值。
-```
 
-#### 2.2.7 发布订阅命令
 
-```bash
+# 发布订阅命令
 UNSUBSCRIBE [channel [channel ...]] # 指退订给定的频道。
 SUBSCRIBE channel [channel ...] # 订阅给定的一个或多个频道的信息。
 PUBSUB <subcommand> [argument [argument ...]] # 查看订阅与发布系统状态。
 PUNSUBSCRIBE [pattern [pattern ...]] # 退订所有给定模式的频道。
 PUBLISH channel message # 将信息发送到指定的频道。
 PSUBSCRIBE pattern [pattern ...] # 订阅一个或多个符合给定模式的频道。
-```
 
-#### 2.2.8 geo命令
 
-```bash
+# geo命令
 GEOHASH # 返回一个或多个位置元素的 Geohash 表示
 GEOPOS # 从key里返回所有给定位置元素的位置（经度和纬度）
 GEODIST # 返回两个给定位置之间的距离
@@ -525,7 +503,7 @@ GEOADD # 将指定的地理空间位置（纬度、经度、名称）添加到�
 GEORADIUSBYMEMBER # 找出位于指定范围内的元素，中心点是由给定的位置元素决定
 ```
 
-## 3. 配置文件6.0
+## 7. 配置文件6.0
 
 redis.conf
 ```conf
@@ -803,7 +781,7 @@ rdb-save-incremental-fsync yes
 jemalloc-bg-thread yes
 ```
 
-## 4. Lua 脚本
+## 8. Lua 脚本
 
 limit.lua自定义限流
 ```lua
@@ -1088,4 +1066,4 @@ public class ProductController {
 }
 ```
 
-## 5. 分布式锁
+## 9. 分布式锁
