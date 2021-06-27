@@ -13,6 +13,7 @@
   * [MySQL](linux/database/mysql.md)
   * [Redis](linux/database/redis.md)
   * [MongoDB](linux/database/mongodb.md)
+  * [HBase](linux/database/hbase.md)
 
 * 系统部署
   * [Docker镜像](linux/deploy/docker-deploy.md)
@@ -22,18 +23,17 @@
   * [Nginx配置HTTPS](linux/deploy/nginx_https.md)
   * [Gitlab搭建](linux/deploy/gitlab.md)
   * [Zabbix安装](linux/deploy/zabbix.md)
-  * [HBase集群搭建](linux/deploy/hbase.md)
+  * [Hadoop](linux/deploy/hadoop.md)
   
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
   * [C/C++ IDE CLion 配置使用教程](tools/clion.md)
   * [阿里开源的诊断神器Arthas](tools/arthas.md)
-  * [Hutool常用的工具类和方法](tools/hutool.md)
   * [服务端高并发分布式架构演进之路](tools/style.md)
   * [开源协议](tools/opensource.md)
 
 * 学习笔记
-   * [算法函数](share/jvm/function.md)
+   * [基础算法函数](share/jvm/function.md)
    * [JVM底层原理](share/jvm/index.md)
    * [Map源码](share/j2se/map)
    * [List源码](share/j2se/list)

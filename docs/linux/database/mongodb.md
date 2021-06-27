@@ -1254,4 +1254,16 @@ security:
 
 注意：启动顺序。先启动配置节点，再启动分片节点，最后启动路由节点
 
+客户端mongo，通过localhost登录任意一个mongos路由,创建一个管理员帐号
+```bash
+use admin
+db.createUser({user:"myroot",pwd:"123456",roles:["root"]})
+```
+创建一个普通权限帐号：
+```bash
+use admin
+db.auth("myroot","123456")
+use articledb
+db.createUser({user: "bobo", pwd: "123456", roles: [{ role: "readWrite",db: "articledb" }]})
+
 

@@ -16,6 +16,7 @@
 8. Kubernetes资源 https://github.com/fungitive/kubernetes
 9. 分布式任务调度 https://github.com/xuxueli/xxl-job
 10. macrozheng部署 http://www.macrozheng.com/
+11. 虫洞栈学习 https://github.com/fuzhengwei/CodeGuide
 
 ## 工作流
 1. 在线设计器 https://www.cnblogs.com/rmxd/p/11715016.html
@@ -53,7 +54,7 @@
 架构师线路 https://www.processon.com/view/link/5ee0e20507912929cb3914b2#map
 
 JVM底层原理
- * [算法函数](/share/jvm/function.md)
+ * [基础算法函数](/share/jvm/function.md)
  * [JVM内存模型](/share/jvm/index.md?id=_1-jvm内存模型)
  * [M垃圾收集机制](/share/jvm/index.md?id=_2-垃圾收集机制详解)
  * [垃圾收集算法](/share/jvm/index.md?id=_3-垃圾收集算法详解)

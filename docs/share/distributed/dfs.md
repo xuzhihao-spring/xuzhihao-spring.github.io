@@ -53,12 +53,12 @@ tracker根据请求的文件路径即文件ID 来快速定义文件。比如请�
 客户端需要访问的文件。
 
 
-
-
-
-
 ## 2. MinIO
+
+[MinIO](/linux/deploy/docker-deploy?id=minio)
 
 ## 3. OOS
 
 ## 4. Hadoop
+
+[Hadoop](linux/deploy/hadoop.md)

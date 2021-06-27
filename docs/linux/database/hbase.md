@@ -119,12 +119,12 @@ hbase shell
 # 输入status
 ```
 
-## 2. WebUI
+### 1.9 WebUI
 
 http://node1.xuzhihao.com.cn:16010/master-status
 
 
-## 3. 参考硬件配置
+### 1.10 参考硬件配置
 
 | 进程 | 堆 | 描述 |
 | :---------- | :---------- | :---------------------------------- |
@@ -142,23 +142,30 @@ http://node1.xuzhihao.com.cn:16010/master-status
 - Master机器要运行NameNode、ResourceManager、以及HBase HMaster，推荐24GB左右
 - Slave机器需要运行DataNode、NodeManager和HBase RegionServer，推荐24GB（及以上）
 
-## 4. shell操作
+## 2. 基本命令
 
 ```shell
-# 创建订单表，表名为ORDER_INFO，该表有一个列蔟为C1
-create "ORDER_INFO", "C1"
+# 表操作
+create "ORDER_INFO", 'C1', 'C2'      # 创建订单表ORDER_INFO，有一个列蔟为C1，C2
+create "MOMO_CHAT:MSG", "C1"         # 指定命名空间创建表
+alter 'ORDER_INFO', 'C3'             # 新增列蔟C3
+alter 'ORDER_INFO', 'delete' => 'C3' # 删除列簇 C3
 
-# 删除表
-# 1. 禁用表
-disable "ORDER_INFO"
+alter "MOMO_CHAT:MSG", {NAME => "C1", COMPRESSION => "GZ"}  # 指定修改某个表的列蔟，它的压缩方式
+create 'MOMO_CHAT:MSG', {NAME => "C1", COMPRESSION => "GZ"}, { NUMREGIONS => 6, SPLITALGO => 'HexStringSplit'} # 在创建表时需要指定预分区
 
-# 2. 删除表
-drop "ORDER_INFO"
+create_namespace 'MOMO_CHAT'         # 创建一个命名空间
+list_namespace                       # 查看命名空间
+drop_namespace 'MOMO_CHAT'           # 删除之前的命名空间
+describe_namespace 'MOMO_CHAT'       # 查看某个具体的命名空间
+describe_namespace 'default'
 
-# 往表中添加一条数据
-# put '表名','ROWKEY','列蔟名:列名','值'
-# ID	STATUS	PAY_MONEY	PAYWAY	USER_ID	OPERATION_DATE	CATEGORY
-# 000001	已提交	4070	1	4944191	2020-04-25 12:09:16	手机;
+disable "ORDER_INFO"                 # 禁用表
+drop "ORDER_INFO"                    # 删除表
+disable "MOMO_CHAT:MSG" 
+drop "MOMO_CHAT:MSG"
+
+# 添加数据 put '表名','ROWKEY','列蔟名:列名','值'
 put "ORDER_INFO", "000001", "C1:STATUS", "已提交"
 put "ORDER_INFO", "000001", "C1:PAY_MONEY", 4070
 put "ORDER_INFO", "000001", "C1:PAYWAY", 1
@@ -166,41 +173,26 @@ put "ORDER_INFO", "000001", "C1:USER_ID", "4944191"
 put "ORDER_INFO", "000001", "C1:OPERATION_DATE", "2020-04-25 12:09:16"
 put "ORDER_INFO", "000001", "C1:CATEGORY", "手机;"
 
-# 要求将rowkey为：000001对应的数据查询出来。
-get "ORDER_INFO", "000001"
+# 查询操作
+get "ORDER_INFO", "000001" # 查询ORDER_INFO rowkey为：000001
+get "ORDER_INFO", "000001", {FORMATTER => 'toString'}   # 指定字符集
+put "ORDER_INFO", "000001", "C1:STATUS", "已付款" # 更新状态
 
-# 要将数据中的中文正确的显示
-get "ORDER_INFO", "000001", {FORMATTER => 'toString'}
+# 删除操作
+delete "ORDER_INFO", "000001", "C1:STATUS" # 删除列
+deleteall "ORDER_INFO", "000001"    # 删除所有列
 
-# 将订单ID为000001的状态，更改为「已付款」
-put "ORDER_INFO", "000001", "C1:STATUS", "已付款"
-
-# 将订单ID为000001的状态列删除。
-delete "ORDER_INFO", "000001", "C1:STATUS"
-
-# 将订单ID为000001的信息全部删除（删除所有的列）
-deleteall "ORDER_INFO", "000001"
-
-# 查看HBase中的ORDER_INFO表，一共有多少条记录。
-count "ORDER_INFO"
+count "ORDER_INFO"  # 查询记录数
 
 # scan操作
-# 需求一：查询订单所有数据
-scan "ORDER_INFO", {FORMATTER => 'toString'}
+scan "ORDER_INFO", {FORMATTER => 'toString'}    # 查询订单所有数据
+scan "ORDER_INFO", {FORMATTER => 'toString', LIMIT => 3} # 查询订单数据（只显示3条）
+scan "ORDER_INFO", {FORMATTER => 'toString', LIMIT => 3, COLUMNS => ['C1:STATUS', 'C1:PAYWAY']} # 显示指定列 只显示3条
 
-# 需求二： 查询订单数据（只显示3条）
-scan "ORDER_INFO", {FORMATTER => 'toString', LIMIT => 3}
-
-# 需求三：只查询订单状态以及支付方式，并且只展示3条数据
-scan "ORDER_INFO", {FORMATTER => 'toString', LIMIT => 3, COLUMNS => ['C1:STATUS', 'C1:PAYWAY']}
-
-# 需求四：使用scan来根据rowkey查询数据，也是查询指定列的数据
 # scan '表名', {ROWPREFIXFILTER => 'rowkey'}
 scan "ORDER_INFO", {ROWPREFIXFILTER => '02602f66-adc7-40d4-8485-76b5632b5b53',FORMATTER => 'toString', LIMIT => 3, COLUMNS => ['C1:STATUS', 'C1:PAYWAY']}
 
-# Scan + Filter
-# 使用RowFilter查询指定订单ID的数据
-# 只查询订单的ID为：02602f66-adc7-40d4-8485-76b5632b5b53、订单状态以及支付方式
+# Scan + Filter 只查询订单的ID为：02602f66-adc7-40d4-8485-76b5632b5b53、订单状态以及支付方式
 scan "ORDER_INFO", {FILTER => "RowFilter(=,'binary:02602f66-adc7-40d4-8485-76b5632b5b53')", COLUMNS => ['C1:STATUS', 'C1:PAYWAY'], FORMATTER => 'toString'}
 
 # 查询状态为「已付款」的订单
@@ -209,42 +201,61 @@ scan "ORDER_INFO", {FILTER => "SingleColumnValueFilter('C1', 'STATUS', =, 'binar
 # 查询支付方式为1，且金额大于3000的订单
 scan "ORDER_INFO", {FILTER => "SingleColumnValueFilter('C1', 'PAYWAY', =, 'binary:1') AND SingleColumnValueFilter('C1', 'PAY_MONEY', >, 'binary:3000')", FORMATTER => 'toString'}
 
-# HBase的计数器
-#	需求一：对0000000020新闻01:00 - 02:00访问计数+1
+# HBase的计数器 对0000000020新闻01:00 - 02:00访问计数+1
 get_counter 'NEWS_VISIT_CNT','0000000020_01:00-02:00', 'C1:CNT'
 incr 'NEWS_VISIT_CNT','0000000020_01:00-02:00','C1:CNT'
-
-# 创建一个USER_INFO表，两个列蔟C1、C2
-create 'USER_INFO', 'C1', 'C2'
-# 新增列蔟C3
-alter 'USER_INFO', 'C3'
-# 删除列蔟C3
-alter 'USER_INFO', 'delete' => 'C3'
-
-# 创建一个命名空间
-create_namespace 'MOMO_CHAT'
-
-# 查看命名空间
-list_namespace
-
-# 删除之前的命名空间
-drop_namespace 'MOMO_CHAT'
-
-# 查看某个具体的命名空间
-describe_namespace 'MOMO_CHAT'
-describe_namespace 'default'
-
-# 在命令MOMO_CHAT命名空间下创建名为：MSG的表，该表包含一个名为C1的列蔟。
-# 注意：带有命名空间的表，使用冒号将命名空间和表名连接到一起
-create "MOMO_CHAT:MSG", "C1"
-
-# 指定修改某个表的列蔟，它的压缩方式
-alter "MOMO_CHAT:MSG", {NAME => "C1", COMPRESSION => "GZ"}
-
-# 删除之前创建的表
-disable "MOMO_CHAT:MSG"
-drop "MOMO_CHAT:MSG"
-
-# 在创建表时需要指定预分区
-create 'MOMO_CHAT:MSG', {NAME => "C1", COMPRESSION => "GZ"}, { NUMREGIONS => 6, SPLITALGO => 'HexStringSplit'}
 ```
+
+## 5. 安装Phoenix
+
+http://phoenix.apache.org/download.html
+
+```bash
+# 1.上传安装包到Linux系统，并解压
+cd /export/software
+tar -xvzf apache-phoenix-5.0.0-HBase-2.0-bin.tar.gz -C ../server/
+
+# 2.将phoenix的所有jar包添加到所有HBase RegionServer和Master的复制到HBase的lib目录
+cp /export/server/apache-phoenix-5.0.0-HBase-2.0-bin/phoenix-*.jar /export/server/hbase-2.1.0/lib/  # 拷贝jar包到hbase lib目录 
+cd /export/server/hbase-2.1.0/lib/  # 进入到hbase lib目录
+# 分发jar包到每个HBase 节点
+scp phoenix-*.jar node2.xuzhihao.com.cn:$PWD
+scp phoenix-*.jar node3.xuzhihao.com.cn:$PWD
+
+# 3.修改配置文件
+cd /export/server/hbase-2.1.0/conf/
+vim hbase-site.xml
+```
+
+```xml
+<!-- 将以下配置添加到 hbase-site.xml 后边 -->
+<!-- 支持HBase命名空间映射 -->
+<property>
+    <name>phoenix.schema.isNamespaceMappingEnabled</name>
+    <value>true</value>
+</property>
+<!-- 支持索引预写日志编码 -->
+<property>
+  <name>hbase.regionserver.wal.codec</name>
+  <value>org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec</value>
+</property>
+```
+
+```bash
+# 将hbase-site.xml分发到每个节点
+scp hbase-site.xml node2.xuzhihao.com.cn:$PWD
+scp hbase-site.xml node3.xuzhihao.com.cn:$PWD
+
+# 4. 将配置后的hbase-site.xml拷贝到phoenix的bin目录
+cp /export/server/hbase-2.1.0/conf/hbase-site.xml /export/server/apache-phoenix-5.0.0-HBase-2.0-bin/bin/
+
+# 5. 重新启动HBase
+stop-hbase.sh
+start-hbase.sh
+
+# 6. 启动Phoenix客户端，连接Phoenix Server 第一次启动Phoenix连接HBase会比较慢
+cd /export/server/apache-phoenix-5.0.0-HBase-2.0-bin/
+bin/sqlline.py zk:2181
+```
+
+## 6. phoenix语法
