@@ -1,5 +1,5 @@
 
-# Kubernetes命令
+# Kubernetes
 
 
 ## 1. 集群
@@ -330,7 +330,7 @@ kubectl get svc -n test
 ```
 
 
-## 2. 组件
+## 2. 组件命令
 
 ### 2.1 Kubectl
 ```bash
