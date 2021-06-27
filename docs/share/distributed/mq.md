@@ -654,18 +654,18 @@ rabbitmq-plugins disable rabbitmq_tracing
 
 #### 3.9.1 HAProxy 实现镜像队列的负载均衡
 
-[HAProxy安装配置](deploy/mycat?id=_624-haproxy安装配置)
+[HAProxy安装配置](share/database/mycat?id=_624-haproxy安装配置)
 
 #### 3.9.2 KeepAlived 搭建高可用的HAProxy集群
 
-[KeepAlived安装配置](deploy/mycat?id=_625-keepalived安装配置)
+[KeepAlived安装配置](share/database/mycat?id=_625-keepalived安装配置)
 
 ### 3.10 集群监控
 
 1. rabbitmq控制台页面监控
 2. tracing日志监控
 3. 使用api接口自定义实现监控
-4. [使用Zabbix监控rabbitmq](deploy/zabbix5.0.md)
+4. [使用Zabbix监控rabbitmq](linux/deploy/zabbix)
 
 ### 3.11 常见问题
 
