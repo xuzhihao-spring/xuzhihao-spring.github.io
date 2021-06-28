@@ -11,7 +11,7 @@
   * [spring-mybatis](https://github.com/xzh-net/spring-mybatis) 
   * [netty-4.1.49](https://github.com/xzh-net/netty-4.1.49) 
   * [springmvc-5.3.1-embed](https://github.com/xzh-net/springmvc-5.3.1-embed)
-* 静态模板
+* 模板
   * [AdminLTE](https://github.com/xzh-net/AdminLTE)
   * [AdminLTE-2.4汉化](https://github.com/xzh-net/AdminLTE_CN)
   * [小米商城首页](https://github.com/xzh-net/xiaomi-index-page)
@@ -21,7 +21,7 @@
   * [wmsAdmin](https://github.com/xzh-net/wmsAdmin)  
   * [WebIM调试](https://github.com/xzh-net/openfire-strophe)
   * [静态调试](https://github.com/xzh-net/html)
-* 项目地址
+* 项目
   * [电商微服务](https://github.com/xzh-net/mall)
   * [微服务架构](https://github.com/xzh-net/microservices-platform)
   * [servlet3](https://github.com/xzh-net/servlet3)
