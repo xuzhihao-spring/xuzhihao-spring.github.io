@@ -208,7 +208,7 @@ public enum Sington {
 }
 ```
 
-## 2. 策略模式Strategy
+## 2. 策略模式（营销策略优惠券折扣）
 
 策略模式属于对象的行为模式。其用意是针对一组算法，将每一个算法封装到具有共同接口的独立的类中，从而使得它们可以相互替换。策略模式使得算法可以在不影响到客户端的情况下发生变化
 
@@ -696,7 +696,333 @@ public class ServletRequestWrapper implements ServletRequest {
 
 - tomcat CoyoteAdapter
 
-## 9. 原型模式
+## 9. 原型模式（多套试题答案乱序）
+
+定义：用一个已经创建的实例作为原型，通过复制该原型对象来创建一个和原型相同或相似的新对象
+
+通过克隆方式创建复杂对象、也可以避免重复做初始化操作、不需要与类中所属的其他类耦合等。但也有一些缺点如果对象中包括了循环引用的克隆，以及类中深度使用对象的克隆，增加复杂度
+
+解答题对象
+```java
+package org.itstack.demo.design;
+
+/**
+ * 解答题
+ */
+public class AnswerQuestion {
+
+    private String name;  // 问题
+    private String key;   // 答案
+
+    public AnswerQuestion() {
+    }
+
+    public AnswerQuestion(String name, String key) {
+        this.name = name;
+        this.key = key;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+}
+```
+
+选择题对象
+```java
+package org.itstack.demo.design;
+
+import java.util.Map;
+
+/**
+ * 单选题
+ */
+public class ChoiceQuestion {
+
+    private String name;                 // 题目
+    private Map<String, String> option;  // 选项；A、B、C、D
+    private String key;                  // 答案；B
+
+    public ChoiceQuestion() {
+    }
+
+    public ChoiceQuestion(String name, Map<String, String> option, String key) {
+        this.name = name;
+        this.option = option;
+        this.key = key;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Map<String, String> getOption() {
+        return option;
+    }
+
+    public void setOption(Map<String, String> option) {
+        this.option = option;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+}
+```
+
+题库对象
+```java
+package org.itstack.demo.design;
+
+import org.itstack.demo.design.util.Topic;
+import org.itstack.demo.design.util.TopicRandomUtil;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+
+public class QuestionBank implements Cloneable {
+
+    private String candidate; // 考生
+    private String number;    // 考号
+
+    private ArrayList<ChoiceQuestion> choiceQuestionList = new ArrayList<ChoiceQuestion>();
+    private ArrayList<AnswerQuestion> answerQuestionList = new ArrayList<AnswerQuestion>();
+
+    public QuestionBank append(ChoiceQuestion choiceQuestion) {
+        choiceQuestionList.add(choiceQuestion);
+        return this;
+    }
+
+    public QuestionBank append(AnswerQuestion answerQuestion) {
+        answerQuestionList.add(answerQuestion);
+        return this;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        QuestionBank questionBank = (QuestionBank) super.clone();
+        questionBank.choiceQuestionList = (ArrayList<ChoiceQuestion>) choiceQuestionList.clone();
+        questionBank.answerQuestionList = (ArrayList<AnswerQuestion>) answerQuestionList.clone();
+
+        // 题目乱序
+        Collections.shuffle(questionBank.choiceQuestionList);
+        Collections.shuffle(questionBank.answerQuestionList);
+        // 答案乱序
+        ArrayList<ChoiceQuestion> choiceQuestionList = questionBank.choiceQuestionList;
+        for (ChoiceQuestion question : choiceQuestionList) {
+            Topic random = TopicRandomUtil.random(question.getOption(), question.getKey());
+            question.setOption(random.getOption());
+            question.setKey(random.getKey());
+        }
+        return questionBank;
+    }
+
+    public void setCandidate(String candidate) {
+        this.candidate = candidate;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
+    @Override
+    public String toString() {
+
+        StringBuilder detail = new StringBuilder("考生：" + candidate + "\r\n" +
+                "考号：" + number + "\r\n" +
+                "--------------------------------------------\r\n" +
+                "一、选择题" + "\r\n\n");
+
+        for (int idx = 0; idx < choiceQuestionList.size(); idx++) {
+            detail.append("第").append(idx + 1).append("题：").append(choiceQuestionList.get(idx).getName()).append("\r\n");
+            Map<String, String> option = choiceQuestionList.get(idx).getOption();
+            for (String key : option.keySet()) {
+                detail.append(key).append("：").append(option.get(key)).append("\r\n");;
+            }
+            detail.append("答案：").append(choiceQuestionList.get(idx).getKey()).append("\r\n\n");
+        }
+
+        detail.append("二、问答题" + "\r\n\n");
+
+        for (int idx = 0; idx < answerQuestionList.size(); idx++) {
+            detail.append("第").append(idx + 1).append("题：").append(answerQuestionList.get(idx).getName()).append("\r\n");
+            detail.append("答案：").append(answerQuestionList.get(idx).getKey()).append("\r\n\n");
+        }
+
+        return detail.toString();
+    }
+
+}
+```
+
+初始化题库
+```java
+package org.itstack.demo.design;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class QuestionBankController {
+
+    private QuestionBank questionBank = new QuestionBank();
+
+    public QuestionBankController() {
+
+        Map<String, String> map01 = new HashMap<String, String>();
+        map01.put("A", "JAVA2 EE");
+        map01.put("B", "JAVA2 Card");
+        map01.put("C", "JAVA2 ME");
+        map01.put("D", "JAVA2 HE");
+        map01.put("E", "JAVA2 SE");
+
+        Map<String, String> map02 = new HashMap<String, String>();
+        map02.put("A", "JAVA程序的main方法必须写在类里面");
+        map02.put("B", "JAVA程序中可以有多个main方法");
+        map02.put("C", "JAVA程序中类名必须与文件名一样");
+        map02.put("D", "JAVA程序的main方法中如果只有一条语句，可以不用{}(大括号)括起来");
+
+        Map<String, String> map03 = new HashMap<String, String>();
+        map03.put("A", "变量由字母、下划线、数字、$符号随意组成；");
+        map03.put("B", "变量不能以数字作为开头；");
+        map03.put("C", "A和a在java中是同一个变量；");
+        map03.put("D", "不同类型的变量，可以起相同的名字；");
+
+        Map<String, String> map04 = new HashMap<String, String>();
+        map04.put("A", "STRING");
+        map04.put("B", "x3x;");
+        map04.put("C", "void");
+        map04.put("D", "de$f");
+
+        Map<String, String> map05 = new HashMap<String, String>();
+        map05.put("A", "31");
+        map05.put("B", "0");
+        map05.put("C", "1");
+        map05.put("D", "2");
+
+        questionBank.append(new ChoiceQuestion("JAVA所定义的版本中不包括", map01, "D"))
+                .append(new ChoiceQuestion("下列说法正确的是", map02, "A"))
+                .append(new ChoiceQuestion("变量命名规范说法正确的是", map03, "B"))
+                .append(new ChoiceQuestion("以下()不是合法的标识符",map04, "C"))
+                .append(new ChoiceQuestion("表达式(11+3*8)/4%3的值是", map05, "D"))
+                .append(new AnswerQuestion("小红马和小黑马生的小马几条腿", "4条腿"))
+                .append(new AnswerQuestion("铁棒打头疼还是木棒打头疼", "头最疼"))
+                .append(new AnswerQuestion("什么床不能睡觉", "牙床"))
+                .append(new AnswerQuestion("为什么好马不吃回头草", "后面的草没了"));
+    }
+
+    public String createPaper(String candidate, String number) throws CloneNotSupportedException {
+        QuestionBank questionBankClone = (QuestionBank) questionBank.clone();
+        questionBankClone.setCandidate(candidate);
+        questionBankClone.setNumber(number);
+        return questionBankClone.toString();
+    }
+
+}
+```
+
+乱序对象
+```java
+package org.itstack.demo.design.util;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+public class Topic {
+
+    private Map<String, String> option;  // 选项；A、B、C、D
+    private String key;           // 答案；B
+
+    public Topic() {
+    }
+
+    public Topic(Map<String, String> option, String key) {
+        this.option = option;
+        this.key = key;
+    }
+
+    public Map<String, String> getOption() {
+        return option;
+    }
+
+    public void setOption(Map<String, String> option) {
+        this.option = option;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+}
+
+package org.itstack.demo.design.util;
+
+import java.util.*;
+
+public class TopicRandomUtil {
+
+    /**
+     * 乱序Map元素，记录对应答案key
+     * @param option 题目
+     * @param key    答案
+     * @return Topic 乱序后 {A=c., B=d., C=a., D=b.}
+     */
+    static public Topic random(Map<String, String> option, String key) {
+        Set<String> keySet = option.keySet();
+        ArrayList<String> keyList = new ArrayList<String>(keySet);
+        Collections.shuffle(keyList);
+        HashMap<String, String> optionNew = new HashMap<String, String>();
+        int idx = 0;
+        String keyNew = "";
+        for (String next : keySet) {
+            String randomKey = keyList.get(idx++);
+            if (key.equals(next)) {
+                keyNew = randomKey;
+            }
+            optionNew.put(randomKey, option.get(next));
+        }
+        return new Topic(optionNew, keyNew);
+    }
+
+}
+
+```
+
+测试
+```java
+    @Test
+	public void test_QuestionBank() throws CloneNotSupportedException {
+		QuestionBankController questionBankController = new QuestionBankController();
+		System.out.println(questionBankController.createPaper("花花", "1000001921032"));
+		System.out.println(questionBankController.createPaper("豆豆", "1000001921051"));
+		System.out.println(questionBankController.createPaper("大宝", "1000001921987"));
+	}
+```
 
 ## 10. 建造者模式
 
