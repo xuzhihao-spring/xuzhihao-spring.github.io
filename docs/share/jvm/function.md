@@ -1544,3 +1544,101 @@ try {
 - hutool-captcha 图片验证码实现
 
 Hutool中的工具类很多，可以参考：[https://www.hutool.cn/](https://www.hutool.cn/)
+
+### 3.4 JDBC枚举单例
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class MyObject {
+    private static final String driver = "com.mysql.cj.jdbc.Driver";// mysql驱动
+    // private static final String driver = "oracle.jdbc.driver.OracleDriver"; // oracle驱动
+    // private static final String driver = "org.postgresql.Driver"; // postgresql驱动
+    // private static final String driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"; // sqlserver驱动
+
+    private static final String url = "jdbc:mysql://debug-registry:3306/mall";// mysql地址
+    // private static final String url = "jdbc:oracle:thin:@debug-registry:1521:ORCL"; // oracle地址
+    // private static final String url = "jdbc:postgresql://debug-registry:5432/VJSP10003182"; // postgresql地址
+    // private static final String url = "jdbc:sqlserver://debug-registry:1433; DatabaseName=maptest"; // sqlserver地址
+
+    public enum JdbcUtilSingletion {
+        connectionFactory;
+
+        private Connection connection;
+
+        private JdbcUtilSingletion() {
+            try {
+                String username = "root";
+                String password = "root";
+                Class.forName(driver);
+                connection = DriverManager.getConnection(url, username, password);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        public Connection getConnection() {
+            return connection;
+        }
+    }
+
+    public static Connection getConnection() {
+        return JdbcUtilSingletion.connectionFactory.getConnection();
+    }
+
+    public static void main(String[] args) {
+        MyThread t1 = new MyThread();
+        MyThread t2 = new MyThread();
+        MyThread t3 = new MyThread();
+        t1.start();
+        t2.start();
+        t3.start();
+    }
+
+    public static void main2(String[] args) throws SQLException {
+
+        // 首先需要获取实例,然后获取连接
+        Connection conn = MyObject.getConnection();
+        // 创建语句
+        Statement st = conn.createStatement();
+        // 执行语句
+        ResultSet rs = st.executeQuery("select * from ums_admin");
+        // 处理结果集
+        while (rs.next()) {
+            System.out
+                .println(rs.getObject(1) + "\t" + rs.getObject(2) + "\t" + rs.getObject(3) + "\t" + rs.getObject(4));
+        }
+        st.executeBatch();
+        st.close();
+
+        // 批量插入
+        String sql = "INSERT INTO ums_admin2 (username,password) VALUES(?,?)";
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        for (int i = 1; i <= 10; i++) {
+            pstmt.setString(1, "username" + i);
+            pstmt.setString(2, "password" + i);
+            pstmt.addBatch();
+        }
+        pstmt.executeBatch();
+        pstmt.close();
+        conn.close();
+    }
+}
+```
+
+```java
+public class MyThread extends Thread {
+    @Override
+    public void run() {
+        super.run();
+        for (int i = 0; i < 5; i++) {
+            System.out.println(MyObject.getConnection().hashCode());
+        }
+    }
+}
+```
