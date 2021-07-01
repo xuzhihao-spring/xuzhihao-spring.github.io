@@ -1065,4 +1065,552 @@ public class ProductController {
 }
 ```
 
-## 9. 分布式锁
+## 9. 部署
+
+### 9.1 单机
+
+单机没密码纯内存配置
+```conf
+bind 0.0.0.0
+protected-mode yes
+port 6379
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+daemonize no
+supervised no
+pidfile /var/run/redis_6379.pid
+
+loglevel notice
+logfile "6379.log"
+databases 16
+
+save ""
+
+always-show-logo yes
+
+stop-writes-on-bgsave-error yes
+
+rdbcompression yes
+rdbchecksum yes
+
+dir ./
+
+slave-serve-stale-data yes
+slave-read-only yes
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-disable-tcp-nodelay no
+slave-priority 100
+lazyfree-lazy-eviction no
+lazyfree-lazy-expire no
+lazyfree-lazy-server-del no
+slave-lazy-flush no
+
+appendonly no
+appendfilename "appendonly.aof"
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+aof-load-truncated yes
+aof-use-rdb-preamble no
+
+lua-time-limit 5000
+
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+latency-monitor-threshold 0
+notify-keyspace-events ""
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+list-compress-depth 0
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+hll-sparse-max-bytes 3000
+activerehashing yes
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit slave 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+hz 10
+aof-rewrite-incremental-fsync yes
+```
+
+- save ""：停止rdb快照
+
+### 9.2 主从复制
+
+1主1从、带密码、RDB-AOF混合持久化,主节点端口为6379，从节点端口为6380
+
+#### 9.2.1 主节点配置
+
+vim /opt/redis/conf/6379.conf
+```conf
+bind 0.0.0.0
+protected-mode yes
+port 6379
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+daemonize no
+supervised no
+pidfile /var/run/redis_6379.pid
+
+loglevel notice
+logfile "6379.log"
+dbfilename dump-6379.rdb
+requirepass 1q2w3e4r
+masterauth 1q2w3e4r
+
+databases 16
+always-show-logo yes
+save ""
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+
+dir ./
+
+slave-serve-stale-data yes
+slave-read-only yes
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-disable-tcp-nodelay no
+slave-priority 100
+lazyfree-lazy-eviction no
+lazyfree-lazy-expire no
+lazyfree-lazy-server-del no
+slave-lazy-flush no
+
+appendonly yes
+appendfilename "appendonly.aof"
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+aof-load-truncated yes
+aof-use-rdb-preamble yes
+
+lua-time-limit 5000
+
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+latency-monitor-threshold 0
+notify-keyspace-events ""
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+list-compress-depth 0
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+hll-sparse-max-bytes 3000
+activerehashing yes
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit slave 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+hz 10
+aof-rewrite-incremental-fsync yes
+```
+
+
+- dbfilename：快照名字
+- requirepass：密码
+- masterauth：主节点密码，主从复制需要
+- save m n：开启RDB快照
+- appendonly：是否开启aof
+- aof-use-rdb-preamble：是否开启混合持久化
+
+
+#### 9.2.2 主节点启动
+
+vim start-6379.sh
+
+```bash
+PORT=6379
+docker stop redis-${PORT}
+docker rm redis-${PORT}
+docker run --name redis-${PORT} \
+           -p ${PORT}:${PORT} \
+           -v /opt/redis/conf/${PORT}.conf:/etc/redis/redis.conf \
+           -v /opt/redis/data:/data \
+           -d redis:4.0 \
+           redis-server /etc/redis/redis.conf
+```
+
+#### 9.2.3 从节点配置
+
+vim /opt/redis/conf/6380.conf
+```conf
+bind 0.0.0.0
+protected-mode yes
+port 6380
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+daemonize no
+supervised no
+pidfile /var/run/redis_6380.pid
+
+loglevel notice
+logfile "6380.log"
+dbfilename dump-6380.rdb
+slaveof 192.168.28.130 6379
+requirepass 1q2w3e4r
+masterauth 1q2w3e4r
+
+databases 16
+always-show-logo yes
+save ""
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+
+dir ./
+
+slave-serve-stale-data yes
+slave-read-only yes
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-disable-tcp-nodelay no
+slave-priority 100
+lazyfree-lazy-eviction no
+lazyfree-lazy-expire no
+lazyfree-lazy-server-del no
+slave-lazy-flush no
+
+appendonly yes
+appendfilename "appendonly.aof"
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+aof-load-truncated yes
+aof-use-rdb-preamble yes
+
+lua-time-limit 5000
+
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+latency-monitor-threshold 0
+notify-keyspace-events ""
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+list-compress-depth 0
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+hll-sparse-max-bytes 3000
+activerehashing yes
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit slave 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+hz 10
+aof-rewrite-incremental-fsync yes
+```
+
+- slaveof：启用主从模式配置主库ip和端口
+- slave-read-only：从节点是否只读
+- masterauth：设置访问master服务器的密码，如果主节点设置了密码必需添加该参数才能同步数据
+
+#### 9.2.4 从节点启动
+
+vim start-6380.sh
+```bash
+PORT=6380
+docker stop redis-${PORT}
+docker rm redis-${PORT}
+docker run --name redis-${PORT} \
+           -p ${PORT}:${PORT} \
+           -v /opt/redis/conf/${PORT}.conf:/etc/redis/redis.conf \
+           -v /opt/redis/data:/data \
+           -d redis:4.0 \
+           redis-server /etc/redis/redis.conf
+```
+
+
+#### 9.2.5 查看主从节点状态
+
+```bash
+# 进入主节点容器
+docker exec -it redis-6379 bash
+# 通过密码登录redis
+redis-cli -a 1q2w3e4r
+# 查看主从信息
+info replication
+```
+
+
+### 9.3 主从复制+哨兵
+
+sentinel是为了解决主从模式下，如果主节点由于故障下线了，自动升级从节点为主节点。
+
+每个sentinel节点其实就是一个redis实例，与主从节点不同的是sentinel节点作用是用于监控redis数据节点的，而sentinel节点集合则表示监控一组主从redis实例多个sentinel监控节点的集合，比如有主节点master和从节点slave-1、slave-2
+
+本例的主从使用主从复制的例子 
+sentinel主节点端口为26379，sentinel从节点端口为26380
+
+#### 9.3.1 主sentinel节点配置
+
+vim /opt/redis/conf/sentinel-26379.conf
+```conf
+port 26379
+logfile "26379.log"
+sentinel myid 5fe8c1456f5080df3e485d44447e812e97ecd4d1
+sentinel deny-scripts-reconfig yes
+
+daemonize no
+pidfile "/var/run/redis-sentinel.pid"
+dir "/tmp"
+
+sentinel monitor mymaster 192.168.28.130 6379 1
+sentinel down-after-milliseconds mymaster 5000
+sentinel auth-pass mymaster 1q2w3e4r
+```
+
+- myid：唯一id，sentinel集群的各自myid参数必需唯一
+- sentinel monitor：只需配置主节点即刻，端口后面的数字代表指明当有多少个sentinel认为一个master失效时，master才算真正失效
+- sentinel down-after-milliseconds：需要多少失效时间，一个master才会被这个sentinel主观地认为是不可用的(默认30秒)
+- sentinel auth-pass：设置连接master和slave时的密码
+
+
+#### 9.3.2 主sentinel节点启动文件
+
+vim start-sentinel-6379.sh
+```conf
+PORT=26379
+docker stop redis-sentinel-${PORT}
+docker rm redis-sentinel-${PORT}
+docker run --name redis-sentinel-${PORT} \
+           -p ${PORT}:${PORT} \
+           -v /opt/redis/conf/sentinel-${PORT}.conf:/etc/redis/sentinel.conf \
+           -v /opt/redis/data:/data \
+           -d redis:4.0 \
+           redis-sentinel /etc/redis/sentinel.conf
+```
+
+#### 9.3.3 从sentinel节点配置
+   
+vim /opt/redis/conf/sentinel-26380.conf
+```conf
+port 26380
+logfile "26380.log"
+sentinel myid 5fe8c1456f5080df3e485d44447e812e97ecd4d2
+sentinel deny-scripts-reconfig yes
+
+daemonize no
+pidfile "/var/run/redis-sentinel.pid"
+dir "/tmp"
+
+sentinel monitor mymaster 192.168.28.130 6379 1
+sentinel down-after-milliseconds mymaster 5000
+sentinel auth-pass mymaster 1q2w3e4r
+```
+
+#### 9.3.4 从sentinel节点启动文件
+
+vim start-sentinel-6380.sh
+```conf
+PORT=26380
+docker stop redis-sentinel-${PORT}
+docker rm redis-sentinel-${PORT}
+docker run --name redis-sentinel-${PORT} \
+           -p ${PORT}:${PORT} \
+           -v /opt/redis/conf/sentinel-${PORT}.conf:/etc/redis/sentinel.conf \
+           -v /opt/redis/data:/data \
+           -d redis:4.0 \
+           redis-sentinel /etc/redis/sentinel.conf
+```
+
+
+### 9.4 cluster集群
+
+伪集群端口是7001-7006，真正的集群放到不同的机器。工作目录：/opt/redis-cluster
+
+#### 9.4.1 创建文件夹
+
+vim create.sh
+```bash
+for i in `seq 7001 7006`
+do
+	mkdir -p ${i}/data
+done
+```
+```bash
+sh create.sh
+```
+
+
+#### 9.4.2 创建docker-compose配置
+
+```bash
+vim .env
+redis_path=/opt/redis-cluster
+
+vim docker-compose.yml
+```
+
+```conf
+version: '3.4'
+
+x-image:
+ &default-image
+ publicisworldwide/redis-cluster
+x-restart:
+ &default-restart
+ always
+x-netmode:
+ &default-netmode
+ host
+
+services:
+ redis1:
+  image: *default-image
+  network_mode: *default-netmode
+  restart: *default-restart
+  volumes:
+  - ${redis_path}/7001/data:/data
+  environment:
+  - REDIS_PORT=7001
+
+ redis2:
+  image: *default-image
+  network_mode: *default-netmode
+  restart: *default-restart
+  volumes:
+  - ${redis_path}/7002/data:/data
+  environment:
+  - REDIS_PORT=7002
+
+ redis3:
+  image: *default-image
+  network_mode: *default-netmode
+  restart: *default-restart
+  volumes:
+  - ${redis_path}/7003/data:/data
+  environment:
+  - REDIS_PORT=7003
+
+ redis4:
+  image: *default-image
+  network_mode: *default-netmode
+  restart: *default-restart
+  volumes:
+  - ${redis_path}/7004/data:/data
+  environment:
+  - REDIS_PORT=7004
+
+ redis5:
+  image: *default-image
+  network_mode: *default-netmode
+  restart: *default-restart
+  volumes:
+  - ${redis_path}/7005/data:/data
+  environment:
+  - REDIS_PORT=7005
+
+ redis6:
+  image: *default-image
+  network_mode: *default-netmode
+  restart: *default-restart
+  volumes:
+  - ${redis_path}/7006/data:/data
+  environment:
+  - REDIS_PORT=7006
+```
+
+#### 9.4.3 启动初始化
+
+```bash
+docker-compose up -d
+vim redis-trib.sh
+docker run --rm -it inem0o/redis-trib create --replicas 1 192.168.28.130:7001 192.168.28.130:7002 192.168.28.130:7003 192.168.28.130:7004 192.168.28.130:7005 192.168.28.130:7006
+sh redis-trib.sh
+```
+
+
+### 9.5 持久化方案
+
+#### 9.5.1 RDB持久化
+
+RDB持久化方式是通过快照(snapshotting)完成的，当符合一定条件时，redis会自动将内存中所有数据以二进制方式生成一份副本并存储在硬盘上。当redis重启时，并且AOF持久化未开启时，redis会读取RDB持久化生成的二进制文件(默认名称dump.rdb，可通过设置dbfilename修改)进行数据恢复，对于持久化信息可以用过命令“info Persistence”查看
+
+RDB持久化配置
+```bash
+#配置快照(rdb)促发规则，格式：save <seconds> <changes>
+#save 900 1  900秒内至少有1个key被改变则做一次快照
+#save 300 10  300秒内至少有300个key被改变则做一次快照
+#save 60 10000  60秒内至少有10000个key被改变则做一次快照
+#关闭该规则使用save ""
+save m n
+
+#rdb持久化存储数据库文件名，默认为dump.rdb
+dbfilename  dump.rdb
+
+#yes代表当使用bgsave命令持久化出错时候停止写RDB快照文件,no表明忽略错误继续写文件。
+stop-write-on-bgsave-error yes 
+
+#在写入文件和读取文件时是否开启rdb文件检查，检查是否有无损坏，如果在启动是检查发现损坏，则停止启动。
+rdbchecksum yes
+
+#数据文件存放目录，rdb快照文件和aof文件都会存放至该目录，请确保有写权限
+dir "/etc/redis"
+
+#是否开启RDB文件压缩，该功能可以节约磁盘空间
+rdbcompression yes
+```
+
+#### 9.5.2 AOF持久化
+
+当redis存储非临时数据时，为了降低redis故障而引起的数据丢失，redis提供了AOF(Append Only File)持久化，从单词意思讲，将命令追加到文件。AOF可以将Redis执行的每一条写命令追加到磁盘文件(appendonly.aof)中,在redis启动时候优先选择从AOF文件恢复数据。由于每一次的写操作，redis都会记录到文件中，所以开启AOF持久化会对性能有一定的影响，但是大部分情况下这个影响是可以接受的，我们可以使用读写速率高的硬盘提高AOF性能。与RDB持久化相比，AOF持久化数据丢失更少，其消耗内存更少(RDB方式执行bgsve会有内存拷贝)
+
+AOF实现本质是基于redis通讯协议，将命令以纯文本的方式写入到文件中。
+
+redis协议：
+
+首先Redis是以行来划分，每行以\r\n行结束。每一行都有一个消息头，消息头共分为5种分别如下:
+
+(+) 表示一个正确的状态信息，具体信息是当前行+后面的字符。
+
+(-)  表示一个错误信息，具体信息是当前行－后面的字符。
+
+(*) 表示消息体总共有多少行，不包括当前行,*后面是具体的行数。
+
+($) 表示下一行数据长度，不包括换行符长度\r\n,$后面则是对应的长度的数据。
+
+(:) 表示返回一个数值，：后面是相应的数字节符。
+
+AOF配置参数
+```bash
+#AOF文件最小重写大小，只有当AOF文件大小大于该值时候才可能重写,4.0默认配置64mb。
+auto-aof-rewrite-min-size 64mb
+
+#当前AOF文件大小和最后一次重写后的大小之间的比率等于或者等于指定的增长百分比，如100代表当前AOF文件是上次重写的两倍时候才重写。
+auto-aof-rewrite-percentage  100
+
+#no：不使用fsync方法同步，而是交给操作系统write函数去执行同步操作，在linux操作系统中大约每30秒刷一次缓冲。这种情况下，缓冲区数据同步不可控，并且在大量的写操作下，aof_buf缓冲区会堆积会越来越严重，一旦redis出现故障，数据
+#always：表示每次有写操作都调用fsync方法强制内核将数据写入到aof文件。这种情况下由于每次写命令都写到了文件中, 虽然数据比较安全，但是因为每次写操作都会同步到AOF文件中，所以在性能上会有影响，同时由于频繁的IO操作，硬盘的使用寿命会降低。
+#everysec：数据将使用调用操作系统write写入文件，并使用fsync每秒一次从内核刷新到磁盘。 这是折中的方案，兼顾性能和数据安全，所以redis默认推荐使用该配置。
+appendfsync everysec
+
+#当redis突然运行崩溃时，会出现aof文件被截断的情况，Redis可以在发生这种情况时退出并加载错误，以下选项控制此行为。
+#如果aof-load-truncated设置为yes，则加载截断的AOF文件，Redis服务器启动发出日志以通知用户该事件。
+#如果该选项设置为no，则服务将中止并显示错误并停止启动。当该选项设置为no时，用户需要在重启之前使用“redis-check-aof”实用程序修复AOF文件在进行启动。
+aof-load-truncated yes
+
+#yes开启AOF，no关闭AOF
+appendonly no 
+
+#指定AOF文件名，4.0无法通过config set 设置，只能通过修改配置文件设置。
+appendfilename appendonly.aof
+
+#RDB文件和AOF文件存放目录
+dir /etc/redis
+```
+
+#### 9.5.3 RDB-AOF混合持久化
+
+混合持久化就是同时结合RDB持久化以及AOF持久化混合写入AOF文件。这样做的好处是可以结合 rdb 和 aof 的优点, 快速加载同时避免丢失过多的数据，缺点是 aof 里面的 rdb 部分就是压缩格式不再是 aof 格式，可读性差
