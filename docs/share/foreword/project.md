@@ -698,8 +698,10 @@ RocketMQ 是阿里巴巴开源的分布式消息中间件，目前已成为 Apac
 - 异步的情况下(线程池)如何传给子线程
 
 
-
 ### 2.9 数据库之分库分表
+
+- ShardingSphere：jdbc、proxy
+- Mycat：proxy
 
 ### 2.10 分布式文件系统
 
@@ -718,11 +720,64 @@ MinIO是一个非常轻量的服务,可以很简单的和其他应用的结合�
 
 ### 2.11 统一日志中心详解
 
+- logstash：通过各种filter结构化日志信息，并把字段transform成对应的类型
+- elasticsearch：负责存储和查询日志信息
+- kibana：通过ui展示日志信息、还能生成饼图、柱状图等
+- filebeat：部署在每台应用服务器、数据库、中间件中，负责日志抓取与日志聚合
+  - 日志聚合：把多行日志合并成一条，例如exception的堆栈信息等
+
+ELK多租户日志
+
 ### 2.12 慢查询sql
+
+基于修改数据库配置的慢sql会对生产环境性能产生影响，本次基于mybatis对Executor进行拦截使用本地filebeat监控slf4j输出到elk
 
 ### 2.13 审计日志
 
+自定义注解 @AuditLog 基于@Aspect切面和spEL表达式获取操作内容
+
+```java
+@CacheEvict(value = "user", key = "#sysUserView.username")
+@PostMapping("/saveOrUpdate")
+@AuditLog(operation = "'新增或更新用户:' + #sysUserView.username")
+public CommonResult<Object> saveOrUpdate(@RequestBody SysUserView sysUserView) throws Exception {
+    if (appUserService.saveOrUpdateUser(sysUserView)) {
+        return CommonResult.success(null);
+    } else {
+        return CommonResult.failed();
+    }
+}
+```
 ### 2.14 JWT的RSA非对称密钥生成
+
+1. 生成密钥文件
+
+使用jdk自带的keytool工具，执行后会在当前目录生成xzh.jks密钥文件
+- 执行指令
+- 输入密钥库口令2次
+- 输入信息或者直接回车
+- `是否正确`输入y
+- 输入密钥
+
+```bash
+keytool -genkey -alias xzh -keyalg RSA -storetype PKCS12 -keysize 1024 -keystore xzh.jks
+```
+
+参数解析
+- genkey：创建证书
+- alias：证书的别名。在一个证书库文件中，别名是唯一用来区分多个证书的标识符
+- keyalg：密钥的算法，非对称加密的话就是RSA
+- keystore：证书库文件保存的位置和文件名。如果路径写错的话，会出现报错信息。如果在路径下，证书库文件不存在，那么就会创建一个
+- keysize：密钥长度，一般都是1024
+- validity：证书的有效期，单位是天。比如36500的话，就是100年
+
+2. 提取公钥
+
+> BEGIN PUBLIC KEY的内容就是公钥内容，直接创建一个pubkey.txt文件复制到里面
+
+```bash
+keytool -list -rfc -keystore xzh.jks -storepass 123456 | openssl x509 -inform pem -pubkey
+```
 
 ### 2.15 Canal数据库日志解析消费
 
