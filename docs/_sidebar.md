@@ -23,6 +23,7 @@
   * [Nginx配置HTTPS](linux/deploy/nginx_https.md)
   * [Gitlab搭建](linux/deploy/gitlab.md)
   * [Zabbix安装](linux/deploy/zabbix.md)
+  * [Zookeeper集群](linux/deploy/zookeeper)
   * [Hadoop](linux/deploy/hadoop.md)
   
 * 开发工具
@@ -62,7 +63,7 @@
    * [CDN技术](share/network/cdn)
    * [操作系统原理](share/os/index.md)
    * [分布式理论与算法](share/distributed/cap)
-   * [Zookeeper源码解析](share/distributed/zookeeper)
+   * [Zookeeper源码解析](linux/deploy/zookeeper)
    * [Dubbo源码解析](share/distributed/dubbo)
    * [消息队列](share/distributed/mq)
    * [分布式锁](share/distributed/dislock)
