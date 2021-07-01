@@ -783,9 +783,15 @@ keytool -list -rfc -keystore xzh.jks -storepass 123456 | openssl x509 -inform pe
 
 ### 2.16 Zookeeper集群搭建
 
+[Zookeeper集群](linux/deploy/zookeeper)
+
 ### 2.17 Redis
 
+[Redis](linux/database/redis.md)
+
 ### 2.18 MySQL
+
+[MySQL](linux/database/mysql.md)
 
 ### 2.19 多租户(应用隔离)
 
