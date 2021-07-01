@@ -111,7 +111,7 @@ XA规范的作用定义了RM和TM的接口交互规范，java的实现方式叫�
 ## 5. 分布式事务解决方案
 1. 2PC
   - XA方案
-  - Seata方案（AT、TCC）
+  - Seata方案（AT、MT）
 2. TCC
   - Hmily方案 
 3. 本地消息表（ebay）
@@ -121,5 +121,6 @@ XA规范的作用定义了RM和TM的接口交互规范，java的实现方式叫�
 5. 最大努力通知
 
 `atomikos` 使用场景，单应用多数据源
+
 `lcn`
 
