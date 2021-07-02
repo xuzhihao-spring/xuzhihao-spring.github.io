@@ -259,3 +259,197 @@ bin/sqlline.py zk:2181
 ```
 
 ## 6. phoenix语法
+
+### 6.1 简介
+
+* Apache Phoenix基于HBase的一个SQL引擎，我们可以使用Phoenix在HBase之上提供SQL语言的支持。
+* Phoenix是可以支持二级索引的，而且Phoenix它自动帮助我们管理二级索引，底层是通过HBase的协处理器来实现的，通过配合二级索引和HBase rowkey，可以提升hbase的查询效率
+* Phoenix底层还是将SQL语言解析为HBase的原生查询（put/get/scan），所以它的定位还是在随机实时查询——OLTP领域
+* Apache Phoenix不是独立运行的，而是提供一些JAR包，扩展了HBase的功能
+
+### 6.2 Phoneix索引的分类
+
+#### 6.2.1 全局索引
+
+* 全局索引适用于读多写少业务
+* 全局索引绝大多数负载都发生在写入时，当构建了全局索引时，Phoenix会拦截写入(DELETE、UPSERT值和UPSERT SELECT)上的数据表更新，构建索引更新，同时更新所有相关的索引表，开销较大
+* 读取时，Phoenix将选择最快能够查询出数据的索引表。默认情况下，除非使用Hint，如果SELECT查询中引用了其他非索引列，该索引是不会生效的
+* 全局索引一般和覆盖索引搭配使用，读的效率很高，但写入效率会受影响
+
+#### 6.2.2 本地索引
+
+* 本地索引适合写操作频繁，读相对少的业务
+* 当使用SQL查询数据时，Phoenix会自动选择是否使用本地索引查询数据
+* 在本地索引中，索引数据和业务表数据存储在同一个服务器上，避免写入期间的其他网络开销
+* 在Phoenix 4.8.0之前，本地索引保存在一个单独的表中，在Phoenix 4.8.1中，本地索引的数据是保存在一个影子列蔟中
+* 本地索引查询即使SELECT引用了非索引中的字段，也会自动应用索引的
+
+注意：创建表的时候指定了SALT_BUCKETS，是不支持本地索引的
+
+
+#### 6.2.3 覆盖索引
+
+Phoenix提供了覆盖的索引，可以不需要在找到索引条目后返回到主表。Phoenix可以将关心的数据捆绑在索引行中，从而节省了读取时间的开销
+
+#### 6.2.4 函数索引
+
+函数索引(4.3和更高版本)可以支持在列上创建索引，还可以基于任意表达式上创建索引。然后，当查询使用该表达式时，可以使用索引来检索结果，而不是数据表。例如，可以在UPPER(FIRST_NAME||‘ ’||LAST_NAME)上创建一个索引，这样将来搜索两个名字拼接在一起时，索引依然可以生效
+
+
+### 6.3 表操作
+
+```bash
+# 1. 创建表（订单明细表）
+create table if not exists ORDER_DTL(
+    id varchar primary key,
+    C1.status varchar,
+    C1.money double,
+    C1.pay_way integer,
+    C1.user_id varchar,
+    C1.operation_time varchar,
+    C1.category varchar
+);
+
+# 2. 删除表
+drop table if exists ORDER_DTL;
+
+# 3. 创建表（小写）
+create table if not exists ORDER_DTL(
+    "id" varchar primary key,
+    "C1"."status" varchar,
+    "C1"."money" double,
+    "C1"."pay_way" integer,
+    "C1"."user_id" varchar,
+    "C1"."operation_time" varchar,
+    "C1"."category" varchar
+);
+
+select "id" from ORDER_DTL;
+
+# 4. 插入一条数据，双引号表示引用一个表或者字段，单引号表示字符串
+upsert into "ORDER_DTL" values('000001', '已提交', 4070, 1, '4944191', '2020-04-25 12:09:16', '手机;');
+
+# 5. 更新数据，将ID为'000001'的订单状态修改为已付款
+upsert into "ORDER_DTL"("id", "C1"."status") values('000001', '已付款');
+
+# 6. 指定ID查询数据
+select * from "ORDER_DTL" where "id" = '000001';
+
+# 7. 删除指定ID的数据
+delete from "ORDER_DTL" where "id" = '000001';
+
+# 8. 查询表中一共有多少条数据
+select count(*) from "ORDER_DTL";
+# 第一页
+select * from "ORDER_DTL" limit 10 offset 0;
+# 第二页
+select * from "ORDER_DTL" limit 10 offset 10;
+# 第三页
+select * from "ORDER_DTL" limit 10 offset 20;
+```
+
+### 6.4 预分区
+
+```bash
+# 1. 使用指定rowkey来进行预分区
+drop table if exists ORDER_DTL;
+create table if not exists ORDER_DTL(
+    "id" varchar primary key,
+    C1."status" varchar,
+    C1."money" float,
+    C1."pay_way" integer,
+    C1."user_id" varchar,
+    C1."operation_time" varchar,
+    C1."category" varchar
+) 
+CONPRESSION='GZ'
+SPLIT ON ('3','5','7');
+
+# 2. 直接指定Region的数量来进行预分区
+drop table if exists ORDER_DTL;
+create table if not exists ORDER_DTL(
+    "id" varchar primary key,
+    C1."status" varchar,
+    C1."money" float,
+    C1."pay_way" integer,
+    C1."user_id" varchar,
+    C1."operation_time" varchar,
+    C1."category" varchar
+) 
+CONPRESSION='GZ',
+SALT_BUCKETS=10;
+
+# 3. 创建二级索引，根据用户ID来查询订单的ID以及对应的支付金额，建立一个覆盖索引，加快查询
+create index IDX_USER_ID on ORDER_DTL(C1."user_id") include ("id", C1."money");
+
+# 4. 删除索引
+drop index IDX_USER_ID on ORDER_DTL;
+
+# 5. 强制使用索引查询
+explain select /*+ INDEX(ORDER_DTL IDX_USER_ID) */ * from ORDER_DTL where "user_id" = '8237476';
+
+# 6. 建立本地索引
+# 因为我们要在很多的列上建立索引，所以不太使用使用覆盖索引
+create local index IDX_LOCAL_ORDER_DTL_MULTI_IDX on ORDER_DTL("id", C1."status", C1."money", C1."pay_way", C1."user_id") ;
+explain select * from ORDER_DTL WHERE C1."status" = '已提交';
+explain select * from ORDER_DTL WHERE C1."pay_way" = 1;
+
+```
+
+### 6.5 视图映射
+
+```bash
+# 1. 建立HBase已经有的表和Phoenix视图的映射
+create view if not exists "MOMO_CHAT"."MSG"(
+    id varchar primary key,
+    "C1"."msg_time" varchar,
+    "C1"."sender_nickyname" varchar,
+    "C1"."sender_account" varchar,
+    "C1"."sender_sex" varchar,
+    "C1"."sender_ip" varchar,
+    "C1"."sender_os" varchar,
+    "C1"."sender_phone_type" varchar,
+    "C1"."sender_network" varchar,
+    "C1"."sender_gps" varchar,
+    "C1"."receiver_nickyname" varchar,
+    "C1"."receiver_ip" varchar,
+    "C1"."receiver_account" varchar,
+    "C1"."receiver_os" varchar,
+    "C1"."receiver_phone_type" varchar,
+    "C1"."receiver_network" varchar,
+    "C1"."receiver_gps" varchar,
+    "C1"."receiver_sex" varchar,
+    "C1"."msg_type" varchar,
+    "C1"."distance" varchar,
+    "C1"."message" varchar
+);
+
+# 查询一条数据
+select * from "MOMO_CHAT"."MSG" limit 1;
+
+# 根据日期、发送人账号、接收人账号查询历史消息
+#日期查询：2020-09-10 11:28:05
+select
+    *
+from
+    "MOMO_CHAT"."MSG"
+where
+    substr("msg_time", 0, 10) = '2020-09-10'
+and "sender_account" = '13514684105'
+and "receiver_account" = '13869783495';
+
+-- 10 rows selected (5.648 seconds)
+
+select * from "MOMO_CHAT"."MSG" where substr("msg_time", 0, 10) = '2020-09-10' and "sender_account" = '13514684105' and "receiver_account" = '13869783495';
+
+# 2. 创建本地索引
+CREATE LOCAL INDEX LOCAL_IDX_MOMO_MSG ON MOMO_CHAT.MSG(substr("msg_time", 0, 10), "sender_account", "receiver_account");
+drop index LOCAL_IDX_MOMO_MSG ON MOMO_CHAT.MSG;
+
+0 rows selected (0.251 seconds)
+
+explain select * from "MOMO_CHAT"."MSG" where substr("msg_time", 0, 10) = '2020-09-10' and "sender_account" = '13514684105' and "receiver_account" = '13869783495';
+
+# 3. 删除索引
+drop index LOCAL_IDX_MOMO_MSG on MOMO_CHAT.MSG;
+```
