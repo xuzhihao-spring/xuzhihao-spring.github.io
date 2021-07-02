@@ -257,6 +257,8 @@ Grafana、Prometheus、Exporter的三剑客，使用邮件、钉钉以及webhook
 
 ### 1.7 架构设计方法论思维导图
 
+![](../../images/share/foreword/map.png)
+
 ### 1.8 系统幂等性设计与实践
 
 一、幂等性的定义
