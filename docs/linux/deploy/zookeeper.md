@@ -93,10 +93,16 @@ server.3=192.168.1.3:2888:3888
 - 2888为组成zookeeper服务器之间的通信端口，3888为用来选举leader的端口
 - 在data目录下新建一个myid文件，里面只包括该节点的id
 
+```bash
+echo 1 > /export/servers/zookeeper-3.6.1/data/myid
+```
 ### 3.3 部署其他节点
 
 将配置之后的 zookeeper，分发到其他节点上，并修改 myid，执行启动命令 zkServer.sh start
-
+```bash
+scp -r  /export/servers/zookeeper-3.6.1/ node02:/export/servers/
+scp -r  /export/servers/zookeeper-3.6.1/ node03:/export/servers/
+```
 ### 3.4 命令
 
 ```bash
@@ -110,7 +116,22 @@ zkCli.sh    # 启动客户端
 ls /        # 查看节点
 get /test   # 查看节点数据
 ls2 /test   # 查看该节点的子节点信息和属性信息
-create /test 123    # 创建节点并指定节点内
-delete /test        # 删除指定节点  
-deleteall /test     # 删除指定节点(包含子节点)
+create /app1 hello          # 创建普通节点
+create -s /app3 world       # 创建顺序节点
+create -e /tempnode world   # 创建临时节点
+create -s -e /tempnode2 aaa # 创建顺序的临时节点
+set /app1  xxx              # 修改节点数据
+delete /test                # 删除的节点不能有子节点
+rmr    /app1                # 递归删除
 ```
+
+| KeeperState   | EventType        | 触发条件                 | 说明                               |
+| ------------- | ---------------- | ------------------------| ---------------------------------- |
+|               | None             | 连接成功                 |                                    |
+| SyncConnected | NodeCreated      | Znode被创建              | 此时处于连接状态                   |
+| SyncConnected | NodeDeleted      | Znode被删除              | 此时处于连接状态                   |
+| SyncConnected | NodeDataChanged  | Znode数据被改变          | 此时处于连接状态                   |
+| SyncConnected | NodeChildChanged | Znode的子Znode数据被改变 | 此时处于连接状态                   |
+| Disconnected  | None             | 客户端和服务端断开连接    | 此时客户端和服务器处于断开连接状态 |
+| Expired       | None             | 会话超时                 | 会收到一个SessionExpiredException  |
+| AuthFailed    | None             | 权限验证失败             | 会收到一个AuthFailedException      |
