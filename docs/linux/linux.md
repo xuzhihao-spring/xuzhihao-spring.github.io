@@ -74,7 +74,7 @@ apt-get --reinstall install python-minimal
 ```
 
 
-## 2. shell脚本
+## 2. Shell
 
 ### 2.1 重启
 
