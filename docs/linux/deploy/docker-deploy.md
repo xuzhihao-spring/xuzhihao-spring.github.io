@@ -920,6 +920,7 @@ docker run -dit --name hadoop-docker \
 docker exec -it [容器id] /bin/bash
 cd /usr/local/hadoop-2.7.0/
 bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar grep input output 'dfs[a-z.]+'
+bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar pi 2 4
 
 vi /etc/profile
 export HADOOP_HOME="/usr/local/hadoop-2.7.0"
