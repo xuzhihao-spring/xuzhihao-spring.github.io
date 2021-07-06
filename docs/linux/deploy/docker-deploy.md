@@ -490,14 +490,14 @@ docker run -dti --network=host --name tracker -v /mydata/fdfs/tracker:/var/fdfs 
 docker run -dti --network=host --name storage -e TRACKER_SERVER=192.168.3.200:22122 -v /mydata/fdfs/storage:/var/fdfs delron/fastdfs storage
 ```
 
-一体安装
+整合安装
 ```bash
 docker run --net=host --name=fastdfs -e IP=192.168.3.200 -e WEB_PORT=80 -v /mydata/fdfs:/var/local/fdfs \
 	-d registry.cn-beijing.aliyuncs.com/tianzuo/fastdfs
 ```
 
 ### minio
-默认Access Key和Secret都是minioadmin
+账号密码：minioadmin
 
 ```bash
 docker run -p 9090:9000 --name minio \
@@ -509,14 +509,7 @@ docker run -p 9090:9000 --name minio \
 
 ## 分布式
 
-### sentinel-dashboard
-
-```bash
-docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard:1.7.2
-```
-
 ### nacos-server
-
 ```bash
 docker run --name nacos -d --network=host -p 8848:8848 -e MODE=standalone nacos/nacos-server:2.0.1
 
@@ -532,8 +525,83 @@ docker run --name nacos -d --network=host -p 8848:8848 -e MODE=standalone \
 --restart=always nacos/nacos-server:2.0.1
 ```
 
-### dubbo-admin
+### seata
+```bash
+mkdir -p /opt/seata/config/
+cd /opt/seata/config
+vi registry.conf
 
+registry {
+  # file 、nacos 、eureka、redis、zk、consul、etcd3、sofa
+  type = "nacos"
+
+  nacos {
+    application = "seata-server"
+    serverAddr = "172.17.17.165:8848"
+    group = "SEATA_GROUP"
+    namespace = "1207ed15-5658-48db-a35a-8e3725930070"
+    cluster = "default"
+    username = "nacos"
+    password = "nacos"
+  }
+}
+
+config {
+  # file、nacos 、apollo、zk、consul、etcd3
+  type = "nacos"
+
+  nacos {
+    serverAddr = "172.17.17.165:8848"
+    namespace = "1207ed15-5658-48db-a35a-8e3725930070"
+    group = "SEATA_GROUP"
+    username = "nacos"
+    password = "nacos"
+  }
+}
+
+vi file.conf
+
+store {
+  mode = "db"
+  db {
+    datasource = "druid"
+    dbType = "postgresql"
+    driverClassName = "org.postgresql.Driver"
+    url = "jdbc:postgresql://172.17.17.29:5432/seata"
+    user = "postgres"
+    password = "vjsp2020"
+    minConn = 5
+    maxConn = 100
+    globalTable = "global_table"
+    branchTable = "branch_table"
+    lockTable = "lock_table"
+    queryLimit = 100
+    maxWait = 5000
+  }
+}
+
+
+docker run --name seata-server -it -d  -p 8091:8091 \
+-e SEATA_CONFIG_NAME=file:/root/seata/config/registry \
+-e SEATA_IP=172.17.17.137 \
+-v /opt/seata/config/:/root/seata/config \
+--net=bridge --restart=always docker.io/seataio/seata-server:1.4.0
+
+SEATA_IP        # 可选, 指定seata-server启动的IP, 该IP用于向注册中心注册时使用, 如eureka等
+SEATA_PORT      # 可选, 指定seata-server启动的端口, 默认为 8091
+STORE_MODE      # 可选, 指定seata-server的事务日志存储方式, 支持db ,file,redis(Seata-Server 1.3及以上版本支持), 默认是 file
+SERVER_NODE     # 可选, 用于指定seata-server节点ID, 如 1,2,3..., 默认为 根据ip生成
+SEATA_ENV       # 可选, 指定 seata-server 运行环境, 如 dev, test 等, 服务启动时会使用 registry-dev.conf 这样的配置
+SEATA_CONFIG_NAME   # 可选, 指定配置文件位置, 如 file:/root/registry, 将会加载 /root/registry.conf 作为配置文件，
+# 如果需要同时指定 file.conf文件，需要将registry.conf的config.file.name的值改为类似file:/root/file.conf：
+```
+
+### sentinel-dashboard
+```bash
+docker run --name sentinel -d -p 8858:8858 -d bladex/sentinel-dashboard:1.7.2
+```
+
+### dubbo-admin
 ```bash
 docker run -d -p 7001:7001 -e dubbo.registry.address=zookeeper://192.168.3.200:2181 \
 -e dubbo.admin.root.password=root \
@@ -542,21 +610,17 @@ chenchuxin/dubbo-admin
 ```
 
 ### zookeeper
-
 ```bash
 docker run -d -p 2181:2181 -v /mydata/zookeeper/data/:/data/ --name=zookeeper  --privileged zookeeper  #启动zk
 docker run -d --net="host" --name zkui -p 9090:9090 -e ZKUI_ZK_SERVER=192.168.3.200:2181 qnib/zkui  #可视化ui
 ```
 
-
 ### zipkin
-
 ```bash
 docker run -d --name zipkin -p  9411:9411 openzipkin/zipkin
 ```
 
 ### skywalking
-
 ```bash
 docker pull elasticsearch:7.6.2
 docker pull apache/skywalking-oap-server:6.6.0-es7
@@ -592,6 +656,7 @@ apache/skywalking-ui:6.6.0
 java -jar skywalking_springboot.jar # 原启动方式
 java -javaagent:/home/mydata/app_skywalking/apache-skywalking-apm-bin/agent/skywalking-agent.jar -Dskywalking.agent.service_name=springboot -Dskywalking.collector.backend_service=127.0.0.1:11800 -jar /home/mydata/app_skywalking/skywalking_springboot.jar
 ```
+
 ## 消息队列
 
 ### activemq

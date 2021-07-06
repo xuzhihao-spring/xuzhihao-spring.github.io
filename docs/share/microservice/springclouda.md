@@ -556,9 +556,10 @@ spring:
 
 [Dubbo源码解析](/share/distributed/dubbo)
 
-
 ## 5. Seata微服务分布式事务解决方案
 
+[分布式事务Seata](/share/distributed/seata)
+  
 ## 6. Alibaba Cloud ACM
 
 ## 7. Alibaba Cloud OSS
