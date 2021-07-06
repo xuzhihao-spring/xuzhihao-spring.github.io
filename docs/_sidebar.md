@@ -1,5 +1,4 @@
 * 序章
-  * [开发手册](share/foreword/coding_guidelines.md)
   * [企业级解决方案](share/foreword/project.md)
 
 * Linux
