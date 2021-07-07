@@ -50,6 +50,19 @@ redis-cli -p 6379 monitor | head -n 100000 | ./redis-faina.py
 
 `无法确定你是否真的存在，但是可以确定真的不存在。`
 
+```lua
+BF.RESERVE	创建一个大小为capacity，错误率为error_rate的空的Bloom	BF.RESERVE {key} {error_rate} {capacity} [EXPANSION expansion] [NONSCALING]
+BF.ADD	向key指定的Bloom中添加一个元素item	BF.ADD {key} {item}
+BF.MADD	向key指定的Bloom中添加多个元素	BF.MADD {key} {item} [item…]
+BF.INSERT	向key指定的Bloom中添加多个元素，添加时可以指定大小和错误率，且可以控制在Bloom不存在的时候是否自动创建	BF.INSERT {key} [CAPACITY {cap}] [ERROR {error}] [EXPANSION expansion] [NOCREATE] [NONSCALING] ITEMS {item…}
+BF.EXISTS	检查一个元素是否可能存在于key指定的Bloom中	BF.EXISTS {key} {item}
+BF.MEXISTS	同时检查多个元素是否可能存在于key指定的Bloom中	BF.MEXISTS {key} {item} [item…]
+BF.SCANDUMP	对Bloom进行增量持久化操作	BF.SCANDUMP {key} {iter}
+BF.LOADCHUNK	加载SCANDUMP持久化的Bloom数据	BF.LOADCHUNK {key} {iter} {data}
+BF.INFO	查询key指定的Bloom的信息	BF.INFO {key}
+BF.DEBUG	查看BloomFilter的内部详细信息（如每层的元素个数、错误率等）	BF.DEBUG {key}
+```
+
 ### 2.2 缓存雪崩
 
 指缓存中数据大批量到过期时间，而查询数据量巨大，请求都直接访问数据库，引起数据库压力过大甚至down机
