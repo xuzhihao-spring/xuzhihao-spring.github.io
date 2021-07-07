@@ -786,11 +786,15 @@ keytool -list -rfc -keystore xzh.jks -storepass 123456 | openssl x509 -inform pe
 
 ### 2.16 Zookeeper集群搭建
 
-[Zookeeper集群](linux/deploy/zookeeper)
+* 分布式锁curator
 
 ### 2.17 Redis
 
-[Redis](linux/database/redis.md)
+* 分布式锁Redisson
+* 缓存注解@Cacheable
+* 集成类Spring Redis Template
+* 自定义缓存分组和时间
+* lua限流
 
 ### 2.18 MySQL
 
