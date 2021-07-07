@@ -176,6 +176,11 @@ docker run --name redis-stat --link redis6380:redis -p 8080:63790 -d insready/re
 docker run --name redis-stat -p 8080:63790 -d insready/redis-stat --server 192.168.3.200:6379 192.168.3.201:6379 # 远程集群或单机
 ```
 
+布隆过滤器
+```bash
+docker run -dit -p 6379:6379 --name redis-redisbloom redislabs/rebloom:2.2.5
+```
+
 ### mongo
 
 ```bash
