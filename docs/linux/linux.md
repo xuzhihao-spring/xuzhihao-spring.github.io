@@ -177,8 +177,8 @@ ps aux|grep jetty
 cd /usr/local/redis/  ./bin/redis-server redis.conf     # redis
 cd /home/nacos/bin sh startup.sh -m standalone          # nacos
 cd /home/es/elasticsearch-7.9.0/bin ./elasticsearch -d  # es
-cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &    # 
-java -Djetty.port=9000 -jar sentinel-dashboard-1.7.2.jar &  # sentinel
+cd /home/es/kibana-7.9.0-linux-x86_64/bin ./kibana &    # kibana
+java -Dserver.port=9000 -jar sentinel-dashboard-1.7.2.jar &  # sentinel
 ```
 
 ## 6. YUM仓库配置
