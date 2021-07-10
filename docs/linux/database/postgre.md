@@ -613,3 +613,59 @@ post ip:8083/connectors
 }
 ```
 3. 查看所有连接器get ip:8083/connectors/ 
+
+## 6. 排查优化
+
+```sql
+-- 查找锁表的pid
+select pid from pg_locks l join pg_class t on l.relation = t.oid where t.relkind = 'r' and t.relname = 'lockedtable';
+
+-- 查找锁表的语句
+select pid, state, usename, query, query_start from pg_stat_activity 
+where pid in ( select pid from pg_locks l join pg_class t on l.relation = t.oid and t.relkind = 'r' where t.relname =  'lockedtable');
+
+-- 查找所有活动的被锁的表
+select pid, state, usename, query, query_start 
+from pg_stat_activity 
+where pid in (
+  select pid from pg_locks l 
+  join pg_class t on l.relation = t.oid 
+  and t.relkind = 'r' 
+);
+
+-- 解锁
+SELECT pg_cancel_backend(pid);
+
+```
+
+占用空间统计
+```sql
+-- 查询单个数据库大小
+select pg_size_pretty(pg_database_size('postgres')) as size;
+ 
+-- 查询所有数据库大小
+select datname, pg_size_pretty (pg_database_size(datname)) AS size from pg_database;
+
+-- 查询单个表大小
+select pg_size_pretty(pg_relation_size('mytab')) as size;
+ 
+-- 查询所有表大小
+select relname, pg_size_pretty(pg_relation_size(relid)) as size from pg_stat_user_tables;
+ 
+-- 查询单个表的总大小，包括该表的索引大小
+select pg_size_pretty(pg_total_relation_size('tab')) as size;
+ 
+-- 查询所有表的总大小，包括其索引大小
+select relname, pg_size_pretty(pg_total_relation_size(relid)) as size from pg_stat_user_tables;
+
+-- 查询单个索引大小
+select pg_size_pretty(pg_relation_size('myindex')) as size;
+
+-- 查询单个表空间大小
+select pg_size_pretty(pg_tablespace_size('pg_default')) as size;
+ 
+-- 查询所有表空间大小
+select spcname, pg_size_pretty(pg_tablespace_size(spcname)) as size from pg_tablespace;
+-- 或
+select spcname, pg_size_pretty(pg_tablespace_size(oid)) as size from pg_tablespace;
+```
