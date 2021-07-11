@@ -129,7 +129,7 @@ psql -Upostgres # 连接数据库
 -v /docker/volumes/postgres:/var/lib/postgresql/data 挂载目录。
 ```
 
-### oracle-xe
+### oracle
 
 ```bash
 docker pull wnameless/oracle-xe-11g
