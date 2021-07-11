@@ -23,7 +23,7 @@
   * [Gitlab搭建](linux/deploy/gitlab.md)
   * [Zabbix安装](linux/deploy/zabbix.md)
   * [Zookeeper集群](linux/deploy/zookeeper)
-  * [Hadoop](linux/deploy/hadoop.md)
+  * [Hadoop3](linux/deploy/hadoop.md)
   
 * 开发工具
   * [使用ZeroBrane Studio调试lua脚本](tools/zerobrane.md)
