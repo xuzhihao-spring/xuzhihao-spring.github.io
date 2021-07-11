@@ -155,11 +155,96 @@ select column_name columnName, data_type dataType, column_comment columnComment,
         where table_name = #{tableName} and table_schema = (select database()) order by ordinal_position
 ```
 
-## 5. 部署 
+## 5. 安装集群
 
-### 5.1 主从复制
+### 5.1 手动安装
+```bash
+#卸载Centos7自带mariadb
+rpm -qa|grep mariadb
+mariadb-libs-5.5.64-1.el7.x86_64
+rpm -e mariadb-libs-5.5.64-1.el7.x86_64 --nodeps
 
-#### 5.1.1 主库安装
+#创建mysql安装包存放点
+mkdir /export/software/mysql
+#上传mysql-5.7.29安装包到上述文件夹下、解压
+tar xvf mysql-5.7.29-1.el7.x86_64.rpm-bundle.tar
+
+#执行安装
+yum -y install libaio
+rpm -ivh mysql-community-common-5.7.29-1.el7.x86_64.rpm mysql-community-libs-5.7.29-1.el7.x86_64.rpm mysql-community-client-5.7.29-1.el7.x86_64.rpm mysql-community-server-5.7.29-1.el7.x86_64.rpm
+
+#初始化mysql
+mysqld --initialize
+#更改所属组
+chown mysql:mysql /var/lib/mysql -R
+
+#启动mysql
+systemctl start mysqld.service
+#查看生成的临时root密码
+cat  /var/log/mysqld.log
+#这行日志的最后就是随机生成的临时密码
+[Note] A temporary password is generated for root@localhost: o+TU+KDOm004
+
+#修改mysql root密码、授权远程访问
+mysql -u root -p
+Enter password:     #这里输入在日志中生成的临时密码
+
+#更新root密码  设置为hadoop
+mysql> alter user user() identified by "hadoop";
+Query OK, 0 rows affected (0.00 sec)
+#授权
+mysql> use mysql;
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'hadoop' WITH GRANT OPTION;
+mysql> FLUSH PRIVILEGES;
+
+#mysql的启动和关闭 状态查看
+systemctl stop mysqld
+systemctl status mysqld
+systemctl start mysqld
+
+#建议设置为开机自启动服务
+systemctl enable  mysqld
+
+#查看是否已经设置自启动成功
+systemctl list-unit-files | grep mysqld
+```
+
+### 5.2 完全卸载
+```bash
+#关闭mysql服务
+systemctl stop mysqld.service
+
+#查找安装mysql的rpm包
+[root@node3 ~]# rpm -qa | grep -i mysql      
+mysql-community-libs-5.7.29-1.el7.x86_64
+mysql-community-common-5.7.29-1.el7.x86_64
+mysql-community-client-5.7.29-1.el7.x86_64
+mysql-community-server-5.7.29-1.el7.x86_64
+
+#卸载
+[root@node3 ~]# yum remove -y mysql-community-libs-5.7.29-1.el7.x86_64 mysql-community-common-5.7.29-1.el7.x86_64 mysql-community-client-5.7.29-1.el7.x86_64 mysql-community-server-5.7.29-1.el7.x86_64
+
+#查看是否卸载干净
+rpm -qa | grep -i mysql
+
+#查找mysql相关目录 删除
+[root@node1 ~]# find / -name mysql
+/var/lib/mysql
+/var/lib/mysql/mysql
+/usr/share/mysql
+
+[root@node1 ~]# rm -rf /var/lib/mysql
+[root@node1 ~]# rm -rf /var/lib/mysql/mysql
+[root@node1 ~]# rm -rf /usr/share/mysql
+
+#删除默认配置 日志
+rm -rf /etc/my.cnf 
+rm -rf /var/log/mysqld.log
+```
+
+### 5.3 主从复制
+
+#### 5.3.1 主库安装
 
 ```bash
 mkdir -p /opt/mysql/master/conf		# 创建目录
@@ -234,7 +319,7 @@ max_connections=3600
 - expire_logs_days：binlog日志过期时间，默认不过期
 - max_connections：mysql最大连接数
 
-#### 5.1.2 启动主库
+#### 5.3.2 启动主库
 
 vim /opt/mysql/master/start.sh
 ```bash
@@ -251,7 +336,7 @@ docker run -d \
     mysql:5.7.25
 ```
 
-#### 5.1.3 主库创建用于同步的账号
+#### 5.3.3 主库创建用于同步的账号
 
 ```bash
 docker exec -it mysql-m bash
@@ -259,7 +344,7 @@ mysql -uroot -p1q2w3e4r
 GRANT REPLICATION SLAVE ON *.* to 'backup'@'%' identified by '123456';
 ```
 
-#### 5.1.4 从库安装
+#### 5.3.4 从库安装
 
 进入从库的服务器执行以下操作，建议是不同于主库的服务器，如果服务器相同需要修改3306端口为其他的值
 
@@ -319,7 +404,7 @@ max_connections=3600
 - server_id：设为2
 - read-only：设为只读
 
-#### 5.1.5 启动从库
+#### 5.3.5 启动从库
 
 vim /opt/mysql/slave/start.sh
 ```bash
@@ -336,7 +421,7 @@ docker run -d \
     mysql:5.7.25
 ```
 
-#### 5.1.6 关联主库
+#### 5.3.6 关联主库
 
 ```bash
 docker exec -it mysql-s bash	# 进入容器
@@ -361,7 +446,7 @@ show slave status\G				# 查看slave的状态
 GRANT select,insert,update,delete,create,drop,alter ON *.* to 'xzh'@'%' identified by '1q2w3e4r';
 ```
 
-#### 5.1.7 主库查看同步信息
+#### 5.3.7 主库查看同步信息
 
 登录主库
 ```bash
@@ -369,7 +454,7 @@ show processlist	# 查看binlog线程
 show slave hosts	# 查看所有从库信息
 ```
 
-### 5.2 主从切换
+### 5.4 主从切换
 
 1. 对主库进行锁表
 
@@ -418,9 +503,9 @@ start slave
 在主库下执行 show slave status\G 查看新slave的状态，Slave_IO_Running和Slave_SQL_Running都显示Yes就代表成功了
 
 
-### 5.3 主主复制
+### 5.5 主主复制
 
-#### 5.3.1 主库配置
+#### 5.5.1 主库配置
 ```conf
 [client]
 default-character-set=utf8
@@ -473,7 +558,7 @@ auto_increment_increment = 2
 !includedir /etc/mysql/conf.d/
 ```
 
-#### 5.3.2 第二主库配置
+#### 5.5.2 第二主库配置
 ```conf
 [client]
 default-character-set=utf8
@@ -532,4 +617,4 @@ auto_increment_increment = 2
 - 新增auto_increment_offset和auto_increment_increment参数，并且两个库的auto_increment_offset值不相同
 
 
-### 5.4 高可用方案
+### 5.6 高可用方案
