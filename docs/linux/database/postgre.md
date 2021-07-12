@@ -558,33 +558,39 @@ COMMENT ON COLUMN order.deleted IS '删除标志';
 ## 5. Debezium数据实时同步ES
 
 ```bash
-# zk
+# 安装zk
 docker run -itd --name zookeeper -p 2181:2181 -p 2888:2888 -p 3888:3888 debezium/zookeeper
-# kafka
+
+# 安装kafka
 docker run -itd  --name kafka -p 9092:9092 \
 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://172.17.17.137:9092  \
 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 --link zookeeper:zookeeper debezium/kafka
-# kafka监控主题
-docker run -itd --rm --name watcher --link zookeeper:zookeeper --link kafka:kafka debezium/kafka watch-topic -a -k postgres.inventory.products
-# kafka创建主题
-docker exec -it kafka /bin/bash
-cd bin
-sh ./kafka-topics.sh --create --zookeeper 172.18.0.4:2181 --replication-factor 1 --partitions 1 --topic postgres.inventory.products   
-# postgres
-docker run -itd  --name database -p 5433:5432 -e POSTGRES_PASSWORD=debezium  -d debezium/example-postgres
-# connect
-docker run -itd --rm --name connect -p 8083:8083 -e GROUP_ID=1 
--e CONFIG_STORAGE_TOPIC=my_connect_configs 
--e OFFSET_STORAGE_TOPIC=my_connect_offsets 
--e STATUS_STORAGE_TOPIC=my_connect_statuses 
---link zookeeper:zookeeper --link kafka:kafka --link database:database debezium/connect
-# kafka-manager
+
+# 安装kafka-manager
 docker run -itd --name kafka-manager \
 --link zookeeper:zookeeper \
 --link kafka:kafka -p 9001:9000 \
 --restart=always \
 --env ZK_HOSTS=zookeeper:2181 \
 sheepkiller/kafka-manager
+
+# 安装pg
+docker run -itd  --name database -p 5433:5432 -e POSTGRES_PASSWORD=debezium  -d debezium/example-postgres
+
+# 安装connect
+docker run -itd --rm --name connect -p 8083:8083 -e GROUP_ID=1 
+-e CONFIG_STORAGE_TOPIC=my_connect_configs 
+-e OFFSET_STORAGE_TOPIC=my_connect_offsets 
+-e STATUS_STORAGE_TOPIC=my_connect_statuses 
+--link zookeeper:zookeeper --link kafka:kafka --link database:database debezium/connect
+
+# kafka监控主题
+docker run -itd --rm --name watcher --link zookeeper:zookeeper --link kafka:kafka debezium/kafka watch-topic -a -k postgres.inventory.products
+
+# kafka创建主题
+docker exec -it kafka /bin/bash
+cd bin
+sh ./kafka-topics.sh --create --zookeeper 172.18.0.4:2181 --replication-factor 1 --partitions 1 --topic postgres.inventory.products
 ```
 
 ```sql
@@ -617,6 +623,24 @@ post ip:8083/connectors
 ## 6. 排查优化
 
 ```sql
+-- 执行中sql
+SELECT pgsa.datname AS database_name
+    , pgsa.usename AS user_name
+    , pgsa.client_addr AS client_addr
+    , pgsa.application_name AS application_name
+    , pgsa.state AS state
+ , pgsa.backend_start AS backend_start
+ , pgsa.xact_start AS xact_start
+ , extract(epoch FROM now() - pgsa.xact_start) AS xact_time, pgsa.query_start AS query_start
+ , extract(epoch FROM now() - pgsa.query_start) AS query_time
+ , pgsa.query AS query_sql
+FROM pg_stat_activity pgsa
+WHERE pgsa.state != 'idle'
+ AND pgsa.state != 'idle in transaction'
+ AND pgsa.state != 'idle in transaction (aborted)'
+ORDER BY query_time DESC
+LIMIT 5
+
 -- 查找锁表的pid
 select pid from pg_locks l join pg_class t on l.relation = t.oid where t.relkind = 'r' and t.relname = 'lockedtable';
 
