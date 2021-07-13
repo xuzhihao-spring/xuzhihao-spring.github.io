@@ -2,7 +2,7 @@
 
 ## 1. 参数设置
 
-### 1.1 大小写配置
+大小写配置
 
 ```sql
 show variables like '%lower_case_table_names%' --大小写敏感
@@ -27,7 +27,7 @@ lower_case_table_names=1
 service mysql restart
 ```
 
-### 1.2 慢查询日志
+慢查询日志
 
 ```bash
 set global slow_query_log = on      #临时开启慢查询日志

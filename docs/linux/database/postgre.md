@@ -17,9 +17,9 @@ pg_dump -h localhost -W -U postgres -f /opt/DB/shop.sql VJSP20004611   #还原
 
 ```
 
-## 3. 函数过程
+## 3. 函数存储过程触发器
 
-### 3.1 视图
+视图
 
 ```sql
 CREATE VIEW viewname AS 
@@ -35,7 +35,7 @@ SELECT
     '是' :: CHARACTER VARYING AS VALUE;
 ```
 
-### 3.2 触发器
+触发器
 
 ```sql
 -- Table: 学生分数表
@@ -151,7 +151,7 @@ $BODY$
 ALTER FUNCTION "public"."Untitled"() OWNER TO "postgres";
 ```
 
-### 3.3 Dual不存在解决方案
+Dual不存在解决方案
 
 ```sql
 CREATE OR REPLACE VIEW dual AS
@@ -163,7 +163,7 @@ GRANT ALL ON TABLE dual TO  ;
 GRANT SELECT ON TABLE dual TO public;
 ```
 
-### 3.4 函数
+函数
 
 ```sql
 CREATE OR REPLACE FUNCTION "public"."f_actuser"("v_flowcid" text)
@@ -319,7 +319,7 @@ $BODY$
 ALTER FUNCTION "public"."Untitled"("""formno""" "pg_catalog"."text") OWNER TO "postgres";
 ```
 
-### 3.5 过程
+存储过程
 
 ```sql
 CREATE OR REPLACE FUNCTION "public"."proc_init_flow_cando"(IN "v_partnerid" text, IN "v_flowcid" text, IN "v_pathid" text, OUT "v_out" refcursor)
@@ -451,9 +451,7 @@ END;
   COST 100
 ```
 
-### 3.6 查询表结构信息
-
-获取表名及备注sql
+查询表结构信息,获取表名及备注sql
 ```sql
 select
 	c.relname as table_name,
@@ -597,8 +595,8 @@ sh ./kafka-topics.sh --create --zookeeper 172.18.0.4:2181 --replication-factor 1
 SELECT * FROM pg_replication_slots;
 ```
 
-1. postman测试get: ip:8083
-2. 创建连接器
+- postman测试get: ip:8083
+- 创建连接器
 ```bash
 post ip:8083/connectors 
 {
@@ -618,7 +616,7 @@ post ip:8083/connectors
     }
 }
 ```
-3. 查看所有连接器get ip:8083/connectors/ 
+- 查看所有连接器get ip:8083/connectors/ 
 
 ## 6. 排查优化
 
@@ -692,4 +690,58 @@ select pg_size_pretty(pg_tablespace_size('pg_default')) as size;
 select spcname, pg_size_pretty(pg_tablespace_size(spcname)) as size from pg_tablespace;
 -- 或
 select spcname, pg_size_pretty(pg_tablespace_size(oid)) as size from pg_tablespace;
+```
+
+## 7. pg_stat_statements
+
+pg_stat_statements模块提供一种方法追踪一个服务器所执行的所有 SQL 语句的执行统计信息
+
+```lua
+userid	oid	pg_authid.oid	执行该语句的用户的 OID
+dbid	oid	pg_database.oid	在其中执行该语句的数据库的 OID
+queryid	bigint	 	内部哈希码，从语句的解析树计算得来
+query	text	 	语句的文本形式
+calls	bigint	 	被执行的次数
+total_time	double precision	 	在该语句中花费的总时间，以毫秒计
+min_time	double precision	 	在该语句中花费的最小时间，以毫秒计
+max_time	double precision	 	在该语句中花费的最大时间，以毫秒计
+mean_time	double precision	 	在该语句中花费的平均时间，以毫秒计
+stddev_time	double precision	 	在该语句中花费时间的总体标准偏差，以毫秒计
+rows	bigint	 	该语句检索或影响的行总数
+shared_blks_hit	bigint	 	该语句造成的共享块缓冲命中总数
+shared_blks_read	bigint	 	该语句读取的共享块的总数
+shared_blks_dirtied	bigint	 	该语句弄脏的共享块的总数
+shared_blks_written	bigint	 	该语句写入的共享块的总数
+local_blks_hit	bigint	 	该语句造成的本地块缓冲命中总数
+local_blks_read	bigint	 	该语句读取的本地块的总数
+local_blks_dirtied	bigint	 	该语句弄脏的本地块的总数
+local_blks_written	bigint	 	该语句写入的本地块的总数
+temp_blks_read	bigint	 	该语句读取的临时块的总数
+temp_blks_written	bigint	 	该语句写入的临时块的总数
+blk_read_time	double precision	 	该语句花在读取块上的总时间，以毫秒计（如果track_io_timing被启用，否则为零）
+blk_write_time	double precision	 	该语句花在写入块上的总时间，以毫秒计（如果track_io_timing被启用，否则为零）
+```
+
+```sql
+-- 最耗时 SQL，单次调用最耗时 SQL TOP 5
+select userid::regrole, dbid, query from pg_stat_statements order by mean_time desc limit 5;  
+-- 最耗时的5条数据，最后一列表示命中率
+SELECT query, calls, total_time, rows, 100.0 * shared_blks_hit /nullif(shared_blks_hit + shared_blks_read, 0) AS hit_percent FROM pg_stat_statements ORDER BY total_time DESC LIMIT 5;
+
+-- 最耗IO SQL，单次调用最耗IO SQL TOP 5
+select userid::regrole, dbid, query from pg_stat_statements order by (blk_read_time+blk_write_time)/calls desc limit 5;  
+-- 总最耗IO SQL TOP 5
+select userid::regrole, dbid, query from pg_stat_statements order by (blk_read_time+blk_write_time) desc limit 5;  
+
+-- 响应时间抖动最严重 SQL
+select userid::regrole, dbid, query from pg_stat_statements order by stddev_time desc limit 5;  
+
+-- 最耗共享内存 SQL
+select userid::regrole, dbid, query from pg_stat_statements order by (shared_blks_hit+shared_blks_dirtied) desc limit 5;  
+
+-- 最耗临时空间 SQL
+select userid::regrole, dbid, query from pg_stat_statements order by temp_blks_written desc limit 5;  
+
+-- 清理历史统计信息
+select pg_stat_statements_reset(); 
 ```
